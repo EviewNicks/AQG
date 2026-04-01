@@ -27,8 +27,9 @@ ENV/
 
 # ── Dataset Output (generated files, tidak perlu di-commit) ───────────────
 dataset_aqg/output/
-*.jsonl
+
 !dataset_aqg/materi/**/*.jsonl
+
 
 # ── Model Checkpoints & Weights ────────────────────────────────────────────
 *.pt
