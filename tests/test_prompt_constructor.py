@@ -108,7 +108,11 @@ class TestBuildPrompt:
         chunk = make_chunk("test text")
         params = TaskParams(concept="X", difficulty="easy", question_type="MCQ")
         result = build_prompt(chunk, params)
-        assert result.chunk is chunk
+        # chunk mungkin dinormalisasi (source_file path), cek equality bukan identity
+        assert result.chunk.text == chunk.text
+        assert result.chunk.section_heading == chunk.section_heading
+        assert result.chunk.token_count == chunk.token_count
+        assert result.chunk.has_code == chunk.has_code
         assert result.params is params
 
     def test_code_block_preserved_in_input(self):
@@ -162,6 +166,7 @@ class TestBuildPromptsForChunk:
             concepts=["Sejarah Python", "Ciri Khas Python"],
             difficulties=["easy", "medium"],
             question_types=["MCQ"],
+            auto_select_concept=False,  # gunakan semua concepts
         )
         assert len(prompts) == 4  # 2 concepts × 2 difficulties × 1 type
 

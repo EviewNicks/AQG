@@ -23,7 +23,7 @@ def make_valid_dp(**overrides) -> RawDataPoint:
             "difficulty": "easy",
             "question_type": "MCQ",
             "concept": "Sejarah Python",
-            "misconception_tags": [],
+            "misconception_tags": ["bahasa_lain"],  # non-empty sesuai Req 6.6
         },
         source="synthetic",
     )

@@ -39,7 +39,8 @@ torch==2.11.0
 # LangChain
 langchain==1.2.14
 langchain-openai==1.1.12
-langchain-google-genai>=4.2.1s
+langchain-openrouter>=0.2.1
+langchain-google-genai>=4.2.1
 langchain-core==1.2.23
 langgraph==1.1.4
 

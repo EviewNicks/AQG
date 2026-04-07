@@ -11,12 +11,12 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from src.dataset.chunker import chunk_all_materials, chunk_markdown
-from src.dataset.concept_list import CONCEPTS, get_concepts_for_module
-from src.dataset.dataset_writer import write_dataset
-from src.dataset.prompt_constructor import TaskParams, build_prompt
-from src.dataset.synthetic_generator import _build_llm_client, generate_datapoint
-from src.dataset.validator import (
+from src.dataset.step2.chunker import chunk_all_materials, chunk_markdown
+from src.dataset.step2.concept_list import CONCEPTS, get_concepts_for_module
+from src.dataset.step2.dataset_writer import write_dataset
+from src.dataset.step2.prompt_constructor import TaskParams, build_prompt
+from src.dataset.step2.synthetic_generator import _build_llm_client, generate_datapoint
+from src.dataset.step2.validator import (
     RawDataPoint,
 )
 
@@ -52,6 +52,25 @@ def _save_failures(failures_path: Path, failures: list[dict]) -> None:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
+def _load_progress(progress_path: Path) -> int:
+    """Load jumlah prompt yang sudah selesai diproses untuk section ini."""
+    if not progress_path.exists():
+        return 0
+    try:
+        with open(progress_path, encoding="utf-8") as f:
+            data = json.loads(f.read().strip())
+            return data.get("completed_prompts", 0)
+    except Exception:
+        return 0
+
+
+def _save_progress(progress_path: Path, completed_prompts: int) -> None:
+    """Simpan jumlah prompt yang sudah selesai (overwrite, bukan append)."""
+    progress_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(progress_path, "w", encoding="utf-8") as f:
+        f.write(json.dumps({"completed_prompts": completed_prompts}))
+
+
 def _load_accumulated(output_dir: Path) -> list[dict]:
     """Load all accumulated data points from partial output files."""
     accumulated = []
@@ -85,18 +104,23 @@ def run_pipeline(
     difficulties: list[str] | None = None,
     question_types: list[str] | None = None,
     dry_run: bool = False,
+    max_chunks_per_section: int | None = None,
 ) -> None:
     """
     Jalankan pipeline lengkap: chunk → prompt → generate → validate → write.
 
     Args:
         materi_dir: direktori materi Markdown
-        output_dir: direktori output dataset
-        max_per_chunk: jumlah soal per chunk (default 2)
+        output_dir: direktori output dataset (root). Setiap section disimpan ke
+                    subfolder output_dir/<section_name>/accumulated.jsonl
+        max_per_chunk: tidak digunakan lagi (deprecated, diabaikan)
         section_filter: nama folder section untuk diproses (None = semua)
         difficulties: list difficulty yang digunakan (default: easy, medium, hard)
         question_types: list question type (default: MCQ)
         dry_run: jika True, skip LLM call (untuk testing pipeline)
+        max_chunks_per_section: batas maksimal chunk yang diproses per section.
+                                 None = proses semua chunk. Gunakan untuk mengontrol
+                                 jumlah prompt dan biaya API.
     """
     if difficulties is None:
         difficulties = ["easy", "medium", "hard"]
@@ -104,16 +128,8 @@ def run_pipeline(
         question_types = ["MCQ"]
 
     materi_path = Path(materi_dir)
-    output_path = Path(output_dir)
-    checkpoint_path = output_path / "checkpoint.jsonl"
-    failures_path = output_path / "validation_failures.jsonl"
-
-    output_path.mkdir(parents=True, exist_ok=True)
-
-    # Load checkpoint
-    completed_sections = _load_checkpoint(checkpoint_path)
-    if completed_sections:
-        print(f"[INFO] Melanjutkan dari checkpoint. Section selesai: {completed_sections}")
+    output_root = Path(output_dir)
+    output_root.mkdir(parents=True, exist_ok=True)
 
     # Temukan semua section (subfolder)
     if section_filter:
@@ -134,12 +150,23 @@ def run_pipeline(
     for section_path in sections:
         section_name = section_path.name
 
+        # Setiap section punya subfolder sendiri di output_root
+        section_output_path = output_root / section_name
+        section_output_path.mkdir(parents=True, exist_ok=True)
+
+        checkpoint_path = section_output_path / "checkpoint.jsonl"
+        failures_path = section_output_path / "validation_failures.jsonl"
+        progress_path = section_output_path / "progress.json"
+
+        # Load checkpoint per section
+        completed_sections = _load_checkpoint(checkpoint_path)
         if section_name in completed_sections:
             print(f"[SKIP] {section_name} (sudah selesai)")
             continue
 
         print(f"\n{'='*60}")
         print(f"[SECTION] {section_name}")
+        print(f"[OUTPUT]  {section_output_path}")
         print(f"{'='*60}")
 
         # Chunk semua file di section ini
@@ -158,43 +185,52 @@ def run_pipeline(
 
         print(f"[INFO] {len(all_chunks)} chunks dari {len(md_files)} file")
 
+        # Batasi jumlah chunk jika max_chunks_per_section di-set
+        if max_chunks_per_section and len(all_chunks) > max_chunks_per_section:
+            import random
+            # Sample merata: ambil chunk dari awal, tengah, dan akhir
+            step = len(all_chunks) // max_chunks_per_section
+            all_chunks = all_chunks[::step][:max_chunks_per_section]
+            print(f"[INFO] Dibatasi ke {len(all_chunks)} chunks (max_chunks_per_section={max_chunks_per_section})")
+
         # Ambil konsep untuk section ini
         concepts = get_concepts_for_module(section_name)
         if not concepts:
-            # Fallback: gunakan nama section sebagai konsep
             concepts = [section_name.replace("-", " ").title()]
         print(f"[INFO] {len(concepts)} konsep: {concepts[:3]}{'...' if len(concepts) > 3 else ''}")
 
         # Build prompt inputs
+        # Setiap chunk menghasilkan 1 prompt per kombinasi (difficulty × question_type).
+        # max_per_chunk mengontrol berapa kali chunk yang sama di-sample ulang dengan
+        # konsep berbeda — default 1 (tidak di-sample ulang).
+        from src.dataset.prompt_constructor import extract_concept_from_chunk
         prompt_inputs = []
         for chunk in all_chunks:
-            # Pilih max_per_chunk kombinasi per chunk
-            combos = []
+            # Pilih konsep paling relevan dengan isi chunk (context grounding)
+            concept = extract_concept_from_chunk(chunk, concepts)
             for diff in difficulties:
                 for qt in question_types:
-                    for concept in concepts[:3]:  # max 3 konsep per chunk
-                        combos.append((concept, diff, qt))
-                        if len(combos) >= max_per_chunk:
-                            break
-                    if len(combos) >= max_per_chunk:
-                        break
-                if len(combos) >= max_per_chunk:
-                    break
-
-            for concept, diff, qt in combos[:max_per_chunk]:
-                try:
-                    params = TaskParams(concept=concept, difficulty=diff, question_type=qt)
-                    prompt_inputs.append(build_prompt(chunk, params))
-                except ValueError:
-                    pass
+                    try:
+                        params = TaskParams(concept=concept, difficulty=diff, question_type=qt)
+                        prompt_inputs.append(build_prompt(chunk, params))
+                    except ValueError:
+                        pass
 
         print(f"[INFO] {len(prompt_inputs)} prompt inputs akan di-generate")
+
+        # Load progress — resume dari prompt terakhir yang selesai
+        completed_prompt_idx = _load_progress(progress_path)
+        if completed_prompt_idx > 0:
+            print(f"[INFO] Resume dari prompt #{completed_prompt_idx + 1} (sudah selesai: {completed_prompt_idx})")
+            prompt_inputs = prompt_inputs[completed_prompt_idx:]
 
         # Generate data points — incremental save per data point
         failed_llm = 0
         section_valid_count = 0
+        current_idx = completed_prompt_idx  # track absolute index
 
-        for prompt_input in tqdm(prompt_inputs, desc=f"Generating {section_name}", unit="soal"):
+        for prompt_input in tqdm(prompt_inputs, desc=f"Generating {section_name}", unit="soal",
+                                  initial=completed_prompt_idx, total=completed_prompt_idx + len(prompt_inputs)):
             if dry_run:
                 raw_dp = RawDataPoint(
                     input=prompt_input.input,
@@ -221,9 +257,10 @@ def run_pipeline(
 
             if result_dp is None:
                 failed_llm += 1
+                current_idx += 1
+                _save_progress(progress_path, current_idx)
                 continue
 
-            # Validate dan simpan langsung ke disk — tidak tunggu section selesai
             from src.dataset.validator import validate, ValidDataPoint
             val_result = validate(result_dp)
             if val_result.is_valid:
@@ -232,7 +269,7 @@ def run_pipeline(
                     target=result_dp.target,
                     metadata=result_dp.metadata,
                 )
-                _append_accumulated(output_path, [valid_dp])
+                _append_accumulated(section_output_path, [valid_dp])
                 section_valid_count += 1
             else:
                 _save_failures(failures_path, [{
@@ -244,37 +281,35 @@ def run_pipeline(
                     },
                 }])
 
+            current_idx += 1
+            _save_progress(progress_path, current_idx)
+
         print(f"[RESULT] Valid: {section_valid_count}, Failed LLM: {failed_llm}")
+
+        # Write final splits untuk section ini
+        section_accumulated = _load_accumulated(section_output_path)
+        if section_accumulated:
+            from src.dataset.validator import ValidDataPoint
+            valid_section = [
+                ValidDataPoint(input=r["input"], target=r["target"], metadata=r["metadata"])
+                for r in section_accumulated
+            ]
+            write_dataset(valid_section, str(section_output_path))
+            print(f"[DONE] Splits disimpan ke {section_output_path}")
 
         # Save checkpoint setelah section selesai
         _save_checkpoint(checkpoint_path, section_name, section_valid_count)
+        # Hapus progress file — section sudah selesai
+        if progress_path.exists():
+            progress_path.unlink()
 
         total_generated += section_valid_count
         total_failed_llm += failed_llm
 
-    # Final: load semua accumulated dan write final splits
     print(f"\n{'='*60}")
     print(f"[FINAL] Total valid data points: {total_generated}")
     print(f"[FINAL] Total LLM failures: {total_failed_llm}")
-
-    accumulated_raw = _load_accumulated(output_path)
-    if not accumulated_raw:
-        print("[WARNING] Tidak ada data yang berhasil di-generate.")
-        return
-
-    # Konversi ke ValidDataPoint untuk writer
-    from src.dataset.validator import ValidDataPoint
-    valid_all = [
-        ValidDataPoint(input=r["input"], target=r["target"], metadata=r["metadata"])
-        for r in accumulated_raw
-    ]
-
-    info = write_dataset(valid_all, output_dir)
-    print(f"\n[DONE] Dataset disimpan ke {output_dir}")
-    print(f"  Train: {info['splits']['train']}")
-    print(f"  Validation: {info['splits']['validation']}")
-    print(f"  Test: {info['splits']['test']}")
-    print(f"  Total: {info['total']}")
+    print(f"[FINAL] Output root: {output_root}")
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────

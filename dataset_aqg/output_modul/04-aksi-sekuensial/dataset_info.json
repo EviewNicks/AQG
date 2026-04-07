@@ -1,0 +1,27 @@
+{
+  "total": 95,
+  "splits": {
+    "train": 65,
+    "validation": 12,
+    "test": 18
+  },
+  "concept_distribution": {
+    "Aksi Sekuensial": 24,
+    "One-liner Python": 30,
+    "Python Interpreter": 35,
+    "Urutan Eksekusi Program": 6
+  },
+  "difficulty_distribution": {
+    "easy": 31,
+    "hard": 32,
+    "medium": 32
+  },
+  "source_distribution": {
+    "synthetic": 95
+  },
+  "question_type_distribution": {
+    "Code Completion": 48,
+    "MCQ": 47
+  },
+  "generated_at": "2026-04-03"
+}

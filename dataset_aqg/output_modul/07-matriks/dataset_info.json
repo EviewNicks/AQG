@@ -1,0 +1,26 @@
+{
+  "total": 100,
+  "splits": {
+    "train": 69,
+    "validation": 13,
+    "test": 18
+  },
+  "concept_distribution": {
+    "Fundamental Matriks": 36,
+    "Implementasi Matriks Python": 46,
+    "Operasi Matriks": 18
+  },
+  "difficulty_distribution": {
+    "easy": 33,
+    "hard": 33,
+    "medium": 34
+  },
+  "source_distribution": {
+    "synthetic": 100
+  },
+  "question_type_distribution": {
+    "Code Completion": 50,
+    "MCQ": 50
+  },
+  "generated_at": "2026-04-05"
+}

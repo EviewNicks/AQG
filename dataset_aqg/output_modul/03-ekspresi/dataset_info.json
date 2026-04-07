@@ -1,0 +1,29 @@
+{
+  "total": 117,
+  "splits": {
+    "train": 81,
+    "validation": 15,
+    "test": 21
+  },
+  "concept_distribution": {
+    "Ekspresi Relasional": 30,
+    "Operator Aritmatika": 18,
+    "Operator Assignment": 12,
+    "Operator Logika": 18,
+    "Operator Perbandingan": 12,
+    "Pengertian Ekspresi": 27
+  },
+  "difficulty_distribution": {
+    "easy": 39,
+    "hard": 39,
+    "medium": 39
+  },
+  "source_distribution": {
+    "synthetic": 117
+  },
+  "question_type_distribution": {
+    "Code Completion": 60,
+    "MCQ": 57
+  },
+  "generated_at": "2026-04-03"
+}

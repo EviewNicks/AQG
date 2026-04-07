@@ -1,0 +1,34 @@
+{
+  "total": 180,
+  "splits": {
+    "train": 126,
+    "validation": 27,
+    "test": 27
+  },
+  "concept_distribution": {
+    "Abstraksi Data": 12,
+    "Data Typing": 12,
+    "Operasi pada List": 24,
+    "Operasi pada String": 6,
+    "Tipe Data Boolean": 6,
+    "Tipe Data Float": 18,
+    "Tipe Data Integer": 6,
+    "Tipe Data List": 18,
+    "Tipe Data Set": 12,
+    "Tipe Data String": 60,
+    "`center()`": 6
+  },
+  "difficulty_distribution": {
+    "easy": 60,
+    "hard": 60,
+    "medium": 60
+  },
+  "source_distribution": {
+    "synthetic": 180
+  },
+  "question_type_distribution": {
+    "Code Completion": 90,
+    "MCQ": 90
+  },
+  "generated_at": "2026-04-03"
+}

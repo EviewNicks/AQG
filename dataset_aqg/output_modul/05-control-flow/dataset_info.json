@@ -1,0 +1,29 @@
+{
+  "total": 118,
+  "splits": {
+    "train": 82,
+    "validation": 16,
+    "test": 20
+  },
+  "concept_distribution": {
+    "Break dan Continue": 11,
+    "Error Handling": 6,
+    "Percabangan if-else": 29,
+    "Perulangan for": 42,
+    "Perulangan while": 12,
+    "Ternary Operator": 18
+  },
+  "difficulty_distribution": {
+    "easy": 39,
+    "hard": 40,
+    "medium": 39
+  },
+  "source_distribution": {
+    "synthetic": 118
+  },
+  "question_type_distribution": {
+    "Code Completion": 59,
+    "MCQ": 59
+  },
+  "generated_at": "2026-04-04"
+}

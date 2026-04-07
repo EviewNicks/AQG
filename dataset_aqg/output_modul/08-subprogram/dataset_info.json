@@ -1,0 +1,27 @@
+{
+  "total": 108,
+  "splits": {
+    "train": 75,
+    "validation": 15,
+    "test": 18
+  },
+  "concept_distribution": {
+    "Definisi Subprogram": 6,
+    "Fungsi Python": 84,
+    "Prosedur": 6,
+    "Return Value": 12
+  },
+  "difficulty_distribution": {
+    "easy": 36,
+    "hard": 36,
+    "medium": 36
+  },
+  "source_distribution": {
+    "synthetic": 108
+  },
+  "question_type_distribution": {
+    "Code Completion": 54,
+    "MCQ": 54
+  },
+  "generated_at": "2026-04-05"
+}

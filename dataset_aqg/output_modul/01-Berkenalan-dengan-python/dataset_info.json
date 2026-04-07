@@ -1,0 +1,32 @@
+{
+  "total": 90,
+  "splits": {
+    "train": 63,
+    "validation": 12,
+    "test": 15
+  },
+  "concept_distribution": {
+    "Ciri Khas Python": 4,
+    "Input Output Python": 12,
+    "Komentar dalam Python": 6,
+    "Menjalankan File Python": 24,
+    "Python Software Foundation": 6,
+    "Sejarah Python": 6,
+    "Variable dan Assignment": 9,
+    "Versi Python 2.x": 17,
+    "Versi Python 3.x": 3,
+    "Zen of Python": 3
+  },
+  "difficulty_distribution": {
+    "easy": 30,
+    "hard": 30,
+    "medium": 30
+  },
+  "source_distribution": {
+    "synthetic": 90
+  },
+  "question_type_distribution": {
+    "MCQ": 90
+  },
+  "generated_at": "2026-04-02"
+}

@@ -106,18 +106,44 @@ Implementasi pipeline persiapan dataset dari Markdown ke JSONL, mengikuti arsite
   - Jalankan `pytest dataset_aqg/tests/ -v`
   - Test pipeline end-to-end dengan 2–3 file Markdown nyata (tanpa LLM, gunakan mock)
 
-- [ ] 9. Implementasi Augmentor (opsional)
-  - [ ]* 9.1 Implementasi `augment_by_difficulty()` dan `deduplicate()`
-    - Buat `dataset_aqg/src/augmentor.py`
+- [x] 9. Perbaikan kualitas dataset (berdasarkan evaluasi)
+  - [x] 9.1 Perbaiki context grounding di Prompt Constructor
+    - Update logika pemilihan `concept` agar hanya menggunakan konsep yang relevan dengan isi chunk
+    - Tambahkan fungsi `extract_concept_from_chunk(chunk, candidate_concepts)` yang memilih konsep paling relevan berdasarkan keyword matching antara teks chunk dan nama konsep
+    - Jika tidak ada konsep yang relevan ditemukan, gunakan heading section sebagai fallback concept
+    - Normalisasi `source_file` path menggunakan `pathlib.PurePosixPath` agar selalu menggunakan forward slash
+    - _Requirements: 2.6, 4.5_
+
+  - [x] 9.2 Revisi `GENERATION_SYSTEM_PROMPT` untuk misconception tags dan context grounding
+    - Update `GENERATION_SYSTEM_PROMPT` di `src/dataset/synthetic_generator.py` sesuai design.md yang baru
+    - Tambahkan instruksi eksplisit: soal hanya boleh dibuat dari informasi dalam konteks
+    - Tambahkan instruksi untuk menghasilkan `misconception_tags` non-empty
+    - Update parser response LLM untuk mengekstrak `misconception_tags` dari output
+    - _Requirements: 7.6, 7.7_
+
+  - [x] 9.3 Update Validator untuk aturan validasi baru
+    - Tambahkan cek: `metadata.misconception_tags` harus non-empty list
+    - Tambahkan: set `metadata.validated = True` setelah data point lolos semua validasi
+    - _Requirements: 6.6, 6.7_
+
+  - [ ]* 9.4 Write property tests untuk perbaikan kualitas
+    - **Property 12: Misconception tags non-empty** — for any valid data point, misconception_tags is a non-empty list
+    - **Property 13: Validated flag set** — for any data point passing validation, metadata.validated is True
+    - **Property 14: Source file path normalization** — for any valid data point, source_file uses forward slashes
+    - **Validates: Requirements 4.5, 4.6, 4.7, 6.6, 6.7**
+
+- [ ] 10. Implementasi Augmentor (opsional)
+  - [ ]* 10.1 Implementasi `augment_by_difficulty()` dan `deduplicate()`
+    - Buat `src/dataset/augmentor.py`
     - Generate varian easy/medium/hard dari satu data point
     - Tag dengan `"source": "augmented"` dan `"augmented_from": "{original_id}"`
     - _Requirements: 8.1, 8.2, 8.4_
 
-  - [ ]* 9.2 Write property test untuk Augmentor
+  - [ ]* 10.2 Write property test untuk Augmentor
     - **Property 11: Augmentation deduplication** — after dedup, no two entries have identical input strings
     - **Validates: Requirements 8.5**
 
-- [x] 10. Buat pipeline runner script
+- [x] 11. Buat pipeline runner script
   - Buat `dataset_aqg/run_pipeline.py` sebagai entry point
   - Terima argumen: `--materi-dir`, `--output-dir`, `--max-per-chunk`, `--llm-provider`, `--section`
   - Jalankan seluruh pipeline: chunk → prompt → generate → validate → write
@@ -127,7 +153,7 @@ Implementasi pipeline persiapan dataset dari Markdown ke JSONL, mengikuti arsite
   - Simpan `validation_failures.jsonl` di output dir
   - _Requirements: semua_
 
-- [x] 11. Final checkpoint — Jalankan pipeline dengan materi nyata
+- [x] 12. Final checkpoint — Jalankan pipeline dengan materi nyata
   - Jalankan pipeline pada minimal 2 modul materi (`01-Berkenalan-dengan-python`)
   - Verifikasi output JSONL bisa di-load dengan `datasets.load_dataset("json", ...)`
   - Pastikan semua tests pass: `pytest dataset_aqg/tests/ -v`

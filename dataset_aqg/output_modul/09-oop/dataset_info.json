@@ -1,0 +1,27 @@
+{
+  "total": 148,
+  "splits": {
+    "train": 103,
+    "validation": 21,
+    "test": 24
+  },
+  "concept_distribution": {
+    "Class dan Object": 101,
+    "Duck Typing": 6,
+    "Inheritance": 5,
+    "Method": 36
+  },
+  "difficulty_distribution": {
+    "easy": 49,
+    "hard": 50,
+    "medium": 49
+  },
+  "source_distribution": {
+    "synthetic": 148
+  },
+  "question_type_distribution": {
+    "Code Completion": 75,
+    "MCQ": 73
+  },
+  "generated_at": "2026-04-07"
+}

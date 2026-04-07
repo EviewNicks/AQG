@@ -1,0 +1,28 @@
+{
+  "total": 126,
+  "splits": {
+    "train": 87,
+    "validation": 18,
+    "test": 21
+  },
+  "concept_distribution": {
+    "Fundamental Array": 6,
+    "Implementasi Array dengan Python": 66,
+    "Indeks Array": 6,
+    "Langkah-langkah Algoritma": 6,
+    "Pemrosesan Sekuensial Array": 42
+  },
+  "difficulty_distribution": {
+    "easy": 42,
+    "hard": 42,
+    "medium": 42
+  },
+  "source_distribution": {
+    "synthetic": 126
+  },
+  "question_type_distribution": {
+    "Code Completion": 63,
+    "MCQ": 63
+  },
+  "generated_at": "2026-04-04"
+}

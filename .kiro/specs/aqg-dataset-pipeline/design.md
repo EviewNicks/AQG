@@ -117,8 +117,12 @@ class RawDataPoint:
 
 GENERATION_SYSTEM_PROMPT = """
 Kamu adalah pembuat soal kuis Python untuk siswa Indonesia.
+PENTING: Buat soal HANYA berdasarkan informasi yang ada di dalam teks Konteks yang diberikan. Jangan gunakan pengetahuan di luar konteks.
+
 Berikan output HANYA dalam format berikut (tanpa teks lain):
-Pertanyaan: <pertanyaan>? Jawaban benar: <jawaban>. Distraktor: 1) <d1> 2) <d2> 3) <d3> 4) <d4>
+Pertanyaan: <pertanyaan>? Jawaban benar: <jawaban>. Distraktor: 1) <d1> 2) <d2> 3) <d3> 4) <d4>. Misconception tags: <tag1>, <tag2>
+
+Misconception tags adalah label singkat (bahasa Indonesia atau Inggris) yang menjelaskan miskonsepsi umum siswa yang ditargetkan oleh setiap distraktor. Contoh: tokoh_pemrograman_lain, salah_versi_python, bingung_tipe_data.
 """
 
 def generate_datapoint(prompt_input: PromptInput, llm_client, max_retries: int = 2) -> Optional[RawDataPoint]:
@@ -159,6 +163,9 @@ Aturan validasi:
 - `metadata`: harus memiliki field `difficulty`, `question_type`, `concept`, `misconception_tags`
 - `metadata.difficulty`: hanya `"easy"`, `"medium"`, `"hard"`
 - `metadata.question_type`: hanya `"MCQ"`, `"Code Completion"`
+- `metadata.misconception_tags`: harus berupa list non-empty (minimal 1 tag)
+- `metadata.validated`: di-set ke `true` setelah data point lolos semua validasi
+- `metadata.source_file`: path dinormalisasi menggunakan forward slash (`/`)
 
 ### 5. Dataset Writer (`src/dataset_writer.py`)
 
@@ -316,6 +323,24 @@ CONCEPTS = {
 *For any* list of data points produced by the Augmentor, no two entries SHALL have identical `input` strings after deduplication is applied.
 
 **Validates: Requirements 8.5**
+
+### Property 12: Misconception tags non-empty
+
+*For any* valid data point in the dataset, `metadata.misconception_tags` SHALL be a non-empty list containing at least one string tag.
+
+**Validates: Requirements 4.6, 6.6, 7.6**
+
+### Property 13: Validated flag set on passing data points
+
+*For any* data point that passes all validation checks, `metadata.validated` SHALL be `true`.
+
+**Validates: Requirements 4.7, 6.7**
+
+### Property 14: Source file path normalization
+
+*For any* valid data point, `metadata.source_file` SHALL use forward slashes (`/`) as path separators, regardless of the operating system used to generate the data.
+
+**Validates: Requirements 4.5**
 
 ## Error Handling
 
