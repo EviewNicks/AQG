@@ -1,0 +1,27 @@
+{
+  "total": 120,
+  "splits": {
+    "train": 84,
+    "validation": 18,
+    "test": 18
+  },
+  "concept_distribution": {
+    "Format Kode Python": 66,
+    "PEP 8 Style Guide": 36,
+    "Penamaan Variabel": 12,
+    "Style Guide Statement": 6
+  },
+  "difficulty_distribution": {
+    "easy": 40,
+    "hard": 40,
+    "medium": 40
+  },
+  "source_distribution": {
+    "synthetic": 120
+  },
+  "question_type_distribution": {
+    "Code Completion": 60,
+    "MCQ": 60
+  },
+  "generated_at": "2026-04-07"
+}

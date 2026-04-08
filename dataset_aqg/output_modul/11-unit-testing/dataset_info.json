@@ -1,0 +1,26 @@
+{
+  "total": 60,
+  "splits": {
+    "train": 41,
+    "validation": 8,
+    "test": 11
+  },
+  "concept_distribution": {
+    "Penerapan Unit Test": 6,
+    "Pengenalan Unit Test": 41,
+    "Test Case": 13
+  },
+  "difficulty_distribution": {
+    "easy": 21,
+    "hard": 19,
+    "medium": 20
+  },
+  "source_distribution": {
+    "synthetic": 60
+  },
+  "question_type_distribution": {
+    "Code Completion": 29,
+    "MCQ": 31
+  },
+  "generated_at": "2026-04-08"
+}

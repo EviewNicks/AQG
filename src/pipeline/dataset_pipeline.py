@@ -203,7 +203,7 @@ def run_pipeline(
         # Setiap chunk menghasilkan 1 prompt per kombinasi (difficulty × question_type).
         # max_per_chunk mengontrol berapa kali chunk yang sama di-sample ulang dengan
         # konsep berbeda — default 1 (tidak di-sample ulang).
-        from src.dataset.prompt_constructor import extract_concept_from_chunk
+        from src.dataset.step2.prompt_constructor import extract_concept_from_chunk
         prompt_inputs = []
         for chunk in all_chunks:
             # Pilih konsep paling relevan dengan isi chunk (context grounding)
@@ -261,7 +261,7 @@ def run_pipeline(
                 _save_progress(progress_path, current_idx)
                 continue
 
-            from src.dataset.validator import validate, ValidDataPoint
+            from src.dataset.step2.validator import validate, ValidDataPoint
             val_result = validate(result_dp)
             if val_result.is_valid:
                 valid_dp = ValidDataPoint(
@@ -289,7 +289,7 @@ def run_pipeline(
         # Write final splits untuk section ini
         section_accumulated = _load_accumulated(section_output_path)
         if section_accumulated:
-            from src.dataset.validator import ValidDataPoint
+            from src.dataset.step2.validator import ValidDataPoint
             valid_section = [
                 ValidDataPoint(input=r["input"], target=r["target"], metadata=r["metadata"])
                 for r in section_accumulated

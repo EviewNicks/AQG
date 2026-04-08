@@ -1,103 +1,21 @@
-Project root : D:\2-Project\AQG
-Python       : 3.12.13
+---------------------------------------------------------------------------
+ModuleNotFoundError                       Traceback (most recent call last)
+Cell In[8], line 2
+      1 # Modul 10
+----> 2 run_pipeline(
+      3     materi_dir='dataset_aqg/materi',
+      4     output_dir=output_dir,
+      5     section_filter='10-style-guide',
 
-Materi dir  : D:\2-Project\AQG\dataset_aqg\materi
-Output dir  : D:\2-Project\AQG\dataset_aqg\output_domain
-Formats     : ['span_corruption', 'qa_generic']
+File d:\2-Project\AQG\src\pipeline\dataset_pipeline.py:206, in run_pipeline(materi_dir, output_dir, max_per_chunk, section_filter, difficulties, question_types, dry_run, max_chunks_per_section)
+    200 print(f"[INFO] {len(concepts)} konsep: {concepts[:3]}{'...' if len(concepts) > 3 else ''}")
+    202 # Build prompt inputs
+    203 # Setiap chunk menghasilkan 1 prompt per kombinasi (difficulty × question_type).
+    204 # max_per_chunk mengontrol berapa kali chunk yang sama di-sample ulang dengan
+    205 # konsep berbeda — default 1 (tidak di-sample ulang).
+--> 206 from src.dataset.prompt_constructor import extract_concept_from_chunk
+    207 prompt_inputs = []
+    208 for chunk in all_chunks:
+    209     # Pilih konsep paling relevan dengan isi chunk (context grounding)
 
-Semua modul (11):
-  01-Berkenalan-dengan-python
-  02-berinteraksi-dengan-data
-  03-ekspresi
-  04-aksi-sekuensial
-  05-control-flow
-  06-array
-  07-matriks
-  08-subprogram
-  09-oop
-  10-style-guide
-  11-unit-testing
-
-Total chunks: 6
-
-────────────────────────────────────────────────────────────
-
-Chunk 1: [# Tipe Data] | tokens=283 | has_code=False
-# Tipe Data
-
-Sebagaimana yang telah dijelaskan, setiap nilai yang digunakan dalam variabel adalah sebuah data. Data memiliki tipe yang berbeda-beda dan dapat kita temui dalam kehidupan sehari-hari. Simak kisah berikut. > "Seorang pria berumur 30 tahun menjalani kehidupan di ibu kota Jakarta. Pria te...
-────────────────────────────────────────────────────────────
-
-Chunk 2: [### Numbers] | tokens=335 | has_code=True
-### Numbers
-
-Tipe data `numbers` adalah tipe data angka yang terdiri dari tiga jenis:
-
-| Jenis | Deskripsi | Contoh |
-|-------|-----------|--------|
-| `int` | Bilangan bulat positif atau negatif, tanpa desimal | `1`, `-20`, `999`, `0` |
-| `float` | Bilangan riil, dapat berupa bilangan bulat atau des...
-────────────────────────────────────────────────────────────
-
-Chunk 3: [### String] | tokens=306 | has_code=True
-### String
-
-`String` merupakan karakter yang berurutan, diawali dengan single quote (`''`) atau double quote (`""`).
-```python
-x = 'Dicoding'
-print(type(x))
-
-"""
-Output:
-<class 'str'>
-"""
-```
-Beberapa fakta menarik tentang string Python:
-
-**1. Multi-line string** menggunakan triple quote (`"""` atau...
-────────────────────────────────────────────────────────────
-
-
-============================================================
-SPAN CORRUPTION
-============================================================
-Input  : # <extra_id_0> telah dijelaskan, setiap nilai yang digunakan dalam variabel adalah sebuah data. Data memiliki tipe yang berbeda-beda dan dapat kita temui dalam kehidupan sehari-hari. Simak kisah berik
-Target : <extra_id_0> Tipe Data Sebagaimana yang <extra_id_1> yang dapat diambil dari <extra_id_2> - **Umur** — <extra_id_3> *numbers* dengan <extra_id_4> 50 huruf. - <extra_id_5> primitif** dan **tipe <extra_
-Format : span_corruption
-
-
-============================================================
-QA GENERIC
-============================================================
-QA pairs ditemukan: 2
-
-QA 1:
-  Input  : Apa itu tipe data primitif dalam Python?
-  Target : Dalam Python, tipe data dikelompokkan menjadi dua: **tipe data primitif** dan **tipe data collection**.
-
-QA 2:
-  Input  : Apa itu tipe data collection dalam Python?
-  Target : Dalam Python, tipe data dikelompokkan menjadi dua: **tipe data primitif** dan **tipe data collection**.
-
-Raw     : 47 data points
-  Valid   : 47 | Failed: 0
-
-[MODULE] 02-berinteraksi-dengan-data
-  Chunks  : 15 dari 6 file
-                                                                          Raw     : 44 data points
-  Valid   : 43 | Failed: 1
-
-[WRITE] Menulis final splits...
-[DONE] 90 data points → D:\2-Project\AQG\dataset_aqg\output_domain_preview
-       Train: 72 | Val: 9 | Test: 9
-
-============================================================
-[SUMMARY]
-  Raw generated : 91
-  Valid         : 90
-  Failed        : 1
-  span_corruption     : 30
-  qa_generic          : 60
-============================================================
-
-Summary: {'total_raw': 91, 'total_valid': 90, 'total_failed': 1, 'format_counts': {'span_corruption': 30, 'qa_generic': 60}, 'output_dir': 'D:\\2-Project\\AQG\\dataset_aqg\\output_domain_preview'}
+ModuleNotFoundError: No module named 'src.dataset.prompt_constructor'
