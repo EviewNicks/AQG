@@ -1,12 +1,12 @@
-# Requirements Document: IndoT5 Fine-tuning untuk AQG
+# Requirements Document: IndoNanoT5 Fine-tuning untuk AQG
 
 ## Introduction
 
-Spec ini mendefinisikan requirements untuk fine-tuning model IndoT5 dengan LoRA untuk task Automatic Question Generation (AQG) Python. Menggunakan pendekatan two-stage hybrid: (1) Domain Adaptation untuk pemahaman materi Python, (2) Task-Specific AQG untuk generasi soal kuis.
+Spec ini mendefinisikan requirements untuk fine-tuning model IndoNanoT5 dengan LoRA untuk task Automatic Question Generation (AQG) Python. Menggunakan pendekatan two-stage hybrid: (1) Domain Adaptation untuk pemahaman materi Python, (2) Task-Specific AQG untuk generasi soal kuis.
 
 ## Glossary
 
-- **IndoT5**: Model T5 (Text-to-Text Transfer Transformer) yang di-pre-train pada korpus bahasa Indonesia
+- **IndoNanoT5**: Model T5 monolingual Indonesia yang di-pre-train dari nol pada korpus CulturaX (23M dokumen)
 - **LoRA**: Low-Rank Adaptation, teknik PEFT (Parameter-Efficient Fine-Tuning) yang mengurangi parameter trainable
 - **Domain Adaptation**: Fine-tuning tahap 1 untuk adaptasi terminologi dan gaya bahasa domain Python
 - **Task-Specific AQG**: Fine-tuning tahap 2 untuk generasi soal kuis dengan format spesifik
@@ -33,7 +33,7 @@ Spec ini mendefinisikan requirements untuk fine-tuning model IndoT5 dengan LoRA 
 
 #### Acceptance Criteria
 
-1. WHEN loading IndoT5 tokenizer, THE System SHALL successfully load tokenizer dari `Wikidepia/IndoT5-base`
+1. WHEN loading IndoNanoT5 tokenizer, THE System SHALL successfully load tokenizer dari `LazarusNLP/IndoNanoT5-base`
 2. WHEN tokenizing markdown content, THE System SHALL handle special characters (`#`, `**`, `` ` ``, `\n`) tanpa error
 3. WHEN tokenizing code blocks, THE System SHALL preserve code block integrity tanpa truncation di tengah block
 4. WHEN analyzing token lengths, THE System SHALL generate histogram distribusi panjang token
@@ -41,13 +41,13 @@ Spec ini mendefinisikan requirements untuk fine-tuning model IndoT5 dengan LoRA 
 
 ### Requirement 3: Model Setup dengan LoRA
 
-**User Story:** As a researcher, I want to setup IndoT5 model dengan LoRA adapters, so that I can train efficiently dengan reduced parameters.
+**User Story:** As a researcher, I want to setup IndoNanoT5 model dengan LoRA adapters, so that I can train efficiently dengan reduced parameters.
 
 #### Acceptance Criteria
 
-1. WHEN loading base model, THE System SHALL load `Wikidepia/IndoT5-base` dengan ~250M parameters
+1. WHEN loading base model, THE System SHALL load `LazarusNLP/IndoNanoT5-base` dengan ~248M parameters
 2. WHEN applying LoRA configuration, THE System SHALL set rank=8, alpha=16, dropout=0.1, target_modules=["q", "v"]
-3. WHEN calculating trainable parameters, THE System SHALL report ~0.5% dari total parameters (~1.25M trainable)
+3. WHEN calculating trainable parameters, THE System SHALL report ~0.5% dari total parameters (~1.24M trainable)
 4. WHEN printing model summary, THE System SHALL display LoRA configuration dan trainable parameter count
 5. WHEN checking GPU memory, THE System SHALL verify bahwa model fit dalam 16GB VRAM
 
@@ -85,7 +85,7 @@ Spec ini mendefinisikan requirements untuk fine-tuning model IndoT5 dengan LoRA 
 
 #### Acceptance Criteria
 
-1. WHEN loading pre-trained model, THE System SHALL load `Wikidepia/IndoT5-base` tanpa fine-tuning
+1. WHEN loading pre-trained model, THE System SHALL load `LazarusNLP/IndoNanoT5-base` tanpa fine-tuning
 2. WHEN running inference, THE System SHALL generate output untuk 10 sample dari validation set
 3. WHEN calculating metrics, THE System SHALL compute BLEU-4, ROUGE-L, dan BERTScore
 4. WHEN documenting baseline, THE System SHALL save sample outputs untuk qualitative analysis

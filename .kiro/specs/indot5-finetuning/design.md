@@ -1,8 +1,14 @@
-# Design Document: IndoT5 Fine-tuning untuk AQG
+# Design Document: IndoNanoT5 Fine-tuning untuk AQG
 
 ## Overview
 
-Sistem ini mengimplementasikan two-stage fine-tuning pipeline untuk IndoT5 model menggunakan LoRA (Low-Rank Adaptation) untuk task Automatic Question Generation (AQG) pada domain Python. Design ini mengoptimalkan untuk Google Colab environment dengan T4 GPU (15GB VRAM) dan menggunakan modular architecture untuk reusability dan maintainability.
+Sistem ini mengimplementasikan two-stage fine-tuning pipeline untuk IndoNanoT5 model menggunakan LoRA (Low-Rank Adaptation) untuk task Automatic Question Generation (AQG) pada domain Python. Design ini mengoptimalkan untuk Google Colab environment dengan T4 GPU (15GB VRAM) dan menggunakan modular architecture untuk reusability dan maintainability.
+
+**Model Selection Rationale:** IndoNanoT5-base dipilih karena:
+- Monolingual Indonesian (pre-trained dari nol pada CulturaX 23M dokumen)
+- Parameter lebih efisien (~248M vs ~580M IndoT5-base)
+- Performa NLG lebih unggul (BLEU: 4.07 vs 1.89 pada XPersona)
+- Lebih cocok untuk task generatif bahasa Indonesia
 
 ### Architecture Diagram
 
@@ -223,13 +229,13 @@ class TokenizerTester:
 class ModelSetup:
     def load_base_model(
         self, 
-        model_name: str = "Wikidepia/IndoT5-base"
+        model_name: str = "LazarusNLP/IndoNanoT5-base"
     ) -> T5ForConditionalGeneration:
         """
-        Load pre-trained IndoT5 base model.
+        Load pre-trained IndoNanoT5 base model.
         
         Returns:
-            T5ForConditionalGeneration model (~250M parameters)
+            T5ForConditionalGeneration model (~248M parameters)
         """
         pass
     
@@ -846,7 +852,7 @@ tqdm>=4.66.0              # Progress bars
 ```yaml
 # Domain Adaptation Configuration
 domain_adaptation:
-  model_name: "Wikidepia/IndoT5-base"
+  model_name: "LazarusNLP/IndoNanoT5-base"
   dataset_dir: "dataset_aqg/output_domain/"
   output_dir: "./checkpoints/domain"
   
@@ -914,9 +920,9 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration
 from peft import PeftModel
 
 # Load model
-base_model = T5ForConditionalGeneration.from_pretrained("Wikidepia/IndoT5-base")
+base_model = T5ForConditionalGeneration.from_pretrained("LazarusNLP/IndoNanoT5-base")
 model = PeftModel.from_pretrained(base_model, "path/to/lora/adapters")
-tokenizer = T5Tokenizer.from_pretrained("Wikidepia/IndoT5-base")
+tokenizer = T5Tokenizer.from_pretrained("LazarusNLP/IndoNanoT5-base")
 
 # Generate
 input_text = "Context: ... Instruction: Generate MCQ question about variables"

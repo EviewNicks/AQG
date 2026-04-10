@@ -1,4 +1,4 @@
-# Implementation Tasks: IndoT5 Fine-tuning untuk AQG
+# Implementation Tasks: IndoNanoT5 Fine-tuning untuk AQG
 
 ## Task Breakdown
 
@@ -19,7 +19,7 @@
 
 **Files to Create:**
 ```
-src/finetuning/
+src/finetuned/
 ├── data/
 │   ├── __init__.py
 │   ├── dataset_loader.py
@@ -195,7 +195,7 @@ class TokenizerTester:
 **Dependencies:** Task 0.1  
 **Estimated Time:** 1 hour
 
-**Description:** Implement class untuk setup IndoT5 dengan LoRA.
+**Description:** Implement class untuk setup IndoNanoT5 dengan LoRA.
 
 **Acceptance Criteria:**
 - [ ] Implement `load_base_model()` method
@@ -212,7 +212,7 @@ from transformers import T5ForConditionalGeneration
 from peft import LoraConfig, get_peft_model
 
 class ModelSetup:
-    def load_base_model(self, model_name="Wikidepia/IndoT5-base"):
+    def load_base_model(self, model_name="LazarusNLP/IndoNanoT5-base"):
         model = T5ForConditionalGeneration.from_pretrained(model_name)
         return model
     
@@ -235,7 +235,7 @@ class ModelSetup:
 **Description:** Test model loading dan LoRA application pada Colab.
 
 **Acceptance Criteria:**
-- [ ] Load IndoT5-base successfully
+- [ ] Load IndoNanoT5-base successfully
 - [ ] Apply LoRA configuration
 - [ ] Verify trainable parameters ~0.5%
 - [ ] Check GPU memory usage < 10GB

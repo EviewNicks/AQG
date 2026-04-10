@@ -1,68 +1,56 @@
-File output:
-  accumulated.jsonl              94725 bytes
-  checkpoint.json                106 bytes
-  dataset_info.json              325 bytes
-  test.jsonl                     9901 bytes
-  train.jsonl                    74181 bytes
-  validation.jsonl               10643 bytes
-  validation_failures.jsonl      835 bytes
+# Upload file dataset domain (train.jsonl, validation.jsonl, test.jsonl)
+# File ada di: D:\2-Project\AQG\dataset_aqg\output_domain\
+
+from google.colab import files
+
+print('Upload file dari: dataset_aqg/output_domain/')
+print('Pilih 3 file: train.jsonl, validation.jsonl, test.jsonl')
+uploaded = files.upload()
+
+# Pindahkan ke direktori yang benar
+for filename in uploaded.keys():
+    os.rename(filename, f'/content/dataset_aqg/output_domain/{filename}')
+    print(f'✓ {filename} → /content/dataset_aqg/output_domain/')
 
 
-Train records: 72
+Upload file dari: dataset_aqg/output_domain/
+Pilih 3 file: train.jsonl, validation.jsonl, test.jsonl
 
-Contoh record pertama:
-  Keys    : ['input', 'target', 'metadata']
-  Format  : qa_generic
-  Input   : Apa itu membuat objek baru dalam Python?...
-  Target  : Perhatikan contoh berikut:
+---------------------------------------------------------------------------
+KeyboardInterrupt                         Traceback (most recent call last)
+/tmp/ipykernel_6062/2782464141.py in <cell line: 0>()
+      6 print('Upload file dari: dataset_aqg/output_domain/')
+      7 print('Pilih 3 file: train.jsonl, validation.jsonl, test.jsonl')
+----> 8 uploaded = files.upload()
+      9 
+     10 # Pindahkan ke direktori yang benar
 
-Ketika Anda melakukan inisialisasi ulang variabel, Python sebenarnya **membuat objek baru** dengan nilai baru — bukan meng...
+/usr/local/lib/python3.12/dist-packages/google/colab/files.py in upload(target_dir)
+     67   """
+     68 
+---> 69   uploaded_files = _upload_files(multiple=True)
+     70   # Mapping from original filename to filename as saved locally.
+     71   local_filenames = dict()
 
+/usr/local/lib/python3.12/dist-packages/google/colab/files.py in _upload_files(multiple)
+    159 
+    160   # First result is always an indication that the file picker has completed.
+--> 161   result = _output.eval_js(
+    162       'google.colab._files._uploadFiles("{input_id}", "{output_id}")'.format(
+    163           input_id=input_id, output_id=output_id
 
-Train records: 72
+/usr/local/lib/python3.12/dist-packages/google/colab/output/_js.py in eval_js(script, ignore_result, timeout_sec)
+     38   if ignore_result:
+     39     return
+---> 40   return _message.read_reply_from_input(request_id, timeout_sec)
+     41 
+     42 
 
-Contoh record pertama:
-  Keys    : ['input', 'target', 'metadata']
-  Format  : qa_generic
-  Input   : Apa itu membuat objek baru dalam Python?...
-  Target  : Perhatikan contoh berikut:
+/usr/local/lib/python3.12/dist-packages/google/colab/_message.py in read_reply_from_input(message_id, timeout_sec)
+     94     reply = _read_next_input_message()
+     95     if reply == _NOT_READY or not isinstance(reply, dict):
+---> 96       time.sleep(0.025)
+     97       continue
+     98     if (
 
-Ketika Anda melakukan inisialisasi ulang variabel, Python sebenarnya **membuat objek baru** dengan nilai baru — bukan meng...
-
-
-{
-  "total": 90,
-  "splits": {
-    "train": 72,
-    "validation": 9,
-    "test": 9
-  },
-  "format_distribution": {
-    "qa_generic": 60,
-    "span_corruption": 30
-  },
-  "module_distribution": {
-    "01-berkenalan-dengan-python": 47,
-    "02-berinteraksi-dengan-data": 43
-  },
-  "generated_at": "2026-04-07"
-}
-
-
-DatasetDict({
-    train: Dataset({
-        features: ['input', 'target', 'metadata'],
-        num_rows: 72
-    })
-    validation: Dataset({
-        features: ['input', 'target', 'metadata'],
-        num_rows: 9
-    })
-    test: Dataset({
-        features: ['input', 'target', 'metadata'],
-        num_rows: 9
-    })
-})
-
-Contoh dari train split:
-{'input': 'Apa itu membuat objek baru dalam Python?', 'target': 'Perhatikan contoh berikut:\n\nKetika Anda melakukan inisialisasi ulang variabel, Python sebenarnya **membuat objek baru** dengan nilai baru — bukan mengubah nilai yang sudah ada.', 'metadata': {'format': 'qa_generic', 'source_file': 'D:\\2-Project\\AQG\\dataset_aqg\\materi\\02-berinteraksi-dengan-data\\03-type-data.md', 'module_name': '02-berinteraksi-dengan-data', 'section_heading': '### Numbers', 'token_count': 335, 'has_code': True}}
+KeyboardInterrupt:

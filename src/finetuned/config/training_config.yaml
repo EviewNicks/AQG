@@ -1,0 +1,86 @@
+# IndoNanoT5 Fine-tuning Configuration
+
+# Domain Adaptation Configuration (Stage 1)
+domain_adaptation:
+  model_name: "LazarusNLP/IndoNanoT5-base"
+  dataset_dir: "dataset_aqg/output_domain/"
+  output_dir: "./checkpoints/domain"
+  
+  # LoRA Configuration
+  lora:
+    r: 8                          # Rank untuk low-rank matrices
+    lora_alpha: 16                # Scaling factor (alpha/r = 2.0)
+    lora_dropout: 0.1             # Dropout untuk regularization
+    target_modules: ["q", "v"]    # Apply LoRA ke query dan value projections
+    bias: "none"                  # Tidak train bias parameters
+    task_type: "SEQ_2_SEQ_LM"     # Task type untuk T5
+  
+  # Training Arguments
+  training:
+    num_train_epochs: 6
+    per_device_train_batch_size: 8
+    gradient_accumulation_steps: 4
+    learning_rate: 2.0e-4
+    warmup_steps: 50
+    max_length: 512
+    evaluation_strategy: "epoch"
+    save_strategy: "epoch"
+    logging_steps: 50
+    fp16: true
+    load_best_model_at_end: false
+    save_total_limit: 3
+
+# Task-Specific AQG Configuration (Stage 2)
+task_specific:
+  checkpoint_path: "./checkpoints/domain/best"
+  dataset_dir: "dataset_aqg/dataset-task-spesifc/"
+  output_dir: "./checkpoints/aqg"
+  
+  # Training Arguments
+  training:
+    num_train_epochs: 3
+    per_device_train_batch_size: 8
+    gradient_accumulation_steps: 4
+    learning_rate: 1.0e-4
+    warmup_steps: 30
+    max_length: 512
+    evaluation_strategy: "epoch"
+    save_strategy: "epoch"
+    load_best_model_at_end: true
+    metric_for_best_model: "eval_bleu"
+    logging_steps: 50
+    fp16: true
+    save_total_limit: 2
+
+# Evaluation Configuration
+evaluation:
+  metrics: ["bleu", "rouge", "bertscore", "diversity"]
+  num_samples: 20
+  
+  # Generation Configuration
+  generation_config:
+    max_length: 512
+    num_beams: 4
+    early_stopping: true
+    no_repeat_ngram_size: 3
+    temperature: 1.0
+    top_k: 50
+    top_p: 0.95
+
+# Dataset Split Configuration
+dataset_split:
+  domain:
+    train: 0.8
+    validation: 0.1
+    test: 0.1
+  
+  task_specific:
+    train: 0.7
+    validation: 0.15
+    test: 0.15
+
+# Checkpoint Management
+checkpoint:
+  backup_to_drive: true
+  drive_path: "/content/drive/MyDrive/aqg_checkpoints/"
+  cleanup_old_checkpoints: true
