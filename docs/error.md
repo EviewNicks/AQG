@@ -1,21 +1,68 @@
----------------------------------------------------------------------------
-ModuleNotFoundError                       Traceback (most recent call last)
-Cell In[8], line 2
-      1 # Modul 10
-----> 2 run_pipeline(
-      3     materi_dir='dataset_aqg/materi',
-      4     output_dir=output_dir,
-      5     section_filter='10-style-guide',
+File output:
+  accumulated.jsonl              94725 bytes
+  checkpoint.json                106 bytes
+  dataset_info.json              325 bytes
+  test.jsonl                     9901 bytes
+  train.jsonl                    74181 bytes
+  validation.jsonl               10643 bytes
+  validation_failures.jsonl      835 bytes
 
-File d:\2-Project\AQG\src\pipeline\dataset_pipeline.py:206, in run_pipeline(materi_dir, output_dir, max_per_chunk, section_filter, difficulties, question_types, dry_run, max_chunks_per_section)
-    200 print(f"[INFO] {len(concepts)} konsep: {concepts[:3]}{'...' if len(concepts) > 3 else ''}")
-    202 # Build prompt inputs
-    203 # Setiap chunk menghasilkan 1 prompt per kombinasi (difficulty × question_type).
-    204 # max_per_chunk mengontrol berapa kali chunk yang sama di-sample ulang dengan
-    205 # konsep berbeda — default 1 (tidak di-sample ulang).
---> 206 from src.dataset.prompt_constructor import extract_concept_from_chunk
-    207 prompt_inputs = []
-    208 for chunk in all_chunks:
-    209     # Pilih konsep paling relevan dengan isi chunk (context grounding)
 
-ModuleNotFoundError: No module named 'src.dataset.prompt_constructor'
+Train records: 72
+
+Contoh record pertama:
+  Keys    : ['input', 'target', 'metadata']
+  Format  : qa_generic
+  Input   : Apa itu membuat objek baru dalam Python?...
+  Target  : Perhatikan contoh berikut:
+
+Ketika Anda melakukan inisialisasi ulang variabel, Python sebenarnya **membuat objek baru** dengan nilai baru — bukan meng...
+
+
+Train records: 72
+
+Contoh record pertama:
+  Keys    : ['input', 'target', 'metadata']
+  Format  : qa_generic
+  Input   : Apa itu membuat objek baru dalam Python?...
+  Target  : Perhatikan contoh berikut:
+
+Ketika Anda melakukan inisialisasi ulang variabel, Python sebenarnya **membuat objek baru** dengan nilai baru — bukan meng...
+
+
+{
+  "total": 90,
+  "splits": {
+    "train": 72,
+    "validation": 9,
+    "test": 9
+  },
+  "format_distribution": {
+    "qa_generic": 60,
+    "span_corruption": 30
+  },
+  "module_distribution": {
+    "01-berkenalan-dengan-python": 47,
+    "02-berinteraksi-dengan-data": 43
+  },
+  "generated_at": "2026-04-07"
+}
+
+
+DatasetDict({
+    train: Dataset({
+        features: ['input', 'target', 'metadata'],
+        num_rows: 72
+    })
+    validation: Dataset({
+        features: ['input', 'target', 'metadata'],
+        num_rows: 9
+    })
+    test: Dataset({
+        features: ['input', 'target', 'metadata'],
+        num_rows: 9
+    })
+})
+
+Contoh dari train split:
+{'input': 'Apa itu membuat objek baru dalam Python?', 'target': 'Perhatikan contoh berikut:\n\nKetika Anda melakukan inisialisasi ulang variabel, Python sebenarnya **membuat objek baru** dengan nilai baru — bukan mengubah nilai yang sudah ada.', 'metadata': {'format': 'qa_generic', 'source_file': 'D:\\2-Project\\AQG\\dataset_aqg\\materi\\02-berinteraksi-dengan-data\\03-type-data.md', 'module_name': '02-berinteraksi-dengan-data', 'section_heading': '### Numbers', 'token_count': 335, 'has_code': True}}
