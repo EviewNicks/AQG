@@ -51,56 +51,105 @@ class DomainAdaptationTrainer:
     def preprocess_dataset(
         self,
         dataset: Dataset,
-        batch_size: int = 8
+        batch_size: int = 32
     ) -> Dataset:
         """
         Preprocess dataset untuk training.
         
         Args:
             dataset: Raw dataset dengan 'input' dan 'target' fields
-            batch_size: Batch size untuk processing
+            batch_size: Batch size untuk processing (default: 32)
             
         Returns:
             Preprocessed dataset dengan tokenized fields
+            
+        Raises:
+            ValueError: Jika dataset size mismatch setelah preprocessing
         """
         print(f"Preprocessing {len(dataset)} samples...")
         
+        # Debug: cek kolom yang ada
+        print(f"  Columns: {dataset.column_names}")
+        
+        # Verify kolom metadata sudah di-drop
+        if 'metadata' in dataset.column_names:
+            print("  ⚠ WARNING: Kolom 'metadata' masih ada!")
+            print("  Recommendation: Jalankan dataset.remove_columns(['metadata']) sebelum training")
+        
         def tokenize_function(examples):
-            # Tokenize inputs
+            # FIX: Tidak menggunakan prefix "question:" untuk domain adaptation.
+            # Domain dataset memiliki dua format:
+            #   - "qa_generic"       : input berupa pertanyaan singkat, target berupa teks penjelasan
+            #   - "span_corruption"  : input berupa teks dengan <extra_id_N>, target berupa span yang hilang
+            #
+            # Prefix "question:" hanya cocok untuk QA task (Stage 2), bukan domain adaptation.
+            # Untuk span_corruption, prefix tersebut justru membingungkan model karena
+            # T5 sudah mengenali pola <extra_id_N> sebagai span infilling task secara native.
+            # Lowercase tetap dipakai karena IndoNanoT5 SentencePiece vocab tidak cover huruf kapital.
+            prefixed_inputs = [inp.lower() for inp in examples["input"]]
+            
+            # Tokenize inputs tanpa prefix tambahan
             model_inputs = self.tokenizer(
-                examples["input"],
+                prefixed_inputs,
                 max_length=self.max_length,
                 truncation=True,
-                padding="max_length"
+                padding=False
             )
             
-            # Tokenize targets (text_target parameter - modern API)
+            # Tokenize targets (transformers 5.x: gunakan text_target)
             labels = self.tokenizer(
-                text_target=examples["target"],
+                text_target=[t.lower() for t in examples["target"]],
                 max_length=self.max_length,
                 truncation=True,
-                padding="max_length"
+                padding=False
             )
             
-            model_inputs["labels"] = labels["input_ids"]
-            
-            # Replace padding token id dengan -100 untuk loss calculation
+            # CRITICAL: Replace pad_token_id dengan -100 agar padding tidak
+            # dihitung dalam cross-entropy loss. Tanpa ini loss bisa 30-40+
+            pad_id = self.tokenizer.pad_token_id
             model_inputs["labels"] = [
-                [(l if l != self.tokenizer.pad_token_id else -100) for l in label]
-                for label in model_inputs["labels"]
+                [(token if token != pad_id else -100) for token in seq]
+                for seq in labels["input_ids"]
             ]
-            
             return model_inputs
         
         # Tokenize dataset
+        cols_to_remove = [c for c in dataset.column_names if c not in ["input_ids", "attention_mask", "labels"]]
+        
+        print(f"  Batch size: {batch_size}")
+        print(f"  Removing columns: {cols_to_remove}")
+        
         tokenized_dataset = dataset.map(
             tokenize_function,
             batched=True,
-            remove_columns=dataset.column_names,
+            batch_size=batch_size,
+            remove_columns=cols_to_remove,
+            load_from_cache_file=False,
             desc="Tokenizing"
         )
         
         print(f"✓ Preprocessed {len(tokenized_dataset)} samples")
+        
+        # Debug: verify label masking benar
+        sample_labels = tokenized_dataset[0]["labels"]
+        n_valid = sum(1 for l in sample_labels if l != -100)
+        n_masked = sum(1 for l in sample_labels if l == -100)
+        print(f"  Sample label check: {n_valid} valid tokens, {n_masked} masked (-100)")        
+        # FAIL FAST: Assertion untuk detect bug preprocessing
+        if len(tokenized_dataset) != len(dataset):
+            raise ValueError(
+                f"❌ CRITICAL: Dataset size mismatch after preprocessing!\n"
+                f"   Input:  {len(dataset)} samples\n"
+                f"   Output: {len(tokenized_dataset)} samples\n"
+                f"   Lost:   {len(dataset) - len(tokenized_dataset)} samples\n\n"
+                f"Possible causes:\n"
+                f"  1. Kolom 'metadata' dengan nested dict inconsistent schema\n"
+                f"  2. HuggingFace datasets 4.0 bug dengan batched=True\n\n"
+                f"Solution:\n"
+                f"  Jalankan dataset.remove_columns(['metadata']) SEBELUM training.\n"
+                f"  Contoh: train_dataset = train_dataset.remove_columns(['metadata'])"
+            )
+        
         return tokenized_dataset
     
     def get_training_args(
@@ -147,13 +196,14 @@ class DomainAdaptationTrainer:
             save_steps=save_steps,
             logging_steps=logging_steps,
             fp16=fp16,
-            predict_with_generate=True,
-            generation_max_length=self.max_length,
+            gradient_checkpointing=True,
+            gradient_checkpointing_kwargs={"use_reentrant": False},
+            predict_with_generate=False,  # False untuk domain adaptation — loss-based training
             load_best_model_at_end=True,
             metric_for_best_model="eval_loss",
             greater_is_better=False,
             save_total_limit=3,
-            report_to=["none"],  # Can change to "wandb" if needed
+            report_to=["none"],
             dataloader_num_workers=2,
             dataloader_pin_memory=True,
         )
@@ -183,11 +233,36 @@ class DomainAdaptationTrainer:
         print("STARTING DOMAIN ADAPTATION TRAINING")
         print("=" * 60 + "\n")
         
+        # Pastikan model di GPU sebelum training
+        import torch
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
+            # Wajib untuk gradient_checkpointing + PEFT/LoRA agar gradient flow benar
+            self.model.enable_input_require_grads()
+            print(f"✓ Model moved to GPU: {torch.cuda.get_device_name(0)}")
+        else:
+            print("⚠ GPU not available, training on CPU (will be slow)")
+        
+        # Verifikasi device — fail fast jika model masih di CPU padahal GPU tersedia
+        device = next(self.model.parameters()).device
+        print(f"  Model device: {device}")
+        if torch.cuda.is_available() and str(device) == 'cpu':
+            raise RuntimeError("Model masih di CPU padahal GPU tersedia! Cek notebook cell yang memanggil .cpu()")
+        
         # Preprocess datasets
         print("Preprocessing datasets...")
         train_dataset = self.preprocess_dataset(train_dataset)
         if eval_dataset is not None:
             eval_dataset = self.preprocess_dataset(eval_dataset)
+        
+        # Verifikasi ukuran dataset setelah preprocessing
+        print(f"\n=== Dataset Size After Preprocessing ===")
+        print(f"Train samples (actual): {len(train_dataset)}")
+        if eval_dataset is not None:
+            print(f"Eval samples (actual):  {len(eval_dataset)}")
+        if len(train_dataset) < 100:
+            print(f"⚠ WARNING: Train dataset sangat kecil ({len(train_dataset)} sampel)!")
+            print(f"  Kemungkinan ada bug di preprocessing. Cek kolom dataset.")
         
         # Get training args if not provided
         if training_args is None:
@@ -195,12 +270,14 @@ class DomainAdaptationTrainer:
                 early_stopping_patience=early_stopping_patience
             )
         
-        # Data collator
+        # Data collator — label_pad_token_id=-100 wajib agar padding
+        # tidak dihitung dalam cross-entropy loss
         data_collator = DataCollatorForSeq2Seq(
             tokenizer=self.tokenizer,
             model=self.model,
             padding=True,
-            max_length=self.max_length
+            label_pad_token_id=-100,
+            pad_to_multiple_of=8
         )
         
         # Callbacks
@@ -216,7 +293,7 @@ class DomainAdaptationTrainer:
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
-            tokenizer=self.tokenizer,
+            processing_class=self.tokenizer,
             data_collator=data_collator,
             callbacks=callbacks
         )
@@ -233,7 +310,6 @@ class DomainAdaptationTrainer:
         print(f"Train samples: {len(train_dataset)}")
         if eval_dataset:
             print(f"Eval samples: {len(eval_dataset)}")
-        print()
         
         # Train
         print("Starting training...")

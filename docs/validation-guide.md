@@ -1,213 +1,122 @@
-# Dataset Validation Guide
+Biar saya baca dulu kode aktual yang ada sebelum menjawab.
 
-## Overview
-
-Notebook `src/pipeline/validate_dataset.ipynb` melakukan validasi 2-level pada dataset AQG untuk memastikan kualitas sebelum fine-tuning.
-
-## Struktur Validasi
-
-### Level 1: Per-Module Validation (`output_modul/`)
-
-**Tujuan:** Deteksi masalah per modul sebelum merge
-
-**Metrics yang Dicek:**
-1. **Total Data Points** - Jumlah soal per modul
-2. **Difficulty Distribution** - Distribusi easy/medium/hard
-3. **Imbalance Ratio** - max(difficulty) / min(difficulty)
-   - ✅ OK: ratio ≤ 2.0
-   - ⚠️ WARNING: ratio > 2.0
-4. **Validation Rate** - % data yang lolos validasi
-   - ✅ OK: ≥ 90%
-   - ⚠️ WARNING: < 90%
-5. **Misconception Tags Coverage** - % data yang punya tags
-   - ✅ OK: ≥ 90%
-   - ⚠️ WARNING: < 90%
-6. **Concept Diversity** - Jumlah konsep unik per modul
-   - ⚠️ WARNING: < 3 konsep
-
-**Output:**
-- Summary table (console)
-- Per-module report (JSON)
-- Issues list (untuk debugging)
+Oke, sekarang saya punya gambaran lengkap dari kode aktual. Berikut jawabannya:
 
 ---
 
-### Level 2: Final Dataset Validation (`dataset-task-spesifc/`)
+## Tahap 3.2: Preprocessing & Rekayasa Prompt
 
-**Tujuan:** Validasi dataset gabungan siap fine-tuning
+### 1. Chunking Strategy
 
-**Checks:**
-1. **File Structure**
-   - train.jsonl, validation.jsonl, test.jsonl ada
-   - dataset_info.json lengkap
-   
-2. **Split Ratio**
-   - Train: 70% ± 2%
-   - Validation: 15% ± 2%
-   - Test: 15% ± 2%
+**Algoritma (dari `chunker.py`):**
 
-3. **Stratification**
-   - Setiap split punya semua difficulty levels
-   - Setiap split punya semua question types
-   - Distribusi concept seimbang
+```
+File .md → Split by heading (#/##/###) → Per section:
+  ├── Pisahkan segmen: teks biasa vs code block (regex: ```...```)
+  ├── Code block → TIDAK pernah dipotong, selalu utuh
+  ├── Teks biasa → split di batas kalimat (regex: (?<=[.!?])\s+)
+  │   └── Blockquote → split per baris
+  └── Chunk < 50 token → merge ke chunk sebelumnya
+```
 
-4. **HuggingFace Compatibility**
-   - Load dengan `datasets.load_dataset()` berhasil
-   - Schema konsisten (input, target, metadata)
-   - Tipe data benar (string, dict)
+**Contoh konkret chunk boundary:**
 
-5. **Cross-Module Analysis**
-   - Distribusi modul di train/val/test
-   - Concept overlap detection
-   - Global difficulty balance
+```
+# Tipe Data Python          ← heading = section boundary
+Teks paragraf 1...          ← chunk 1 (teks biasa)
+                            ← boundary: token > 400
+Teks paragraf 2...          ← chunk 2
+```python                   ← code block: TIDAK dipotong
+x = 10
+```                         ← selalu satu chunk utuh
+```
 
-**Output:**
-- Final validation report (JSON)
-- HuggingFace dataset preview
-- Pass/Fail decision
-- Recommendations
+**Estimasi token:** `len(text.split()) × 1.3` (tanpa tokenizer penuh)
+
+**Batas:** min=50 token, max=400 token per chunk
+
+**Statistik distribusi** — tidak ada angka pasti di kode, tapi berdasarkan parameter:
+- Min: 50 token (setelah merge)
+- Max: 400 token (hard limit)
+- Target range: 250–400 token (sweet spot)
 
 ---
 
-## Usage
+### 2. Rekayasa Prompt (dari `prompt_constructor.py`)
 
-### 1. Run Validation
+**Template tunggal:**
+```
+Konteks: {context}
 
-```bash
-# Open notebook
-jupyter notebook src/pipeline/validate_dataset.ipynb
-
-# Run all cells
+Prompt: Buat satu soal {question_type} tentang {concept},
+tingkat kesulitan: {difficulty}, bahasa Indonesia.
 ```
 
-### 2. Interpret Results
+**Tahap pembuatan prompt:**
 
-**Level 1 Output:**
-```
-Modul                                          Total   Easy    Med   Hard  Ratio   Val%  Tags%  Status
-====================================================================================================
-01-berkenalan-dengan-python                      120     45     40     35   1.29  98.0%  95.0%  ✓ OK
-02-berinteraksi-dengan-data                      150     30     60     60   2.00  96.0%  94.0%  ✓ OK
-03-ekspresi                                       80     10     40     30   4.00  92.0%  90.0%  ⚠️ WARNING
-```
+1. **Context grounding** — pilih konsep paling relevan dengan isi chunk via `extract_concept_from_chunk()`:
+   - Tokenisasi nama konsep → hitung keyword match di teks chunk
+   - Bonus score jika nama konsep muncul sebagai substring
+   - Fallback ke `section_heading` jika score = 0
 
-**Interpretation:**
-- Modul 03 has imbalance (ratio=4.00) → Need re-generate with more `easy` questions
+2. **Kombinasi parameter** — setiap chunk menghasilkan N prompt:
+   - `difficulty` × `question_type` = 3 × 1 = 3 prompt per chunk (default)
+   - Contoh: chunk 1 → [easy/MCQ, medium/MCQ, hard/MCQ]
 
-**Level 2 Output:**
-```
-✅ PASS: Dataset siap untuk fine-tuning!
-
-Summary:
-  Total: 1500 data points
-  Train: 1050 (70.0%)
-  Validation: 225 (15.0%)
-  Test: 225 (15.0%)
-  
-  HuggingFace load: ✓ Success
-  Stratification: ✓ OK
-  Schema validation: ✓ OK
-```
+3. **Normalisasi path** — `source_file` dinormalisasi ke forward slash (cross-platform)
 
 ---
 
-## Troubleshooting
+### 3. Validasi Output (dari `validator.py`)
 
-### Issue: Imbalanced Difficulty
+Setiap output LLM divalidasi sebelum masuk dataset:
 
-**Symptom:**
-```
-⚠️ WARNING: Imbalanced difficulty: ratio=4.00x
-```
-
-**Solution:**
-```python
-# Re-run pipeline untuk modul tersebut dengan fokus difficulty yang kurang
-run_pipeline(
-    section_filter='03-ekspresi',
-    difficulties=['easy'],  # Fokus ke easy saja
-    max_chunks_per_section=50  # Tambah jumlah
-)
-```
-
-### Issue: Low Validation Rate
-
-**Symptom:**
-```
-⚠️ WARNING: Low validation rate: 65.0%
-```
-
-**Solution:**
-1. Cek `validation_failures.jsonl` di modul tersebut
-2. Identifikasi pola error (target format salah, tags kosong, dll)
-3. Fix prompt LLM atau re-generate
-
-### Issue: HuggingFace Load Failed
-
-**Symptom:**
-```
-❌ FAIL: Cannot load dataset with HuggingFace
-```
-
-**Solution:**
-1. Cek JSONL format (setiap baris valid JSON?)
-2. Cek encoding (UTF-8?)
-3. Cek schema konsisten (semua entry punya input, target, metadata?)
+| Cek | Aturan |
+|-----|--------|
+| Panjang input | 50–600 token |
+| Format target | Wajib ada: `Pertanyaan:`, `Jawaban benar:`, `Distraktor:` |
+| Metadata fields | `difficulty`, `question_type`, `concept`, `misconception_tags` |
+| Enum difficulty | hanya `easy/medium/hard` |
+| Enum question_type | hanya `MCQ/Code Completion` |
+| misconception_tags | list non-empty, minimal 1 tag |
 
 ---
 
-## Best Practices
+### 4. Dataset Split (dari `dataset_writer.py`)
 
-1. **Run Level 1 after each module generation**
-   - Deteksi masalah early
-   - Fix sebelum merge
+**Stratified split** berdasarkan `difficulty`:
+- Task-specific: 70/15/15 (train/val/test)
+- Domain: 80/10/10
 
-2. **Run Level 2 before fine-tuning**
-   - Final check
-   - Ensure compatibility
-
-3. **Save validation reports**
-   - For documentation
-   - For reproducibility
-
-4. **Re-validate after any changes**
-   - After re-generation
-   - After manual edits
-   - After augmentation
+Stratifikasi memastikan distribusi `easy/medium/hard` merata di setiap split. Jika group terlalu kecil (n=1 → semua ke train, n=2 → train+val).
 
 ---
 
-## Files Generated
+### 5. Checkpoint & Resume
 
-```
-dataset_aqg/
-├── output_modul/
-│   ├── 01-berkenalan-dengan-python/
-│   │   ├── accumulated.jsonl
-│   │   ├── validation_failures.jsonl
-│   │   └── module_validation_report.json  ← NEW
-│   └── .../
-├── dataset-task-spesifc/
-│   ├── train.jsonl
-│   ├── validation.jsonl
-│   ├── test.jsonl
-│   ├── dataset_info.json
-│   └── final_validation_report.json  ← NEW
-└── validation_summary.png  ← NEW (grafik)
-```
+Pipeline menyimpan progress per-section sehingga bisa resume jika terputus:
+- `checkpoint.jsonl` — section yang sudah selesai
+- `progress.json` — index prompt terakhir yang diproses
+- `accumulated.jsonl` — data valid yang sudah terkumpul
+
 
 ---
 
-## Next Steps
+# flowcahrt Data Pipeline 
 
-After validation passes:
-1. ✅ Dataset ready for fine-tuning
-2. Proceed to `indot5-finetuning` spec
-3. Run domain adaptation first (optional)
-4. Run task-specific fine-tuning
+flowchart LR
+    MD["📄 Markdown\nFiles"] 
+    --> CHUNK["🔪 Chunking\n50–400 token\ncode block utuh"]
+    --> PROMPT["✍️ Build Prompt\nKonteks + concept\n+ difficulty + type"]
+    --> LLM["🤖 LLM Generate\nsoal MCQ/Code"]
+    --> VAL{✅ Valid?}
 
-If validation fails:
-1. ⚠️ Fix issues identified
-2. Re-run pipeline for problematic modules
-3. Re-validate
-4. Repeat until pass
+    VAL -->|No| SKIP["🗑️ failures.jsonl"]
+    VAL -->|Yes| SPLIT["📊 Split\n70/15/15\nstratified"]
+
+    SPLIT --> TRAIN["train.jsonl\n~340 domain\n~1262 task"]
+
+    TRAIN --> S1["🧠 Stage 1\nDomain Adaptation\n6 epoch lr=2e-4"]
+    S1 --> M1["indot5-python\n-domain"]
+    M1 --> S2["🎯 Stage 2\nTask-Specific AQG\n3 epoch lr=1e-4"]
+    S2 --> M2["✨ indot5-python\n-aqg"]

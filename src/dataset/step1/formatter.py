@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from src.dataset.step2.chunker import Chunk
+from src.dataset.tokenizer_utils import count_tokens, tokenize, decode_tokens
 
 
 # ---------------------------------------------------------------------------
@@ -32,7 +33,8 @@ class RawDomainDataPoint:
 # ---------------------------------------------------------------------------
 
 def _estimate_tokens(text: str) -> int:
-    return max(1, int(len(text.split()) * 1.3))
+    """Hitung token menggunakan IndoT5 tokenizer yang sebenarnya."""
+    return count_tokens(text)
 
 
 def _count_sentinels(text: str) -> int:
@@ -382,7 +384,7 @@ def extract_qa_pairs(chunk: Chunk) -> List[RawDomainDataPoint]:
             if heading_sentence and _is_technical_sentence(heading_sentence):
                 qa = RawDomainDataPoint(
                     input=f"Apa yang dimaksud dengan {heading_clean}?",
-                    target=heading_sentence,
+                    target=_clean_target(heading_sentence),
                     metadata=_qa_metadata(chunk),
                 )
                 results.append(qa)
@@ -416,8 +418,34 @@ def _find_sentence_with_term(sentences: List[str], term: str) -> Optional[str]:
     term_lower = term.lower()
     for s in sentences:
         if term_lower in s.lower():
-            return s.strip()
+            return _clean_target(s.strip())
     return None
+
+
+def _clean_target(text: str) -> str:
+    """
+    Bersihkan target string dari noise yang bisa menyebabkan model belajar pola salah.
+
+    Menghapus:
+    - Separator markdown (---) di awal
+    - Heading markdown (## ...) di awal
+    - Baris kosong berlebih di awal/akhir
+
+    Ini adalah Fix 3: mencegah target yang dimulai dengan '---' atau heading
+    yang menyebabkan model belajar generate separator berulang saat inference.
+    """
+    # Strip baris separator dan heading di awal
+    lines = text.splitlines()
+    while lines:
+        stripped = lines[0].strip()
+        if re.match(r"^[-_*]{3,}$", stripped) or re.match(r"^#{1,6}\s", stripped) or stripped == "":
+            lines.pop(0)
+        else:
+            break
+    # Strip baris kosong di akhir
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return "\n".join(lines).strip()
 
 
 def _qa_metadata(chunk: Chunk) -> dict:

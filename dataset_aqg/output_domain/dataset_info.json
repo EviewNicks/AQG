@@ -1,19 +1,19 @@
 {
-  "total": 340,
+  "total": 341,
   "splits": {
-    "train": 271,
+    "train": 272,
     "validation": 33,
     "test": 36
   },
   "format_distribution": {
-    "qa_generic": 222,
+    "qa_generic": 223,
     "span_corruption": 118
   },
   "module_distribution": {
     "01-berkenalan-dengan-python": 47,
     "02-berinteraksi-dengan-data": 43,
     "03-ekspresi": 39,
-    "04-aksi-sekuensial": 23,
+    "04-aksi-sekuensial": 24,
     "05-control-flow": 21,
     "06-array": 27,
     "07-matriks": 27,
@@ -22,5 +22,5 @@
     "10-style-guide": 30,
     "11-unit-testing": 25
   },
-  "generated_at": "2026-04-07"
+  "generated_at": "2026-04-15"
 }

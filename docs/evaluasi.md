@@ -1,40 +1,160 @@
- # Evaluasi dan Saran Revisi: AQG Dataset Pipeline Requirement & Design
+# 4 configure training
 
-Secara keseluruhan, dokumen *Requirement* dan *Design* yang Anda susun sangat komprehensif, teknis, dan siap diimplementasikan. Penggunaan *Correctness Properties* menunjukkan pendekatan *engineering* yang sangat matang. Namun, mengingat skala proyek kita yang mencakup 25 *lesson*, ada beberapa poin yang perlu dievaluasi dan direvisi untuk memastikan efisiensi dan kualitas dalam skala besar.
+============================================================
+TRAINING CONFIGURATION
+============================================================
 
-## 1. Evaluasi Komponen Utama
+✓ Hyperparameters (Spec Defaults):
+  Epochs:              6
+  Learning Rate:       0.0002
+  Warmup Steps:        50
+  Batch Size:          4
+  Gradient Accum:      4
+  Effective Batch:     16
+  FP16:                True
 
-### Chunker (src/chunker.py)
-*   **Kekuatan**: Strategi pemotongan berdasarkan *heading* dan penanganan *code block* sudah sangat baik. Properti *invariant* jumlah token (Property 1) memastikan data masuk ke IndoT5 tidak terpotong.
-*   **Saran Revisi**: Tambahkan fungsionalitas untuk mengekstraksi *Learning Objectives* (jika ada di materi) sebagai metadata tambahan. Ini akan sangat membantu model dalam menghasilkan soal yang lebih relevan secara pedagogis.
+✓ Training Estimates:
+  Steps per epoch:     ~15
+  Total steps:         ~90
+  Warmup duration:     ~3.3 epochs
+  Estimated time:      30-45 minutes on T4 GPU
 
-### Prompt Constructor (src/prompt_constructor.py)
-*   **Kekuatan**: Penggunaan *template* yang konsisten (Property 4) adalah kunci keberhasilan *fine-tuning*.
-*   **Saran Revisi**: Mengingat kita memiliki 25 *lesson*, *template* perlu mendukung variasi bahasa yang lebih kaya agar model tidak *overfitting* pada satu struktur kalimat instruksi saja. Saya menyarankan penambahan *Multiple Prompt Templates* yang dipilih secara acak saat konstruksi.
+✓ Checkpoint Directory:
+  /content/drive/MyDrive/dataset_aqg/checkpoints/domain
 
-### Synthetic Generator (src/synthetic_generator.py)
-*   **Kekuatan**: Dukungan multi-LLM dan *system prompt* yang ketat.
-*   **Saran Revisi**: Gunakan **Instructor** atau **DSPy** di sini (seperti yang kita bahas di sesi *brainstorming*). Daripada hanya mengandalkan *plain string* dan berharap model mematuhi format (Property 6), Instructor akan menjamin *output* terstruktur melalui Pydantic sebelum diubah menjadi *plain string* final untuk dataset.
+============================================================
+✅ Configuration ready for training
+============================================================
 
-## 2. Tabel Saran Revisi Spesifik
+# 5 Start Training
 
-| Komponen | Masalah Potensial | Saran Revisi / Solusi |
-| :--- | :--- | :--- |
-| **Metadata** | Skala 25 *lesson* bisa membuat pelabelan `concept` manual menjadi sangat lambat. | Gunakan LLM di tahap *Synthetic Generator* untuk secara otomatis menyarankan `concept` dari *Master Concept List* berdasarkan isi *chunk*. |
-| **Target Format** | Format "Pertanyaan: ... Jawaban benar: ... Distraktor: ..." mungkin sulit di-*parse* jika ada karakter serupa di dalam konten soal. | Gunakan pemisah yang lebih unik atau tetap gunakan JSON internal sebelum di-*flatten* menjadi string final. |
-| **Augmentor** | Risiko duplikasi data yang tinggi saat melakukan augmentasi skala besar. | Implementasikan *Semantic Deduplication* (menggunakan *embeddings*) selain *String-based Deduplication* (Property 11). |
-| **Validation** | Validasi saat ini hanya bersifat struktural (panjang teks, keberadaan field). | Tambahkan *Pedagogical Validation* menggunakan LLM untuk memeriksa apakah *distractor* benar-benar *plausible* (masuk akal) dan tidak terlalu mudah. |
+Starting domain adaptation training...
+Checkpoints will be saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/domain
+============================================================
 
-## 3. Penyesuaian untuk Skala 25 Lesson
+============================================================
+STARTING DOMAIN ADAPTATION TRAINING
+============================================================
 
-Dengan total 25 *lesson*, kita perlu memastikan *pipeline* ini dapat berjalan secara *batch* dan memiliki mekanisme *checkpointing*.
+✓ Model moved to GPU: Tesla T4
+  Model device: cuda:0
+Preprocessing datasets...
+Preprocessing 253 samples...
+  Columns: ['input', 'target']
+  Batch size: 32
+  Removing columns: ['input', 'target']
 
-*   **Batch Processing**: *Pipeline* harus bisa memproses satu *section* (5 *lesson*) sekaligus dan menyimpan hasilnya sebelum lanjut ke *section* berikutnya. Ini mencegah kehilangan data jika terjadi kegagalan API di tengah jalan.
-*   **Master Concept List Integration**: Dokumen `design.md` sudah mencantumkan `CONCEPTS`, namun perlu dipastikan bahwa skrip `chunker.py` dapat secara otomatis memetakan file Markdown ke kunci yang tepat di dalam kamus `CONCEPTS` tersebut berdasarkan nama folder/file.
-*   **Cost Management**: Menghasilkan 800 pasang data dengan GPT-4o bisa memakan biaya. Pertimbangkan untuk menggunakan model yang lebih murah (seperti GPT-4o-mini) untuk tugas-tugas awal seperti *chunking* dan pelabelan konsep, sementara GPT-4o digunakan khusus untuk generasi soal dan distraktor.
+✓ Preprocessed 253 samples
+  Sample label check: 217 valid tokens, 0 masked (-100)
+Preprocessing 33 samples...
+  Columns: ['input', 'target']
+  Batch size: 32
+  Removing columns: ['input', 'target']
 
-## 4. Kesimpulan
+✓ Preprocessed 33 samples
+  Sample label check: 24 valid tokens, 0 masked (-100)
 
-Rancangan Anda sudah sangat solid. Jika saran-saran di atas (terutama integrasi Instructor untuk validasi *output* dan optimasi pelabelan konsep otomatis) diimplementasikan, *pipeline* ini akan sangat *robust* untuk menghasilkan dataset berkualitas tinggi bagi IndoT5.
+=== Dataset Size After Preprocessing ===
+Train samples (actual): 253
+Eval samples (actual):  33
 
-Apakah Anda ingin saya membantu mendetailkan implementasi salah satu komponen di atas (misalnya skrip `chunker.py` atau `synthetic_generator.py`) berdasarkan saran revisi ini?
+=== Training Configuration ===
+Epochs: 6
+Batch size: 4
+Gradient accumulation: 4
+Effective batch size: 16
+Learning rate: 0.0002
+Warmup steps: 50
+FP16: True
+Train samples: 253
+Eval samples: 33
+Starting training...
+
+=== Training Complete ===
+Final training loss: 38.9387
+Training time: 203.85 seconds
+Training samples per second: 7.45
+✓ Training results saved to /content/drive/MyDrive/dataset_aqg/checkpoints/domain/training_results.json
+
+Training completed in 0.06 hours
+Final training loss: 38.9387
+
+# 6 Save Best Model 
+
+✓ Best model saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/domain/indot5-python-domain
+Model saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/domain/indot5-python-domain
+✓ Training curves saved to /content/drive/MyDrive/dataset_aqg/checkpoints/domain/training_curves.png
+✓ Training curves saved
+
+# 7  Evaluate on Validation Set
+
+============================================================
+INFERENCE TEST
+============================================================
+
+⚠️  IMPORTANT: Adding task prefix "question: " for inference
+   (T5 models require task prefix for correct output)
+
+Input:  Apa itu list dalam Python?
+Output: - – - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+------------------------------------------------------------
+Input:  Jelaskan fungsi dalam Python.
+Output: - - – - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+------------------------------------------------------------
+Input:  Apa itu variable dalam Python?
+Output: - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+------------------------------------------------------------
+
+✅ Inference test complete
+============================================================
+
+
+Loading model from checkpoint: /content/drive/MyDrive/dataset_aqg/checkpoints/domain/indot5-python-domain
+✓ Model loaded | device: cuda:0
+✓ Evaluator re-initialized
+
+
+Evaluating on validation set...
+
+============================================================
+EVALUATING ON TEST SET
+============================================================
+
+Evaluating 33 samples...
+  Processed 10/33 samples...
+  Processed 20/33 samples...
+  Processed 30/33 samples...
+✓ Generated 33 predictions
+Computing metrics for 33 samples...
+  Computing BLEU...
+
+Computing Diversity...
+✓ All metrics computed
+
+============================================================
+Test Set Evaluation Results
+============================================================
+
+BLEU Scores:
+  BLEU:     0.0000
+  BLEU-1:   0.0700
+  BLEU-2:   0.0140
+  BLEU-3:   0.0003
+  BLEU-4:   0.0000
+
+ROUGE Scores:
+  ROUGE-1:  0.1203
+  ROUGE-2:  0.0018
+  ROUGE-L:  0.0882
+
+Diversity:
+  Distinct-1: 0.1253
+  Distinct-2: 0.6875
+
+============================================================
+
+=== Validation Metrics ===
+  BLEU-4:  0.0000
+  ROUGE-L: 0.0882
+  ROUGE-1: 0.1203
+

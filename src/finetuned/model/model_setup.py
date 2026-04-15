@@ -29,7 +29,10 @@ class ModelSetup:
             AutoModelForSeq2SeqLM model (~248M parameters)
         """
         print(f"Loading base model: {model_name}")
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+        model = AutoModelForSeq2SeqLM.from_pretrained(
+            model_name,
+            device_map="auto"   # otomatis ke GPU jika tersedia
+        )
         print(f"✓ Model loaded successfully")
         
         return model
@@ -57,7 +60,7 @@ class ModelSetup:
     
     def apply_lora(
         self, 
-        model: T5ForConditionalGeneration,
+        model: AutoModelForSeq2SeqLM,
         lora_config: LoraConfig = None
     ) -> PeftModel:
         """
