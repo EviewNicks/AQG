@@ -1,122 +1,39 @@
-Biar saya baca dulu kode aktual yang ada sebelum menjawab.
+Research report-nya solid dan arahnya sudah benar. Tapi ada beberapa hal yang perlu dipertimbangkan lebih dalam, terutama mengingat hasil training kita yang loss-nya 36+.
 
-Oke, sekarang saya punya gambaran lengkap dari kode aktual. Berikut jawabannya:
+**Yang sudah tepat dari research:**
 
----
-
-## Tahap 3.2: Preprocessing & Rekayasa Prompt
-
-### 1. Chunking Strategy
-
-**Algoritma (dari `chunker.py`):**
-
-```
-File .md → Split by heading (#/##/###) → Per section:
-  ├── Pisahkan segmen: teks biasa vs code block (regex: ```...```)
-  ├── Code block → TIDAK pernah dipotong, selalu utuh
-  ├── Teks biasa → split di batas kalimat (regex: (?<=[.!?])\s+)
-  │   └── Blockquote → split per baris
-  └── Chunk < 50 token → merge ke chunk sebelumnya
-```
-
-**Contoh konkret chunk boundary:**
-
-```
-# Tipe Data Python          ← heading = section boundary
-Teks paragraf 1...          ← chunk 1 (teks biasa)
-                            ← boundary: token > 400
-Teks paragraf 2...          ← chunk 2
-```python                   ← code block: TIDAK dipotong
-x = 10
-```                         ← selalu satu chunk utuh
-```
-
-**Estimasi token:** `len(text.split()) × 1.3` (tanpa tokenizer penuh)
-
-**Batas:** min=50 token, max=400 token per chunk
-
-**Statistik distribusi** — tidak ada angka pasti di kode, tapi berdasarkan parameter:
-- Min: 50 token (setelah merge)
-- Max: 400 token (hard limit)
-- Target range: 250–400 token (sweet spot)
+Strategi dua tahap (domain adaptation → task-specific) memang best practice untuk kasus ini. IndoNanoT5 sebagai pilihan arsitektur juga justified — encoder-decoder lebih cocok untuk structured output seperti QA generation dibanding decoder-only.
 
 ---
 
-### 2. Rekayasa Prompt (dari `prompt_constructor.py`)
+**Yang perlu kita diskusikan lebih dalam:**
 
-**Template tunggal:**
-```
-Konteks: {context}
+**1. Apakah span corruption benar-benar perlu untuk kita?**
 
-Prompt: Buat satu soal {question_type} tentang {concept},
-tingkat kesulitan: {difficulty}, bahasa Indonesia.
-```
+Research menyebut span corruption sebagai objective utama domain adaptation T5. Tapi ada masalah praktis: IndoNanoT5 sudah di-pre-train dengan span corruption pada CulturaX. Melakukan span corruption lagi dengan dataset 161 sampel kemungkinan besar tidak akan mengubah representasi internal model secara signifikan — terlalu sedikit sinyal.
 
-**Tahap pembuatan prompt:**
+Alternatif yang lebih pragmatis: fokus ke `qa_generic` dan `summarization` saja, karena keduanya supervised dan lebih langsung mengajarkan pola domain Python.
 
-1. **Context grounding** — pilih konsep paling relevan dengan isi chunk via `extract_concept_from_chunk()`:
-   - Tokenisasi nama konsep → hitung keyword match di teks chunk
-   - Bonus score jika nama konsep muncul sebagai substring
-   - Fallback ke `section_heading` jika score = 0
+**2. Ukuran dataset kita jauh di bawah threshold**
 
-2. **Kombinasi parameter** — setiap chunk menghasilkan N prompt:
-   - `difficulty` × `question_type` = 3 × 1 = 3 prompt per chunk (default)
-   - Contoh: chunk 1 → [easy/MCQ, medium/MCQ, hard/MCQ]
+Research menyebut "Indonesian Python tutorials (Markdown/YAML)" sebagai sumber data. Kita punya 11 modul, tapi setelah filter + dedup hanya 161 sampel train. Ini masalah utama. Beberapa opsi untuk menambah data:
 
-3. **Normalisasi path** — `source_file` dinormalisasi ke forward slash (cross-platform)
+- Aktifkan format `summarization` via LLM — bisa menambah 200-400 sampel dari materi yang sama
+- Augmentasi `qa_generic`: satu chunk bisa menghasilkan lebih dari 1 QA pair (bold term + inline code + heading sekaligus)
+- Pertimbangkan sumber eksternal: dokumentasi Python resmi dalam bahasa Indonesia, artikel Dicoding/Petani Kode
 
----
+**3. Ada pertanyaan strategis yang perlu dijawab dulu**
 
-### 3. Validasi Output (dari `validator.py`)
+Apakah domain adaptation ini benar-benar diperlukan untuk proyek ini, atau kita bisa langsung ke Stage 2 (task-specific AQG)?
 
-Setiap output LLM divalidasi sebelum masuk dataset:
+Argumen untuk skip domain adaptation: IndoNanoT5 sudah cukup "tahu" bahasa Indonesia. Dengan dataset AQG yang cukup berkualitas, model mungkin bisa langsung belajar pola QA Python tanpa perlu Stage 1. Beberapa paper (termasuk referensi no. 2 di report) berhasil dengan LoRA langsung tanpa domain adaptation.
 
-| Cek | Aturan |
-|-----|--------|
-| Panjang input | 50–600 token |
-| Format target | Wajib ada: `Pertanyaan:`, `Jawaban benar:`, `Distraktor:` |
-| Metadata fields | `difficulty`, `question_type`, `concept`, `misconception_tags` |
-| Enum difficulty | hanya `easy/medium/hard` |
-| Enum question_type | hanya `MCQ/Code Completion` |
-| misconception_tags | list non-empty, minimal 1 tag |
+Argumen untuk tetap lakukan: jika dataset AQG kita juga kecil, domain adaptation membantu model tidak "kaget" dengan terminologi Python saat Stage 2.
 
 ---
 
-### 4. Dataset Split (dari `dataset_writer.py`)
+**Rekomendasi saya:**
 
-**Stratified split** berdasarkan `difficulty`:
-- Task-specific: 70/15/15 (train/val/test)
-- Domain: 80/10/10
+Sebelum invest lebih banyak waktu di domain adaptation, coba dulu eksperimen kecil: langsung fine-tune IndoNanoT5 base dengan dataset AQG Stage 2 yang ada. Bandingkan hasilnya dengan model yang sudah melalui domain adaptation. Kalau perbedaannya tidak signifikan, kita bisa simplifikasi pipeline dan fokus ke kualitas dataset AQG.
 
-Stratifikasi memastikan distribusi `easy/medium/hard` merata di setiap split. Jika group terlalu kecil (n=1 → semua ke train, n=2 → train+val).
-
----
-
-### 5. Checkpoint & Resume
-
-Pipeline menyimpan progress per-section sehingga bisa resume jika terputus:
-- `checkpoint.jsonl` — section yang sudah selesai
-- `progress.json` — index prompt terakhir yang diproses
-- `accumulated.jsonl` — data valid yang sudah terkumpul
-
-
----
-
-# flowcahrt Data Pipeline 
-
-flowchart LR
-    MD["📄 Markdown\nFiles"] 
-    --> CHUNK["🔪 Chunking\n50–400 token\ncode block utuh"]
-    --> PROMPT["✍️ Build Prompt\nKonteks + concept\n+ difficulty + type"]
-    --> LLM["🤖 LLM Generate\nsoal MCQ/Code"]
-    --> VAL{✅ Valid?}
-
-    VAL -->|No| SKIP["🗑️ failures.jsonl"]
-    VAL -->|Yes| SPLIT["📊 Split\n70/15/15\nstratified"]
-
-    SPLIT --> TRAIN["train.jsonl\n~340 domain\n~1262 task"]
-
-    TRAIN --> S1["🧠 Stage 1\nDomain Adaptation\n6 epoch lr=2e-4"]
-    S1 --> M1["indot5-python\n-domain"]
-    M1 --> S2["🎯 Stage 2\nTask-Specific AQG\n3 epoch lr=1e-4"]
-    S2 --> M2["✨ indot5-python\n-aqg"]
+Mau lanjut ke arah mana — perbaiki domain adaptation dulu, atau coba eksperimen langsung ke Stage 2

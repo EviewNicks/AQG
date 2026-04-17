@@ -7,16 +7,16 @@ TRAINING CONFIGURATION
 ✓ Hyperparameters (Spec Defaults):
   Epochs:              6
   Learning Rate:       0.0002
-  Warmup Steps:        50
+  Warmup Steps:        10
   Batch Size:          4
   Gradient Accum:      4
   Effective Batch:     16
   FP16:                True
 
 ✓ Training Estimates:
-  Steps per epoch:     ~15
-  Total steps:         ~90
-  Warmup duration:     ~3.3 epochs
+  Steps per epoch:     ~10
+  Total steps:         ~60
+  Warmup duration:     ~1.0 epochs
   Estimated time:      30-45 minutes on T4 GPU
 
 ✓ Checkpoint Directory:
@@ -39,24 +39,17 @@ STARTING DOMAIN ADAPTATION TRAINING
 ✓ Model moved to GPU: Tesla T4
   Model device: cuda:0
 Preprocessing datasets...
-Preprocessing 253 samples...
+Preprocessing 161 samples...
   Columns: ['input', 'target']
   Batch size: 32
   Removing columns: ['input', 'target']
 
-✓ Preprocessed 253 samples
-  Sample label check: 217 valid tokens, 0 masked (-100)
-Preprocessing 33 samples...
-  Columns: ['input', 'target']
-  Batch size: 32
-  Removing columns: ['input', 'target']
-
-✓ Preprocessed 33 samples
-  Sample label check: 24 valid tokens, 0 masked (-100)
+✓ Preprocessed 22 samples
+  Sample label check: 31 valid tokens, 0 masked (-100)
 
 === Dataset Size After Preprocessing ===
-Train samples (actual): 253
-Eval samples (actual):  33
+Train samples (actual): 161
+Eval samples (actual):  22
 
 === Training Configuration ===
 Epochs: 6
@@ -64,20 +57,22 @@ Batch size: 4
 Gradient accumulation: 4
 Effective batch size: 16
 Learning rate: 0.0002
-Warmup steps: 50
+Warmup steps: 10
 FP16: True
-Train samples: 253
-Eval samples: 33
+Train samples: 161
+Eval samples: 22
 Starting training...
 
 === Training Complete ===
-Final training loss: 38.9387
-Training time: 203.85 seconds
-Training samples per second: 7.45
+Final training loss: 36.6791
+Training time: 107.23 seconds
+Training samples per second: 9.01
 ✓ Training results saved to /content/drive/MyDrive/dataset_aqg/checkpoints/domain/training_results.json
 
-Training completed in 0.06 hours
-Final training loss: 38.9387
+Training completed in 0.03 hours
+Final training loss: 36.6791
+
+
 
 # 6 Save Best Model 
 
@@ -91,70 +86,16 @@ Model saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/domain/indot5-pyt
 ============================================================
 INFERENCE TEST
 ============================================================
-
-⚠️  IMPORTANT: Adding task prefix "question: " for inference
-   (T5 models require task prefix for correct output)
-
 Input:  Apa itu list dalam Python?
-Output: - – - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Output: (),"-'/?`. di dari: dalam hal ini adalah sebagai berikut; dan yang lainnya juga bisa!—ta= untukh#123456* atau anda dapat menggunakan fitur pada> langsung saja ke halaman dengan kata lain kita akan mengetahui apa itu’”[0]–“terms\» yaitu sendiri baru sebelumnya tentang caraed_ seperti tersebut lagi tertentu
 ------------------------------------------------------------
 Input:  Jelaskan fungsi dalam Python.
-Output: - - – - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Output: (1). dalam hal ini, ada beberapa cara untuk melakukannya:"[2]-— di atas= dengan demikian kita dapat memahaminya lebih lanjut lagi tentang apa yang akan terjadi selanjutnya pada suatu waktu nanti tersebut berikut adalah penjelasan singkat mengenai pengertian dari kata/etc;”>“ dan’s all about me?'*`#\ sebagai misalnya saja menggunakan atau hanya satu selain itu juga»nh
 ------------------------------------------------------------
 Input:  Apa itu variable dalam Python?
-Output: - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Output: (),"-nya.'/?` di dari dalam: yang dapat kita gunakan untuk memahami cara kerja dengan menggunakan bahasa indonesia sebagai* dan juga bisa digunakan oleh pengguna lain seperti#10 atau lebih baik=htc+’s_ef—“>” pada langsung saja berikut ini adalah penjelasan tentang apa itu tersebut!– yaitu; sendiri jika anda ingin|[]2»n sebelumnyad
 ------------------------------------------------------------
 
 ✅ Inference test complete
 ============================================================
-
-
-Loading model from checkpoint: /content/drive/MyDrive/dataset_aqg/checkpoints/domain/indot5-python-domain
-✓ Model loaded | device: cuda:0
-✓ Evaluator re-initialized
-
-
-Evaluating on validation set...
-
-============================================================
-EVALUATING ON TEST SET
-============================================================
-
-Evaluating 33 samples...
-  Processed 10/33 samples...
-  Processed 20/33 samples...
-  Processed 30/33 samples...
-✓ Generated 33 predictions
-Computing metrics for 33 samples...
-  Computing BLEU...
-
-Computing Diversity...
-✓ All metrics computed
-
-============================================================
-Test Set Evaluation Results
-============================================================
-
-BLEU Scores:
-  BLEU:     0.0000
-  BLEU-1:   0.0700
-  BLEU-2:   0.0140
-  BLEU-3:   0.0003
-  BLEU-4:   0.0000
-
-ROUGE Scores:
-  ROUGE-1:  0.1203
-  ROUGE-2:  0.0018
-  ROUGE-L:  0.0882
-
-Diversity:
-  Distinct-1: 0.1253
-  Distinct-2: 0.6875
-
-============================================================
-
-=== Validation Metrics ===
-  BLEU-4:  0.0000
-  ROUGE-L: 0.0882
-  ROUGE-1: 0.1203
 

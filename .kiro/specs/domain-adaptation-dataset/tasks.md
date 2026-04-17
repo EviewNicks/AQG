@@ -41,7 +41,7 @@ Implementasi pipeline persiapan dataset domain adaptation dari Markdown ke JSONL
   - [x] 3.2 Write property tests untuk QAGenerator
 
     - **Property 7: QA term presence** — term di input question muncul di target answer
-    - **Validates: Requirements 4.3**
+    - **Validates: Requirements .3**
 
 - [x] 4. Checkpoint — Pastikan SpanCorruptor dan QAGenerator berfungsi
   - Jalankan `pytest tests/ -v -k "domain"`

@@ -77,20 +77,16 @@ class DomainAdaptationTrainer:
             print("  Recommendation: Jalankan dataset.remove_columns(['metadata']) sebelum training")
         
         def tokenize_function(examples):
-            # FIX: Tidak menggunakan prefix "question:" untuk domain adaptation.
-            # Domain dataset memiliki dua format:
-            #   - "qa_generic"       : input berupa pertanyaan singkat, target berupa teks penjelasan
-            #   - "span_corruption"  : input berupa teks dengan <extra_id_N>, target berupa span yang hilang
-            #
-            # Prefix "question:" hanya cocok untuk QA task (Stage 2), bukan domain adaptation.
-            # Untuk span_corruption, prefix tersebut justru membingungkan model karena
-            # T5 sudah mengenali pola <extra_id_N> sebagai span infilling task secara native.
-            # Lowercase tetap dipakai karena IndoNanoT5 SentencePiece vocab tidak cover huruf kapital.
-            prefixed_inputs = [inp.lower() for inp in examples["input"]]
-            
-            # Tokenize inputs tanpa prefix tambahan
+            # Tokenize inputs as-is — tidak menggunakan prefix maupun .lower().
+            # Alasan:
+            #   1. IndoNanoT5 dilatih pada CulturaX yang case-sensitive; lowercase paksa
+            #      merusak token teknis Python seperti True/False/None, nama class (ValueError,
+            #      DataFrame), dan proper noun bahasa Indonesia.
+            #   2. Domain dataset hanya berisi format qa_generic setelah span_corruption
+            #      dihapus — tidak ada kebutuhan task prefix.
+            #   3. Konsistensi: inference juga tidak perlu lowercase.
             model_inputs = self.tokenizer(
-                prefixed_inputs,
+                examples["input"],
                 max_length=self.max_length,
                 truncation=True,
                 padding=False
@@ -98,7 +94,7 @@ class DomainAdaptationTrainer:
             
             # Tokenize targets (transformers 5.x: gunakan text_target)
             labels = self.tokenizer(
-                text_target=[t.lower() for t in examples["target"]],
+                text_target=examples["target"],
                 max_length=self.max_length,
                 truncation=True,
                 padding=False
@@ -157,8 +153,9 @@ class DomainAdaptationTrainer:
         num_train_epochs: int = 6,
         per_device_train_batch_size: int = 8,
         gradient_accumulation_steps: int = 4,
-        learning_rate: float = 2e-4,
-        warmup_steps: int = 50,
+        learning_rate: float = 1e-3,
+        weight_decay: float = 0.01,
+        warmup_steps: int = 10,
         logging_steps: int = 50,
         eval_steps: int = None,
         save_steps: int = None,
@@ -168,11 +165,17 @@ class DomainAdaptationTrainer:
         """
         Get default training arguments untuk domain adaptation.
         
+        Hyperparameter mengikuti referensi resmi LazarusNLP/IndoT5:
+        - learning_rate: 1e-3 (dari run_summarization.py resmi)
+        - weight_decay: 0.01 (dari run_summarization.py resmi)
+        - optim: adamw_torch_fused (dari run_summarization.py resmi)
+        
         Args:
             num_train_epochs: Number of training epochs
             per_device_train_batch_size: Batch size per device
             gradient_accumulation_steps: Gradient accumulation steps
-            learning_rate: Learning rate
+            learning_rate: Learning rate (default 1e-3 sesuai referensi resmi)
+            weight_decay: Weight decay untuk regularization (default 0.01)
             warmup_steps: Warmup steps
             logging_steps: Steps between logging
             eval_steps: Steps between evaluations (None = epoch)
@@ -189,6 +192,8 @@ class DomainAdaptationTrainer:
             per_device_train_batch_size=per_device_train_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
             learning_rate=learning_rate,
+            weight_decay=weight_decay,
+            optim="adamw_torch_fused",
             warmup_steps=warmup_steps,
             eval_strategy="epoch" if eval_steps is None else "steps",
             eval_steps=eval_steps,
