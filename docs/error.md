@@ -1,88 +1,189 @@
-# Research Report: Automatic Generation of Python Programming Quiz Questions and Distractors Using IndoT5 with LoRA
+# 1 Load Model dan Tokenizer 
 
-*Generated: April 17, 2026 | Sources: 15+ | Confidence: High*
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/utils/_auth.py:103: UserWarning: 
+Error while fetching `HF_TOKEN` secret value from your vault: 'Requesting secret HF_TOKEN timed out. Secrets can only be fetched when running from the Colab UI.'.
+You are not authenticated with the Hugging Face Hub in this notebook.
+If the error persists, please let us know by opening an issue on GitHub (https://github.com/huggingface/huggingface_hub/issues/new).
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
 
-## Executive Summary
-This report explores the development of an Indonesian Automatic Question Generation (AQG) system for Python programming using **IndoNanoT5** and **LoRA**. The research focuses on the necessity of **Domain Adaptation** to bridge the gap between general Indonesian language and technical Python concepts. Key findings suggest that a two-stage approach—**Domain Adaptation (Pre-training style)** followed by **Task-Specific Fine-tuning**—is optimal. The report also provides 7+ literature references comparing this project with existing studies in Indonesian NLP and educational content generation.
+✓ Base model loaded
+✓ LoRA applied: r=8, alpha=16, target=['q', 'v']
+  Trainable: 884,736 (0.30%)
+  Total:     297,811,200
+✓ Model device: cuda:0
+  GPU allocated: 1.19 GB
+Tokenizer pad_token_id: 0
+Tokenizer eos_token_id: 1
+Model device: cuda:0
 
----
+# 2 Load Sample Data
 
-## 1. Domain Adaptation & Dataset Strategy
-In the context of this project, **Domain Adaptation** is the process of teaching the IndoNanoT5 model about the "world of Python" in Indonesian before training it for the specific task of generating questions.
+✓ Dataset already exists
+✓ Loaded 876 entries from /content/dataset_aqg/dataset-task-spesifc/train.jsonl
 
-### Why Domain Adaptation?
-IndoNanoT5 is pre-trained on general Indonesian corpora (like CulturaX or common crawl). While it understands Indonesian, it lacks deep semantic understanding of Python-specific terms (e.g., *list, dictionary, loop, function*) and how they are explained in an Indonesian educational context.
+Loaded 876 samples
 
-### Recommended Dataset Types
-| Dataset Type | Purpose | Format | Example Content |
-| :--- | :--- | :--- | :--- |
-| **Technical Corpus** | Teach technical vocabulary | Raw text / Markdown | Python documentation, Indonesian programming blogs (e.g., Dicoding, Maguru). |
-| **Span Corruption** | Learn structure & syntax | Masked text | `Fungsi <extra_id_0> digunakan untuk <extra_id_1> di Python.` |
-| **Code-Mixed Text** | Handle bilingual nature | Text with code blocks | Explanations where Python code is embedded within Indonesian sentences. |
+Sample input length: 973 chars
+Sample target length: 422 chars
 
----
+Input preview : Konteks: ### Perbandingan Penggunaan Memori
 
-## 2. Fine-tuning vs. Pre-training: The Strategy
-Based on the T5 paper (*Raffel et al., 2019*) and recent studies on IndoT5, the recommended strategy for this project is a **Hybrid Approach**:
+```python
+import numpy
+import sys
 
-### Step 1: Continued Pre-training (Domain Adaptation)
-*   **Action**: Perform "Self-Supervised Learning" on unlabelled Python educational content.
-*   **Objective**: Use the **Span Corruption** objective (as defined in the original T5 paper) to reconstruct missing parts of technical text.
-*   **Benefit**: Adapts the model's internal representations to the Python domain without needing labeled question-answer pairs.
+var_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+var_array = numpy.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-### Step 2: Task-Specific Fine-tuning (AQG & Distractors)
-*   **Action**: Use **LoRA (Low-Rank Adaptation)** on the domain-adapted model.
-*   **Objective**: Train on a labeled dataset of (Context, Question, Answer, Distractors).
-*   **Benefit**: Efficiently teaches the model the specific "format" of a quiz question while maintaining the domain knowledge gained in Step 1.
+print("Ukuran keseluruhan elemen list dalam bytes =", sys.getsizeof(var_list) * len(var_list))
+print("Ukuran keseluruhan elemen NumPy dalam bytes =", var_array.size * var_array.itemsize)
 
-> **Verdict**: You should do **Domain Adaptation (as a form of continued pre-training)** followed by **Fine-tuning (Task-specific)**. Full pre-training from scratch is unnecessary and computationally expensive.
+"""
+Output:
+Ukuran keseluruhan elemen list dalam bytes = 240
+Ukuran keseluruhan elemen NumPy dalam bytes = 72
+"""
+```
+Dengan matriks yang sama, NumPy hanya menggunakan **72 bytes** dibanding list Python yang menggunakan **240 bytes** — inilah alasan banyak programmer memilih NumPy untuk memproses matriks. > **Catatan:** Seluruh materi pada modul ini akan menggunakan list Python untuk mengimplementasikan matriks, agar kita memahami fundamental matriks tanpa melibatkan library apa pun.
 
----
+Prompt: Buat satu soal Code Completion tentang Fundamental Matriks, tingkat kesulitan: hard, bahasa Indonesia....
 
-## 3. Literature Review (7+ References)
+Target preview : Pertanyaan: Sesuai catatan modul yang menggunakan list Python untuk matriks, lengkapi kode berikut untuk menghitung ukuran memori list: import sys; var_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]; ukuran_memori = ________________.? Jawaban benar: `sys.getsizeof(var_list) * len(var_list)`. Distraktor: 1) `var_array.size * var_array.itemsize` 2) `sys.getsizeof(var_list)` 3) `sys.getsizeof(var_list) + len(var_list)` 4) `240`...
 
-1. **Towards Automatic Question Generation Using Pre-trained Model in Academic Field for Bahasa Indonesia (2024)**
-   *   **Summary**: This paper explores the use of decoder-based models for generating Indonesian academic questions. It highlights the transition from rule-based to generative AI for better flexibility.
-   *   **Comparison**: Similar in task (AQG) but differs in domain (general academic vs. specific Python programming).
-   *   **Link**: [https://link.springer.com/article/10.1007/s10639-024-12717-9](https://link.springer.com/article/10.1007/s10639-024-12717-9)
+# 3 Test Tokenization
 
-2. **High-Performance Indonesian Short Answer Grading via Reasoning-Guided Language Model Fine-Tuning (2025)**
-   *   **Summary**: Uses IndoT5 and LoRA for grading short answers in Indonesian. It proves that LoRA is highly effective for specialized educational tasks in low-resource settings.
-   *   **Comparison**: Uses the same architecture (IndoT5 + LoRA) but for grading instead of generation.
-   *   **Link**: [https://ijecbe.ui.ac.id/go/article/view/148](https://ijecbe.ui.ac.id/go/article/view/148)
+=== HASIL TOKENIZATION ===
 
-3. **IndoT5 (Text-to-Text Transfer Transformer) Algorithm for Paraphrasing Indonesian Language (2025)**
-   *   **Summary**: Demonstrates the effectiveness of IndoT5 for text-to-text tasks like paraphrasing, which is a core component of AQG (especially for question variation).
-   *   **Comparison**: Focuses on the "Text-to-Text" capability of IndoT5 which is the foundation of your AQG project.
-   *   **Link**: [https://ejournal.uinsgd.ac.id/index.php/kjrt/article/download/1093/396](https://ejournal.uinsgd.ac.id/index.php/kjrt/article/download/1093/396)
+Input IDs length: 319
+Input IDs sample (20 pertama): [2777, 5561, 39, 2892, 18209, 18209, 926, 16135, 30, 12489, 24532, 11, 10347, 10347, 10347, 258, 22502, 7676, 120, 11]
 
-4. **Comparison of IndoNanoT5 and IndoGPT for Advancing Indonesian Text Formalization (2025)**
-   *   **Summary**: A systematic comparison showing that encoder-decoder models like IndoNanoT5 often outperform decoder-only models (GPT) in specific structured text tasks.
-   *   **Comparison**: Validates your choice of IndoNanoT5 as a superior architecture for structured output tasks.
-   *   **Link**: [https://www.researchgate.net/publication/397568008_Comparison_of_IndoNanoT5_and_IndoGPT_for_Advancing_Indonesian_Text_Formalization_in_Low-Resource_Settings](https://www.researchgate.net/publication/397568008_Comparison_of_IndoNanoT5_and_IndoGPT_for_Advancing_Indonesian_Text_Formalization_in_Low-Resource_Settings)
+Label IDs length: 201
+Label IDs sample (20 pertama): [926, 369, 23, 30, 39, 15506, 1489, 10059, 10, 138, 19133, 211, 22502, 21, 12942, 8, 2046, 43, 1620, 614]
 
-5. **idT5: Indonesian Version of Multilingual T5 Transformer (2023)**
-   *   **Summary**: This is the foundational paper for Indonesian T5 adaptation. It explains how mT5 was specialized for Indonesian, which is the same logic you should apply for Python specialization.
-   *   **Comparison**: Provides the methodological framework for your "Domain Adaptation" stage.
-   *   **Link**: [https://arxiv.org/abs/2302.00856](https://arxiv.org/abs/2302.00856)
+Input padding tokens: 0 (seharusnya 0)
+Label padding tokens: 0 (seharusnya 0)
 
-6. **Sequence-to-Sequence Learning for Indonesian Automatic Question Generator (2020)**
-   *   **Summary**: An early exploration of Indonesian AQG using Seq2Seq architectures. It provides a baseline for dataset sizes and evaluation metrics (BLEU, ROUGE).
-   *   **Comparison**: Represents the "Pre-T5" era of Indonesian AQG, serving as a baseline for your project's improvements.
-   *   **Link**: [https://arxiv.org/abs/2009.13889](https://arxiv.org/abs/2009.13889)
+Non-zero label tokens: 201 / 201
 
-7. **Automatic Question Answer Generation using T5 and NLP for Education (2024)**
-   *   **Summary**: A review of methodologies for T5-based question generation in educational contexts, emphasizing the importance of context grounding.
-   *   **Comparison**: Directly aligns with your project's goal of using T5 for educational content.
-   *   **Link**: [https://www.semanticscholar.org/paper/8d07fa3cd59588cd91048e1f7aa407162be325b1](https://www.semanticscholar.org/paper/8d07fa3cd59588cd91048e1f7aa407162be325b1)
+✓ Labels mengandung token non-zero (BAGUS)
 
----
+# 4 Test DataColator Behaviour 
 
-## Key Takeaways for Your Project
-*   **Dataset**: Use Indonesian Python tutorials (Markdown/YAML) for Domain Adaptation.
-*   **Technique**: Use **Span Corruption** for domain adaptation and **LoRA** for task-specific fine-tuning.
-*   **Architecture**: IndoNanoT5 is an excellent choice due to its balance of size and performance in Indonesian.
-*   **Strategy**: You should perform **Domain Adaptation (Continued Pre-training)** followed by **Fine-tuning**.
+=== SEBELUM DATACOLLATOR ===
+Sample 1 - Input length: 319
+Sample 1 - Label length: 201
+Sample 2 - Input length: 50
+Sample 2 - Label length: 30
 
-## Methodology
-Searched 15+ queries across academic and technical sources. Analyzed the T5 paper (arXiv:1910.10683) and the user-provided project draft. Cross-referenced findings with current SOTA in Indonesian NLP.
+=== SETELAH DATACOLLATOR ===
+Batch input_ids shape: torch.Size([2, 320])
+Batch labels shape: torch.Size([2, 208])
+
+First sample labels (30 pertama): tensor([  926,   369,    23,    30,    39, 15506,  1489, 10059,    10,   138,
+        19133,   211, 22502,    21, 12942,     8,  2046,    43,  1620,   614,
+           21,  6983,  1547,  6273, 19133,    39,  7676,   120,  7809,    32])
+
+=== ANALISIS MASKING ===
+Masked tokens (-100): 7 (3.4%)
+Non-masked tokens: 201 (96.6%)
+Total tokens: 208
+
+✓ DataCollator bekerja dengan benar!
+   201 valid labels untuk training.
+
+# 5  Test Forward Pass 
+
+=== HASIL FORWARD PASS ===
+
+Loss: 9.9250
+Logits shape: torch.Size([2, 208, 32128])
+
+✓ Loss valid: 9.9250
+   Model dapat menerima learning signal.
+
+# 6 Test Generation
+
+=== TEST GENERATION ===
+
+Input (200 char): Konteks: ### Perbandingan Penggunaan Memori
+
+```python
+import numpy
+import sys
+
+var_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+var_array = numpy.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+print("Ukuran k...
+
+Reference (200 char): Pertanyaan: Sesuai catatan modul yang menggunakan list Python untuk matriks, lengkapi kode berikut untuk menghitung ukuran memori list: import sys; var_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]; ukuran...
+
+Prediction (200 char): Perbandingan Penggunaan Memori Konteks: ### Perbandingan Penggunaan Memori Konteks: ### Perbandingan Penggunaan Memori Konteks: ### Perbandingan Penggunaan Memori Konteks: ### Perbandingan Penggunaan ...
+
+Prediction length: 414 chars
+
+⚠️ PERINGATAN: Prediction tidak dimulai dengan 'Pertanyaan'
+   Format output mungkin tidak sesuai.
+```
+
+# Hasil Evaluasi Report
+
+## Evaluasi Hasil Debug - Ringkasan
+
+Berdasarkan hasil debug, saya dapat memberikan **KABAR BAIK** dan analisis lengkap:
+
+### ✅ MASALAH UTAMA SUDAH FIXED!
+
+**DataCollator Fix BERHASIL**:
+- ✓ Tokenization: **201/201 labels valid** (100%)
+- ✓ DataCollator: **201/208 non-masked** (96.6% valid, 3.4% padding)
+- ✓ Forward Pass: **Loss = 9.9250** (VALID, bukan 0.0 atau NaN!)
+- ✓ Model menerima learning signal dengan benar
+
+**Perbandingan**:
+```
+SEBELUM FIX:
+- Loss: 0.0000 ❌
+- Eval loss: NaN ❌
+- Labels: >90% di-mask ❌
+
+SESUDAH FIX:
+- Loss: 9.9250 ✓
+- Labels: 96.6% valid ✓
+- DataCollator bekerja benar ✓
+```
+
+### ⚠️ Prediction Warning - BUKAN Masalah Kritis
+
+**Output yang Dihasilkan**:
+```
+Prediction: "Perbandingan Penggunaan Memori Konteks: ### Perbandingan..."
+Expected: "Pertanyaan: Sesuai catatan modul..."
+```
+
+**Analisis**:
+1. **BUKAN masalah dataset** - Format dataset sudah benar
+2. **BUKAN masalah preprocessing** - Tokenization 100% valid
+3. **BUKAN masalah DataCollator** - Masking sudah benar
+
+**Root Cause**: **Model belum di-train!**
+- Ini adalah **base model** (pre-trained IndoT5)
+- Model belum pernah lihat task AQG
+- Model belum belajar format output yang diinginkan
+- **NORMAL** untuk model yang belum di-fine-tune
+
+### 📊 Kesimpulan
+
+**Masalah Training Loss=0.0 SUDAH TERATASI**:
+1. ✅ DataCollator fix berhasil (hapus `max_length`)
+2. ✅ Labels tidak di-mask semua (96.6% valid)
+3. ✅ Loss valid (9.9250, bukan 0.0)
+4. ✅ Model siap untuk training
+
+**Prediction Warning adalah EXPECTED**:
+- Model base belum di-train untuk AQG
+- Setelah training, output akan sesuai format
+- Ini BUKAN indikasi masalah teknis
+

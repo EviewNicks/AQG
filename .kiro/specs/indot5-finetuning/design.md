@@ -84,6 +84,44 @@ Sistem ini mengimplementasikan two-stage fine-tuning pipeline untuk IndoNanoT5 m
 
 ## Component Descriptions
 
+### Preprocessing Strategy
+
+**Reference**: See `docs/fine-tuned/preprocessing-guide.md` untuk detailed explanation.
+
+**Key Principles**:
+1. **Separation of Concerns**: Tokenization ≠ Padding
+2. **Dynamic Padding**: Memory efficient (40-60% savings)
+3. **Label Masking**: `-100` untuk padding tokens
+4. **T5-Specific**: `text_target` parameter untuk target sequences
+
+**Implementation**:
+```python
+# Step 1: Tokenization (NO padding)
+def tokenize_function(examples):
+    model_inputs = tokenizer(
+        examples["input"],
+        max_length=512,
+        truncation=True
+        # NO padding parameter
+    )
+    labels = tokenizer(
+        text_target=examples["target"],  # T5-specific
+        max_length=512,
+        truncation=True
+    )
+    model_inputs["labels"] = labels["input_ids"]
+    return model_inputs
+
+# Step 2: Collation (Dynamic padding)
+data_collator = DataCollatorForSeq2Seq(
+    tokenizer=tokenizer,
+    model=model,
+    label_pad_token_id=-100,  # Mask padding
+    padding=True,              # Dynamic
+    pad_to_multiple_of=8       # GPU optimization
+)
+```
+
 ### 1. Data Module (`data/`)
 
 #### 1.1 DatasetLoader

@@ -69,29 +69,24 @@ class TaskSpecificTrainer:
         print(f"Preprocessing {len(dataset)} samples...")
         
         def tokenize_function(examples):
-            # Tokenize inputs
+            # Tokenize inputs - NO PADDING (collator will handle it)
             model_inputs = self.tokenizer(
                 examples["input"],
                 max_length=self.max_length,
-                truncation=True,
-                padding="max_length"
+                truncation=True
             )
             
-            # Tokenize targets (text_target parameter - modern API)
+            # Tokenize targets - NO PADDING (collator will handle it)
             labels = self.tokenizer(
                 text_target=examples["target"],
                 max_length=self.max_length,
-                truncation=True,
-                padding="max_length"
+                truncation=True
             )
             
             model_inputs["labels"] = labels["input_ids"]
             
-            # Replace padding token id dengan -100 untuk loss calculation
-            model_inputs["labels"] = [
-                [(l if l != self.tokenizer.pad_token_id else -100) for l in label]
-                for label in model_inputs["labels"]
-            ]
+            # NO manual masking - DataCollatorForSeq2Seq will handle it
+            # with label_pad_token_id=-100 parameter
             
             return model_inputs
         
@@ -104,6 +99,7 @@ class TaskSpecificTrainer:
         )
         
         print(f"✓ Preprocessed {len(tokenized_dataset)} samples")
+        print(f"  Note: Padding and label masking will be handled by DataCollatorForSeq2Seq")
         return tokenized_dataset
     
     def compute_metrics(self, eval_preds) -> Dict[str, float]:
@@ -117,6 +113,10 @@ class TaskSpecificTrainer:
             Dict dengan metric values
         """
         predictions, labels = eval_preds
+        
+        # Handle predictions yang mungkin mengandung nilai negatif dari padding
+        if hasattr(predictions, '__iter__'):
+            predictions = np.where(predictions < 0, 0, predictions)
         
         # Decode predictions
         decoded_preds = self.tokenizer.batch_decode(
@@ -176,11 +176,13 @@ class TaskSpecificTrainer:
         per_device_train_batch_size: int = 8,
         gradient_accumulation_steps: int = 4,
         learning_rate: float = 1e-4,
-        warmup_steps: int = 30,
+        warmup_steps: int = 50,
         logging_steps: int = 50,
         eval_steps: int = None,
         save_steps: int = None,
         fp16: bool = True,
+        weight_decay=0.01,
+        optim="adamw_torch_fused",
         early_stopping_patience: int = 2
     ) -> Seq2SeqTrainingArguments:
         """
@@ -214,6 +216,8 @@ class TaskSpecificTrainer:
             save_steps=save_steps,
             logging_steps=logging_steps,
             fp16=fp16,
+            gradient_checkpointing=True,
+            gradient_checkpointing_kwargs={"use_reentrant": False},
             predict_with_generate=True,
             generation_max_length=self.max_length,
             load_best_model_at_end=True,
@@ -221,6 +225,8 @@ class TaskSpecificTrainer:
             greater_is_better=True,
             save_total_limit=2,
             report_to=["none"],
+            weight_decay=0.01,           # sesuai referensi resmi LazarusNLP
+            optim="adamw_torch_fused",   # sesuai referensi resmi LazarusNLP
             dataloader_num_workers=2,
             dataloader_pin_memory=True,
         )
@@ -262,12 +268,15 @@ class TaskSpecificTrainer:
                 early_stopping_patience=early_stopping_patience
             )
         
-        # Data collator
+        # Data collator - sesuai dokumentasi HuggingFace
+        # https://huggingface.co/docs/transformers/main_classes/data_collator#transformers.DataCollatorForSeq2Seq
         data_collator = DataCollatorForSeq2Seq(
             tokenizer=self.tokenizer,
             model=self.model,
-            padding=True,
-            max_length=self.max_length
+            label_pad_token_id=-100,  # Padding labels akan di-mask dengan -100
+            padding=True,  # Dynamic padding
+            pad_to_multiple_of=8  # Untuk efisiensi GPU (Tensor Cores)
+            # TIDAK menggunakan max_length - biarkan dynamic padding bekerja
         )
         
         # Callbacks
@@ -283,7 +292,7 @@ class TaskSpecificTrainer:
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
-            tokenizer=self.tokenizer,
+            processing_class=self.tokenizer,
             data_collator=data_collator,
             compute_metrics=self.compute_metrics,
             callbacks=callbacks
