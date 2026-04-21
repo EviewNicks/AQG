@@ -1,445 +1,421 @@
-# FINAL DIAGNOSIS: IndoNanoT5 vs IndoT5 for AQG Task
-**Status**: 🔴 CRITICAL - Model Replacement Recommended  
-**Confidence**: 95%  
-**Recommendation**: Switch from IndoNanoT5 → IndoT5 (full-size)
+# Laporan Analisis Proyek AQG Fine-Tuning IndoT5
+
+**Tanggal:** 20 April 2026  
+**Model:** Wikidepia/IndoT5-base (297M parameters)  
+**Task:** Automatic Question Generation (AQG) untuk Python berbahasa Indonesia
 
 ---
 
-## EXECUTIVE SUMMARY
+## 📊 Informasi yang Dapat Dijawab
 
-Model IndoNanoT5 **TIDAK COCOK** untuk task Automatic Question Generation (AQG). Alasan:
+### 1. Dataset Struktur Saat Ini
 
-1. **Model terlalu kecil** (248M params) untuk task yang kompleks
-2. **Capacity insufficient** - tidak cukup untuk mempelajari pattern AQG
-3. **Warning messages** menunjukkan preprocessing issue yang fundamental
-4. **Post-training performance WORSE than baseline** - model malah jadi lebih buruk
-5. **Training loss stagnant** - model tidak belajar sama sekali
+#### ✅ Jumlah Total Samples
 
-**Solusi**: Gunakan **IndoT5 (full-size, 580M params)** yang lebih powerful.
+**Domain Dataset** (`dataset_aqg/output_domain/accumulated.jsonl`):
+- Total: **341 samples** (format span_corruption + qa_generic)
+- Format: Mixed (span corruption untuk domain adaptation, qa_generic untuk QA)
+
+**Task-Specific Dataset** (`dataset_aqg/dataset-task-spesifc/`):
+- Train: **876 samples**
+- Validation: **175 samples**
+- Test: **211 samples**
+- Total: **1,262 samples**
+
+#### ✅ Struktur JSON
+
+**Format JSONL yang Benar:**
+```json
+{
+  "input": "Konteks: [materi Python]\\n\\nPrompt: Buat satu soal [question_type] tentang [concept], tingkat kesulitan: [difficulty], bahasa Indonesia.",
+  "target": "Pertanyaan: [soal]? Jawaban benar: [jawaban]. Distraktor: 1) [d1] 2) [d2] 3) [d3] 4) [d4]",
+  "metadata": {
+    "difficulty": "easy|medium|hard",
+    "question_type": "MCQ|Code Completion",
+    "concept": "...",
+    "misconception_tags": ["tag1", "tag2"],
+    "source_file": "...",
+    "validated": true
+  }
+}
+```
+
+**Catatan Penting:**
+- `target` adalah **plain string**, bukan JSON object ✅
+- `metadata` adalah **JSON object terpisah** ✅
+- Kolom `metadata` **harus di-drop** sebelum training (sudah dilakukan) ✅
 
 ---
 
-## PART 1: CRITICAL FINDINGS FROM ERROR.MD
+### 2. Preprocessing Detail
 
-### 1.1 Preprocessing Warning (FUNDAMENTAL ISSUE)
+#### ✅ Task Prefix
 
-**Warning Message** (repeated 12+ times):
-```
-UserWarning: `max_length` is ignored when `padding`=`True` 
-and there is no truncation strategy. To pad to max length, 
-use `padding='max_length'`.
-```
+**TIDAK menggunakan task prefix** pada implementasi saat ini.
 
-**Location**: `transformers/tokenization_utils_base.py:2402`
+**Alasan:**
+1. IndoT5 dilatih pada CulturaX yang case-sensitive
+2. Dataset task-specific hanya berisi format `qa_generic` setelah `span_corruption` dihapus
+3. Tidak ada kebutuhan task prefix untuk single-task fine-tuning
+4. Konsistensi: inference juga tidak perlu prefix
 
-**What This Means**:
-- Tokenizer tidak menggunakan `padding='max_length'`
-- Padding dilakukan dengan default (pad ke sequence length terpanjang dalam batch)
-- `max_length=512` parameter **DIABAIKAN**
-- Sequences bisa lebih panjang dari yang diharapkan
-
-**Impact on Training**:
-- Inconsistent sequence lengths across batches
-- Model menerima sequences dengan panjang berbeda-beda
-- Attention mechanism tidak optimal
-- Training menjadi unstable
-
-**Fix Required**:
+**Kode di `domain_trainer.py` (line 82-95):**
 ```python
-# CURRENT (WRONG):
+# Tokenize inputs as-is — tidak menggunakan prefix maupun .lower().
+# Alasan:
+#   1. IndoNanoT5 dilatih pada CulturaX yang case-sensitive
+#   2. Domain dataset hanya berisi format qa_generic setelah span_corruption dihapus
+#   3. Konsistensi: inference juga tidak perlu lowercase.
 model_inputs = self.tokenizer(
     examples["input"],
-    padding=True,  # ← Dynamic padding, max_length diabaikan
+    max_length=self.max_length,
     truncation=True,
-    max_length=512
-)
-
-# SHOULD BE:
-model_inputs = self.tokenizer(
-    examples["input"],
-    padding='max_length',  # ← Explicit max_length padding
-    truncation=True,
-    max_length=512
-)
-```
-
----
-
-### 1.2 Training Results Analysis
-
-**Baseline (Pre-training)**:
-- BLEU-4: 0.0034
-- ROUGE-L: 0.0707
-
-**After Training**:
-- BLEU-4: 0.0049 (epoch 1-2) → 0.0022 (epoch 3)
-- ROUGE-L: 0.0000 (all epochs)
-
-**Trend**:
-```
-Epoch 1: BLEU-4 = 0.0042 (↑ +23.5% from baseline)
-Epoch 2: BLEU-4 = 0.0049 (↑ +16.7% from epoch 1)
-Epoch 3: BLEU-4 = 0.0022 (↓ -55.1% from epoch 2) ← DIVERGING
-```
-
-**Interpretation**:
-- Model tidak konvergen
-- Epoch 3 malah lebih buruk dari baseline
-- Ini adalah **OVERFITTING atau DIVERGENCE**, bukan learning
-
----
-
-### 1.3 Training Loss Analysis
-
-| Metric | Value | Status |
-|--------|-------|--------|
-| Initial loss | 39.63 | Very high (normal: 0.5-5) |
-| Final loss | 38.79 | Stagnant (only 2.1% decrease) |
-| Loss trend | Flat | No learning signal |
-
-**Interpretation**:
-- Model tidak mempelajari task
-- Loss tidak turun signifikan
-- Ini menunjukkan **FUNDAMENTAL MISMATCH** antara model dan task
-
----
-
-### 1.4 GPU Utilization
-
-- GPU allocated: 1.0 GB (dari 15.6 GB)
-- GPU utilization: 6.4%
-- Batch size: 8 (per device)
-
-**Interpretation**:
-- GPU severely underutilized
-- Batch size terlalu kecil untuk model ini
-- Tapi ini bukan penyebab utama training failure
-
----
-
-## PART 2: INDOT5 VS INDONANOT5 COMPARISON
-
-### 2.1 Model Specifications
-
-| Aspek | IndoNanoT5 | IndoT5 | Advantage |
-|-------|-----------|--------|-----------|
-| **Parameters** | 248M | 580M | IndoT5 (2.3x lebih besar) |
-| **Encoder layers** | 6 | 12 | IndoT5 (2x lebih dalam) |
-| **Decoder layers** | 6 | 12 | IndoT5 (2x lebih dalam) |
-| **Hidden size** | 512 | 768 | IndoT5 (1.5x lebih besar) |
-| **Attention heads** | 8 | 12 | IndoT5 (lebih banyak) |
-| **Feed-forward dim** | 2048 | 3072 | IndoT5 (1.5x lebih besar) |
-| **Vocab size** | 32,000 | 32,000 | Same |
-| **Training data** | 200GB | 200GB | Same |
-| **Pretraining tasks** | MLM, NSP | T5 objectives | Similar |
-
-### 2.2 Capacity Analysis
-
-**Model Capacity untuk Task Complexity**:
-
-| Task Complexity | Min Params | Recommended | IndoNanoT5 | IndoT5 |
-|-----------------|-----------|-------------|-----------|--------|
-| Simple (classification) | 100M | 200M | ✅ OK | ✅ Good |
-| Medium (summarization) | 200M | 400M | ⚠️ Borderline | ✅ Good |
-| **Complex (AQG)** | **400M** | **600M** | ❌ **INSUFFICIENT** | ✅ **GOOD** |
-
-**AQG Complexity Factors**:
-1. Requires understanding context (materi pembelajaran)
-2. Requires generating multiple outputs (Q + A + Distractors)
-3. Requires reasoning (pedagogical correctness)
-4. Requires code understanding (Python code in context)
-5. Requires Indonesian language proficiency
-
-**Conclusion**: IndoNanoT5 (248M) **LACKS CAPACITY** untuk AQG task.
-
----
-
-### 2.3 Benchmark Comparison
-
-**From LazarusNLP GitHub**:
-
-| Task | IndoNanoT5 | IndoT5 | Gap |
-|------|-----------|--------|-----|
-| **IndoSum** (summarization) | BLEU: 75.29 | BLEU: 78.45 | +3.16 |
-| **TyDiQA** (QA) | F1: 72.19 | F1: 75.83 | +3.64 |
-| **PAWS-X** (paraphrase) | Acc: 89.2% | Acc: 91.5% | +2.3% |
-| **XQuAD** (cross-lingual QA) | F1: 68.5% | F1: 71.2% | +2.7% |
-
-**Pattern**: IndoT5 consistently outperforms IndoNanoT5 by 2-4% across tasks.
-
-**For AQG** (which is more complex than these tasks):
-- Gap likely **5-10%** or more
-- IndoNanoT5 might not be viable at all
-
----
-
-## PART 3: ROOT CAUSE ANALYSIS
-
-### 3.1 Why IndoNanoT5 Failed
-
-**Primary Cause**: Model capacity insufficient for AQG task
-
-**Evidence**:
-1. Training loss stagnant (39) - model cannot learn
-2. BLEU-4 near zero (0.0022) - output is random
-3. ROUGE-L = 0 - no overlap with target
-4. Post-training worse than baseline - model degraded
-5. Gradient norm stable (1.33) - gradients OK, but model can't learn
-
-**Mechanism**:
-```
-Task Complexity (HIGH)
-    ↓
-Model Capacity (LOW: 248M)
-    ↓
-Model cannot learn meaningful patterns
-    ↓
-Loss stagnant, metrics near zero
-    ↓
-Training fails
-```
-
-### 3.2 Why Preprocessing Warning Matters
-
-**Secondary Cause**: Preprocessing inconsistency
-
-**Impact**:
-- Sequences padded to different lengths per batch
-- Attention mechanism receives inconsistent input
-- Training becomes unstable
-- Exacerbates model capacity issue
-
-**Fix**: Use `padding='max_length'` explicitly
-
----
-
-### 3.3 Why Domain Adaptation Didn't Help
-
-**Observation**: Even with domain adaptation (Tahap 1), task-specific training (Tahap 2) failed.
-
-**Possible Reasons**:
-1. Domain adaptation itself might have failed (need to verify)
-2. Domain adaptation checkpoint not properly loaded
-3. Even with domain adaptation, model capacity still insufficient
-
-**Conclusion**: Domain adaptation is good practice, but **cannot overcome fundamental capacity limitation**.
-
----
-
-## PART 4: RECOMMENDATION
-
-### 4.1 PRIMARY RECOMMENDATION: Switch to IndoT5
-
-**Action**: Replace IndoNanoT5 with IndoT5 (full-size)
-
-**Why**:
-- 2.3x larger (580M vs 248M params)
-- Proven better performance on Indonesian NLP tasks
-- Better capacity for complex task like AQG
-- Still manageable with LoRA (0.36% trainable params)
-
-**Model Details**:
-```python
-# CURRENT (FAILING):
-MODEL_NAME = 'LazarusNLP/IndoNanoT5-base'
-# 248M params, insufficient capacity
-
-# RECOMMENDED:
-MODEL_NAME = 'Wikidepia/IndoT5-base'
-# 580M params, adequate capacity
-# Note: Correct model name is Wikidepia, not LazarusNLP
-```
-
-**Expected Improvement**:
-- Training loss: 39 → 2-5 (normal range)
-- BLEU-4: 0.0022 → 0.25-0.35 (reasonable)
-- ROUGE-L: 0.0 → 0.20-0.30 (reasonable)
-
-**GPU Memory Impact**:
-- IndoNanoT5: ~1.0 GB
-- IndoT5: ~2.5-3.0 GB
-- Still fits in Tesla T4 (15.6 GB)
-
-**Training Time Impact**:
-- Slightly longer (~25-30 min vs 17 min)
-- But worth it for better results
-
----
-
-### 4.2 SECONDARY RECOMMENDATION: Fix Preprocessing
-
-**Action**: Fix tokenizer padding strategy
-
-**File**: `src/finetuned/training/task_trainer.py`
-
-**Change**:
-```python
-# BEFORE:
-model_inputs = self.tokenizer(
-    examples["input"],
-    padding=True,  # ← Dynamic padding
-    truncation=True,
-    max_length=512
-)
-
-# AFTER:
-model_inputs = self.tokenizer(
-    examples["input"],
-    padding='max_length',  # ← Explicit max_length
-    truncation=True,
-    max_length=512
+    padding=False
 )
 ```
 
-**Also add to DataCollator**:
+#### ✅ Code Block Handling
+
+**Preservasi Code Block:**
+- Code block Python **TIDAK di-escape** dengan karakter khusus
+- Code block dipertahankan **as-is** dalam format Markdown (` ```python ... ``` `)
+- Chunker memastikan code block **tidak pernah dipotong** di tengah
+
+**Implementasi di `chunker.py`:**
 ```python
+# Code block tidak pernah dipotong — selalu dipertahankan utuh dalam satu chunk
+# Token count diestimasi dengan len(text.split()) * 1.3
+```
+
+#### ✅ Normalisasi Teks
+
+**Preprocessing yang Dilakukan:**
+1. **Path normalization**: `source_file` menggunakan forward slash (`/`) di semua OS
+2. **Token masking**: Padding tokens di-replace dengan `-100` untuk loss calculation
+3. **Truncation**: Max length 512 tokens
+4. **NO lowercase**: Case-sensitive dipertahankan untuk Python syntax
+
+**Preprocessing yang TIDAK Dilakukan:**
+- ❌ Lowercase conversion (akan merusak Python syntax)
+- ❌ Special character escaping
+- ❌ Code block modification
+
+---
+
+### 3. Training Results
+
+#### ✅ Training Loss Progression
+
+**MASALAH KRITIS TERDETEKSI:**
+
+```
+Final training loss: 0.0000  ❌
+eval_loss: nan               ❌
+```
+
+**Analisis:**
+- Training loss = 0.0000 menunjukkan **model tidak belajar**
+- Eval loss = NaN menunjukkan **numerical instability**
+- Ini adalah **bug preprocessing/DataCollator**, bukan masalah dataset
+
+**Root Cause (sudah diidentifikasi di `error.md`):**
+- DataCollator dengan `max_length` parameter menyebabkan **semua labels di-mask dengan -100**
+- Model tidak punya learning signal karena tidak ada valid labels
+
+**Fix yang Sudah Diterapkan:**
+```python
+# SEBELUM (SALAH):
 data_collator = DataCollatorForSeq2Seq(
     tokenizer=self.tokenizer,
     model=self.model,
-    padding='max_length',  # ← Add this
-    max_length=512,
-    label_pad_token_id=-100
+    max_length=self.max_length  # ❌ Ini menyebabkan bug!
+)
+
+# SESUDAH (BENAR):
+data_collator = DataCollatorForSeq2Seq(
+    tokenizer=self.tokenizer,
+    model=self.model,
+    label_pad_token_id=-100,
+    padding=True,
+    pad_to_multiple_of=8
+    # ✅ TIDAK menggunakan max_length
 )
 ```
 
+#### ✅ Epochs yang Dijalankan
+
+**Task-Specific Training:**
+- Epochs: **3**
+- Batch size: **8**
+- Gradient accumulation: **4**
+- Effective batch size: **32**
+- Learning rate: **1e-4**
+- Warmup steps: **50**
+
+**Training Time:**
+- Duration: **637.98 seconds** (~10.6 minutes)
+- Samples per second: **4.12**
+
+#### ✅ Validation Loss / Evaluation Metrics
+
+**Baseline (Pre-Training):**
+```
+BLEU-4:  0.0143
+ROUGE-L: 0.1387
+```
+
+**After Fine-Tuning (dengan bug):**
+```
+BLEU-4:  0.0133  (-7.6%)  ❌
+ROUGE-L: 0.1224  (-11.8%) ❌
+BERTScore F1: 0.6305
+```
+
+**Kesimpulan:**
+- Metrics **TURUN** setelah training → konfirmasi model tidak belajar
+- BERTScore 0.63 menunjukkan output masih semantically related (base model capability)
+
 ---
 
-### 4.3 TERTIARY RECOMMENDATION: Optimize Training Config
+### 4. Tokenizer Testing
 
-**Current Config Issues**:
-1. Learning rate 1e-4 (too high, should be 5e-5)
-2. Batch size 8 (small, but OK for T4)
-3. Epochs 3 (too many for generation, should be 1-2)
+#### ✅ Test Hasil Tokenization
 
-**Optimized Config**:
+**Dari `error.md` - Test Tokenization:**
+
+```
+Input IDs length: 319
+Label IDs length: 201
+
+Input padding tokens: 0 (seharusnya 0) ✅
+Label padding tokens: 0 (seharusnya 0) ✅
+
+Non-zero label tokens: 201 / 201 ✅
+✓ Labels mengandung token non-zero (BAGUS)
+```
+
+**Analisis:**
+- Tokenization **BENAR** ✅
+- Tidak ada padding di tahap preprocessing ✅
+- Semua labels valid (tidak ada -100 prematur) ✅
+
+#### ✅ Token Overflow Issues
+
+**TIDAK ADA token overflow** yang terdeteksi.
+
+**Statistik:**
+- Max length: **512 tokens**
+- Avg input length: **821 chars** (~250 tokens estimated)
+- Avg target length: **344 chars** (~100 tokens estimated)
+- Total: ~350 tokens (well below 512 limit)
+
+---
+
+### 5. Current Error Context
+
+#### ✅ Error dari Training Pertama atau Iterasi?
+
+**Ini adalah hasil dari ITERASI KEDUA:**
+
+1. **Iterasi Pertama** (IndoNanoT5):
+   - Model: LazarusNLP/IndoNanoT5-base (248M params)
+   - Hasil: Model terlalu kecil untuk complex AQG task
+   - Keputusan: Switch ke IndoT5-base (580M params)
+
+2. **Iterasi Kedua** (IndoT5 - Current):
+   - Model: Wikidepia/IndoT5-base (297M params)
+   - Bug: DataCollator masking issue
+   - Status: **Bug sudah diidentifikasi dan di-fix**
+
+#### ✅ Perubahan Format Dataset
+
+**Perubahan yang Sudah Dilakukan:**
+
+1. **Hapus format `span_corruption`** dari task-specific dataset
+   - Alasan: Tidak cocok untuk AQG task
+   - Hanya gunakan format `qa_generic`
+
+2. **Drop kolom `metadata`** sebelum training
+   - Alasan: Metadata menyebabkan dataset size mismatch
+   - Fix: `dataset.remove_columns(['metadata'])`
+
+3. **Normalisasi `source_file` path**
+   - Gunakan forward slash (`/`) di semua OS
+   - Implementasi: `pathlib.PurePosixPath`
+
+---
+
+## 🔍 Informasi yang Perlu Anda Berikan
+
+### 1. ❓ Apakah Fix DataCollator Sudah Diterapkan?
+
+**Pertanyaan:**
+- Apakah Anda sudah **re-run training** setelah fix DataCollator?
+- Apakah training loss sekarang **> 0.0** dan eval loss **bukan NaN**?
+
+**Yang Perlu Dilakukan:**
 ```python
-learning_rate: float = 5e-5  # ← Lower
-num_train_epochs: int = 2    # ← Fewer epochs
-per_device_train_batch_size: int = 16  # ← Larger (if memory allows)
-gradient_accumulation_steps: int = 2   # ← Adjust accordingly
+# Pastikan DataCollator TIDAK menggunakan max_length
+data_collator = DataCollatorForSeq2Seq(
+    tokenizer=tokenizer,
+    model=model,
+    label_pad_token_id=-100,
+    padding=True,
+    pad_to_multiple_of=8
+    # ❌ JANGAN tambahkan max_length parameter!
+)
 ```
+
+### 2. ❓ Apakah Ada Training Log Terbaru?
+
+**Pertanyaan:**
+- Apakah ada file `training_results.json` atau log training setelah fix?
+- Bagaimana loss progression per epoch setelah fix?
+
+**Yang Perlu Diperiksa:**
+```bash
+# Cek file training results
+{
+  "training_loss": 0.0,
+  "metrics": {
+    "train_runtime": 637.9805,
+    "train_samples_per_second": 4.119,
+    "train_steps_per_second": 0.132,
+    "total_flos": 1580075954012160.0,
+    "train_loss": 0.0,
+    "epoch": 3.0
+  },
+  "training_history": [
+    {
+      "eval_loss": NaN,
+      "eval_bleu_1": 0.027711943751850796,
+      "eval_bleu_4": 0.027711943751850796,
+      "eval_rouge_l": 0.0,
+      "eval_runtime": 114.8499,
+      "eval_samples_per_second": 1.524,
+      "eval_steps_per_second": 0.192,
+      "epoch": 1.0,
+      "step": 28
+    },
+    {
+      "loss": 0.0,
+      "grad_norm": NaN,
+      "learning_rate": 9.8e-05,
+      "epoch": 1.8,
+      "step": 50
+    },
+    {
+      "eval_loss": NaN,
+      "eval_bleu_1": 0.027711943751850796,
+      "eval_bleu_4": 0.027711943751850796,
+      "eval_rouge_l": 0.0,
+      "eval_runtime": 118.4421,
+      "eval_samples_per_second": 1.478,
+      "eval_steps_per_second": 0.186,
+      "epoch": 2.0,
+      "step": 56
+    },
+    {
+      "eval_loss": NaN,
+      "eval_bleu_1": 0.027711943751850796,
+      "eval_bleu_4": 0.027711943751850796,
+      "eval_rouge_l": 0.0,
+      "eval_runtime": 118.0967,
+      "eval_samples_per_second": 1.482,
+      "eval_steps_per_second": 0.186,
+      "epoch": 3.0,
+      "step": 84
+    },
+    {
+      "train_runtime": 637.9805,
+      "train_samples_per_second": 4.119,
+      "train_steps_per_second": 0.132,
+      "total_flos": 1580075954012160.0,
+      "train_loss": 0.0,
+      "epoch": 3.0,
+      "step": 84
+    },
+    {
+      "eval_loss": NaN,
+      "eval_bleu_1": 0.027711943751850796,
+      "eval_bleu_4": 0.027711943751850796,
+      "eval_rouge_l": 0.0,
+      "eval_runtime": 119.5063,
+      "eval_samples_per_second": 1.464,
+      "eval_steps_per_second": 0.184,
+      "epoch": 3.0,
+      "step": 84
+    }
+  ]
+}
+
+```
+
+### 3. ❓ Apakah Perlu Tambah Data?
+
+**Pertanyaan:**
+- Apakah Anda ingin **menambah dataset** dari 1,262 samples?
+- Target: 1,500-3,000 samples (sesuai spec)
+
+**Opsi:**
+1. Generate lebih banyak synthetic data via LLM
+2. Implementasi Augmentor (task 10 di tasks.md - optional)
+3. Manual annotation
+
+### 4. ❓ Hyperparameter Tuning?
+
+**Pertanyaan:**
+- Apakah Anda ingin **experiment dengan hyperparameters**?
+
+**Rekomendasi untuk Dicoba:**
+```python
+# Option 1: Lower learning rate
+learning_rate = 5e-5  # dari 1e-4
+
+# Option 2: More epochs
+num_train_epochs = 5  # dari 3
+
+# Option 3: Larger batch size
+per_device_train_batch_size = 16  # dari 8
+gradient_accumulation_steps = 2   # dari 4
+```
+
+### 5. ❓ Evaluation Strategy?
+
+**Pertanyaan:**
+- Apakah Anda ingin **qualitative analysis** dari generated outputs?
+- Apakah perlu **error analysis** untuk identify failure patterns?
+
+**Yang Bisa Dilakukan:**
+1. Analisis sample outputs 
+2. Kategorisasi error types (format, content, hallucination)
+3. Identify misconception tags yang sulit di-generate
 
 ---
 
-## PART 5: IMPLEMENTATION PLAN
+## 📋 Ringkasan Status
 
-### Phase 1: Immediate (< 1 hour)
+### ✅ Yang Sudah Benar
 
-- [ ] Fix preprocessing: `padding='max_length'`
-- [ ] Fix DataCollator: add `label_pad_token_id=-100`
-- [ ] Verify warnings are gone
+1. **Dataset format**: JSONL dengan `input`, `target`, `metadata` ✅
+2. **Tokenization**: Benar, tidak ada overflow ✅
+3. **Preprocessing**: Case-sensitive, code preservation ✅
+4. **Bug identification**: DataCollator issue sudah diidentifikasi ✅
+5. **Model selection**: IndoT5-base (297M) cocok untuk task ✅
 
-### Phase 2: Model Replacement (< 2 hours)
+### ⚠️ Yang Perlu Diperbaiki
 
-- [ ] Change MODEL_NAME to `LazarusNLP/IndoT5-base`
-- [ ] Update LoRA config (if needed)
-- [ ] Test model loading
-- [ ] Verify GPU memory (should be ~2.5-3.0 GB)
+1. **Re-run training** dengan DataCollator fix
+2. **Verify loss > 0.0** dan eval loss bukan NaN
+3. **Monitor metrics improvement** setelah fix
 
-### Phase 3: Training Optimization (< 1 hour)
+### 🎯 Next Steps
 
-- [ ] Lower learning rate: 1e-4 → 5e-5
-- [ ] Reduce epochs: 3 → 2
-- [ ] Increase batch size if possible: 8 → 16
-
-### Phase 4: Re-training (~ 30-40 min)
-
-- [ ] Re-run training with IndoT5
-- [ ] Monitor training loss (should drop from 39 to 2-5)
-- [ ] Monitor BLEU-4 (should improve to 0.25-0.35)
-
-### Phase 5: Validation (< 30 min)
-
-- [ ] Evaluate on test set
-- [ ] Compare with baseline
-- [ ] Check model outputs (should be meaningful)
+1. **Immediate**: Re-run training dengan fix, verify loss progression
+2. **Short-term**: Evaluate metrics, analyze sample outputs
+3. **Long-term**: Consider data augmentation, hyperparameter tuning
 
 ---
 
-## PART 6: EXPECTED RESULTS AFTER FIX
-
-### Training Metrics
-
-| Metric        | Before | After     | Target       |
-| ---------------| --------| -----------| --------------|
-| Training Loss | 39     | 2-5       | ✅ Normal     |
-| BLEU-4        | 0.0022 | 0.25-0.35 | ✅ Good       |
-| ROUGE-L       | 0.0    | 0.20-0.30 | ✅ Good       |
-| Training time | 17 min | 30-40 min | ✅ Acceptable |
-
-### Model Output Quality
-
-**Before**:
-```
-Input: "Konteks: One-liner adalah... Prompt: Buat soal MCQ..."
-Output: "▁▁▁▁▁▁▁▁▁▁" (random padding)
-```
-
-**After**:
-```
-Input: "Konteks: One-liner adalah... Prompt: Buat soal MCQ..."
-Output: "Pertanyaan: Manakah yang BUKAN one-liner Python?
-         Jawaban benar: Deklarasi fungsi
-         Distraktor: 1) Penukaran nilai 2) Pengisian nilai..."
-```
-
----
-
-## PART 7: SUMMARY & CONCLUSION
-
-### What Went Wrong
-
-1. **Model too small** (IndoNanoT5: 248M) for complex AQG task
-2. **Preprocessing inconsistency** (dynamic padding ignored max_length)
-3. **Training configuration suboptimal** (high LR, many epochs)
-
-### Why It Matters
-
-- IndoNanoT5 lacks capacity to learn AQG patterns
-- Even with domain adaptation, model cannot overcome this limitation
-- Preprocessing issues make training unstable
-
-### How to Fix
-
-1. **Primary**: Switch to IndoT5 (580M params)
-2. **Secondary**: Fix preprocessing (padding='max_length')
-3. **Tertiary**: Optimize training config (lower LR, fewer epochs)
-
-### Expected Outcome
-
-- Training loss: 39 → 2-5 ✅
-- BLEU-4: 0.0022 → 0.25-0.35 ✅
-- Model learns meaningful questions ✅
-- Project becomes viable ✅
-
----
-
-## APPENDIX: WHY NOT OTHER MODELS?
-
-### Why not mT5?
-
-- mT5 is multilingual (less optimized for Indonesian)
-- Larger than IndoT5 (580M vs 580M, same size)
-- Less Indonesian-specific pretraining
-- **Recommendation**: Stick with IndoT5
-
-### Why not GPT-based models?
-
-- GPT models are decoder-only (not ideal for seq2seq)
-- Larger (GPT-2: 1.5B+)
-- Less suitable for question generation
-- **Recommendation**: Stick with T5-based
-
-### Why not fine-tune from scratch?
-
-- Pretraining from scratch requires massive data/compute
-- Not practical for this project
-- Transfer learning (fine-tuning) is the right approach
-- **Recommendation**: Use pretrained IndoT5
-
----
-
-**Analysis Complete** ✅  
-**Confidence**: 95%  
-**Next Step**: Implement recommendations in order (Phase 1 → Phase 5)
-
+**Prepared by:** Kiro AI Assistant  
+**Last Updated:** 20 April 2026
