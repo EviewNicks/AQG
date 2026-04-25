@@ -62,17 +62,25 @@ class DatasetLoader:
             - avg_input_length: float
             - avg_target_length: float
             - has_metadata: bool
+            - output_field: str (either 'target' or 'output')
         """
-        required_fields = ["input", "target"]
-        missing_fields = []
+        # Check for input field (required)
+        if "input" not in dataset.column_names:
+            raise ValueError("Missing required field: 'input'")
         
-        # Check required fields
-        for field in required_fields:
-            if field not in dataset.column_names:
-                missing_fields.append(field)
+        # Check for output field (support both 'target' and 'output')
+        output_field = None
+        if "target" in dataset.column_names:
+            output_field = "target"
+        elif "output" in dataset.column_names:
+            output_field = "output"
+        else:
+            raise ValueError(
+                "Missing output field. Dataset must have either 'target' or 'output' field.\n"
+                f"Available fields: {dataset.column_names}"
+            )
         
-        if missing_fields:
-            raise ValueError(f"Missing required fields: {missing_fields}")
+        print(f"✓ Using output field: '{output_field}'")
         
         # Calculate statistics
         total_entries = len(dataset)
@@ -81,20 +89,21 @@ class DatasetLoader:
         inputs = [item["input"] for item in dataset]
         duplicate_count = len(inputs) - len(set(inputs))
         
-        # Calculate average lengths
+        # Calculate average lengths (use detected output field)
         avg_input_length = sum(len(item["input"]) for item in dataset) / total_entries
-        avg_target_length = sum(len(item["target"]) for item in dataset) / total_entries
+        avg_target_length = sum(len(item[output_field]) for item in dataset) / total_entries
         
         # Check metadata
         has_metadata = "metadata" in dataset.column_names
         
         results = {
             "total_entries": total_entries,
-            "missing_fields": missing_fields,
+            "missing_fields": [],
             "duplicate_count": duplicate_count,
             "avg_input_length": round(avg_input_length, 2),
             "avg_target_length": round(avg_target_length, 2),
-            "has_metadata": has_metadata
+            "has_metadata": has_metadata,
+            "output_field": output_field  # Store which field is used
         }
         
         # Print validation summary
@@ -134,12 +143,15 @@ class DatasetLoader:
             - pct_exceeding_limit: float
             - histogram: List[Tuple[str, int]]
         """
+        # Detect output field
+        output_field = "target" if "target" in dataset.column_names else "output"
+        
         token_lengths = []
         
         for item in dataset:
-            # Tokenize input + target
+            # Tokenize input + output (support both 'target' and 'output')
             input_tokens = tokenizer(item["input"], truncation=False)["input_ids"]
-            target_tokens = tokenizer(item["target"], truncation=False)["input_ids"]
+            target_tokens = tokenizer(item[output_field], truncation=False)["input_ids"]
             total_length = len(input_tokens) + len(target_tokens)
             token_lengths.append(total_length)
         

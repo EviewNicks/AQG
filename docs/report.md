@@ -1,421 +1,569 @@
-# Laporan Analisis Proyek AQG Fine-Tuning IndoT5
+# Preprocessing & Tokenization Pipeline - Task-Specific AQG Training
 
-**Tanggal:** 20 April 2026  
-**Model:** Wikidepia/IndoT5-base (297M parameters)  
-**Task:** Automatic Question Generation (AQG) untuk Python berbahasa Indonesia
+## Overview
+
+Dokumen ini menjelaskan tahapan preprocessing dan tokenization yang digunakan dalam notebook `03_task_specific_training_v2.ipynb` untuk fine-tuning IndoNanoT5 pada task Automatic Question Generation (AQG).
 
 ---
 
-## 📊 Informasi yang Dapat Dijawab
+## Pipeline Preprocessing
 
-### 1. Dataset Struktur Saat Ini
+### 1. Dataset Loading & Validation
 
-#### ✅ Jumlah Total Samples
+**Apa itu**: Memuat dataset JSONL dan memvalidasi struktur data
 
-**Domain Dataset** (`dataset_aqg/output_domain/accumulated.jsonl`):
-- Total: **341 samples** (format span_corruption + qa_generic)
-- Format: Mixed (span corruption untuk domain adaptation, qa_generic untuk QA)
+**Tujuan**: 
+- Memastikan dataset tersedia dan format valid
+- Verifikasi field wajib (`input`, `target`, `metadata`)
+- Deteksi duplikasi dan statistik dasar
 
-**Task-Specific Dataset** (`dataset_aqg/dataset-task-spesifc/`):
-- Train: **876 samples**
-- Validation: **175 samples**
-- Test: **211 samples**
-- Total: **1,262 samples**
+**Cara Kerja**:
+```python
+# Di notebook Section 3
+loader = DatasetLoader()
+train_dataset = loader.load_dataset(TASK_DIR, split='train')
+validation_results = loader.validate_dataset(train_dataset)
+```
 
-#### ✅ Struktur JSON
+**Lokasi Code**:
+- Module: `src/finetuned/data/dataset_loader.py`
+- Method: `load_dataset()`, `validate_dataset()`
+- Notebook: Section 3 - Load Dataset
 
-**Format JSONL yang Benar:**
-```json
+**Output**:
+- HuggingFace Dataset object
+- Validation report (total entries, duplicates, avg length)
+
+---
+
+### 2. Tokenizer Loading
+
+**Apa itu**: Load tokenizer yang sesuai dengan model IndoNanoT5
+
+**Tujuan**: 
+- Menyediakan tool untuk konversi text → token IDs
+- Memastikan compatibility dengan model architecture
+
+**Cara Kerja**:
+```python
+# Di notebook Section 2
+from src.finetuned.utils.model_loader import load_model_with_lora
+
+peft_model, tokenizer = load_model_with_lora(
+    model_name='LazarusNLP/IndoNanoT5-base'
+)
+```
+
+**Lokasi Code**:
+- Module: `src/finetuned/utils/model_loader.py`
+- Line: `tokenizer = AutoTokenizer.from_pretrained(model_name)`
+- Notebook: Section 2 - Load Model with LoRA
+
+**Detail Tokenizer**:
+- Type: `AutoTokenizer` (auto-detect T5Tokenizer)
+- Vocab size: ~32,000 tokens
+- Special tokens: `<pad>`, `</s>` (EOS)
+
+---
+
+### 3. Tokenization (NO Padding)
+
+**Apa itu**: Konversi text menjadi token IDs **tanpa padding**
+
+**Tujuan**:
+- Transform text → numerical format untuk model
+- Truncate sequences yang > 512 tokens
+- Hemat memory dengan NO padding di tahap ini
+
+**Cara Kerja**:
+```python
+# Di task_trainer.py → preprocess_dataset()
+def tokenize_function(examples):
+    # Tokenize INPUT (NO PADDING)
+    model_inputs = tokenizer(
+        examples["input"],
+        max_length=512,
+        truncation=True
+        # ❌ TIDAK ada padding=True
+    )
+    
+    # Tokenize TARGET (T5-specific)
+    labels = tokenizer(
+        text_target=examples["target"],  # ⭐ T5 parameter
+        max_length=512,
+        truncation=True
+    )
+    
+    model_inputs["labels"] = labels["input_ids"]
+    return model_inputs
+```
+
+**Lokasi Code**:
+- Module: `src/finetuned/training/task_trainer.py`
+- Method: `preprocess_dataset()` → inner function `tokenize_function()`
+- Dipanggil di: `trainer.train()` (Section 6 notebook)
+
+**Key Points**:
+- ✅ `text_target` parameter untuk T5 model
+- ✅ NO padding (memory efficient)
+- ✅ Truncation di 512 tokens
+- ✅ Batch processing via `dataset.map(batched=True)`
+
+**Output**:
+```python
 {
-  "input": "Konteks: [materi Python]\\n\\nPrompt: Buat satu soal [question_type] tentang [concept], tingkat kesulitan: [difficulty], bahasa Indonesia.",
-  "target": "Pertanyaan: [soal]? Jawaban benar: [jawaban]. Distraktor: 1) [d1] 2) [d2] 3) [d3] 4) [d4]",
-  "metadata": {
-    "difficulty": "easy|medium|hard",
-    "question_type": "MCQ|Code Completion",
-    "concept": "...",
-    "misconception_tags": ["tag1", "tag2"],
-    "source_file": "...",
-    "validated": true
-  }
+    "input_ids": [234, 567, 1234, ...],      # Variable length
+    "attention_mask": [1, 1, 1, ...],        # No padding yet
+    "labels": [890, 456, 789, ...]           # Variable length
 }
 ```
 
-**Catatan Penting:**
-- `target` adalah **plain string**, bukan JSON object ✅
-- `metadata` adalah **JSON object terpisah** ✅
-- Kolom `metadata` **harus di-drop** sebelum training (sudah dilakukan) ✅
-
 ---
 
-### 2. Preprocessing Detail
+### 4. Dynamic Padding (DataCollator)
 
-#### ✅ Task Prefix
+**Apa itu**: Padding dilakukan per-batch saat training, bukan saat preprocessing
 
-**TIDAK menggunakan task prefix** pada implementasi saat ini.
+**Tujuan**:
+- Pad hanya ke max length dalam batch (bukan global max)
+- Hemat memory 40-60%
+- Automatic label masking dengan `-100`
 
-**Alasan:**
-1. IndoT5 dilatih pada CulturaX yang case-sensitive
-2. Dataset task-specific hanya berisi format `qa_generic` setelah `span_corruption` dihapus
-3. Tidak ada kebutuhan task prefix untuk single-task fine-tuning
-4. Konsistensi: inference juga tidak perlu prefix
-
-**Kode di `domain_trainer.py` (line 82-95):**
+**Cara Kerja**:
 ```python
-# Tokenize inputs as-is — tidak menggunakan prefix maupun .lower().
-# Alasan:
-#   1. IndoNanoT5 dilatih pada CulturaX yang case-sensitive
-#   2. Domain dataset hanya berisi format qa_generic setelah span_corruption dihapus
-#   3. Konsistensi: inference juga tidak perlu lowercase.
-model_inputs = self.tokenizer(
-    examples["input"],
-    max_length=self.max_length,
-    truncation=True,
-    padding=False
-)
-```
-
-#### ✅ Code Block Handling
-
-**Preservasi Code Block:**
-- Code block Python **TIDAK di-escape** dengan karakter khusus
-- Code block dipertahankan **as-is** dalam format Markdown (` ```python ... ``` `)
-- Chunker memastikan code block **tidak pernah dipotong** di tengah
-
-**Implementasi di `chunker.py`:**
-```python
-# Code block tidak pernah dipotong — selalu dipertahankan utuh dalam satu chunk
-# Token count diestimasi dengan len(text.split()) * 1.3
-```
-
-#### ✅ Normalisasi Teks
-
-**Preprocessing yang Dilakukan:**
-1. **Path normalization**: `source_file` menggunakan forward slash (`/`) di semua OS
-2. **Token masking**: Padding tokens di-replace dengan `-100` untuk loss calculation
-3. **Truncation**: Max length 512 tokens
-4. **NO lowercase**: Case-sensitive dipertahankan untuk Python syntax
-
-**Preprocessing yang TIDAK Dilakukan:**
-- ❌ Lowercase conversion (akan merusak Python syntax)
-- ❌ Special character escaping
-- ❌ Code block modification
-
----
-
-### 3. Training Results
-
-#### ✅ Training Loss Progression
-
-**MASALAH KRITIS TERDETEKSI:**
-
-```
-Final training loss: 0.0000  ❌
-eval_loss: nan               ❌
-```
-
-**Analisis:**
-- Training loss = 0.0000 menunjukkan **model tidak belajar**
-- Eval loss = NaN menunjukkan **numerical instability**
-- Ini adalah **bug preprocessing/DataCollator**, bukan masalah dataset
-
-**Root Cause (sudah diidentifikasi di `error.md`):**
-- DataCollator dengan `max_length` parameter menyebabkan **semua labels di-mask dengan -100**
-- Model tidak punya learning signal karena tidak ada valid labels
-
-**Fix yang Sudah Diterapkan:**
-```python
-# SEBELUM (SALAH):
-data_collator = DataCollatorForSeq2Seq(
-    tokenizer=self.tokenizer,
-    model=self.model,
-    max_length=self.max_length  # ❌ Ini menyebabkan bug!
-)
-
-# SESUDAH (BENAR):
-data_collator = DataCollatorForSeq2Seq(
-    tokenizer=self.tokenizer,
-    model=self.model,
-    label_pad_token_id=-100,
-    padding=True,
-    pad_to_multiple_of=8
-    # ✅ TIDAK menggunakan max_length
-)
-```
-
-#### ✅ Epochs yang Dijalankan
-
-**Task-Specific Training:**
-- Epochs: **3**
-- Batch size: **8**
-- Gradient accumulation: **4**
-- Effective batch size: **32**
-- Learning rate: **1e-4**
-- Warmup steps: **50**
-
-**Training Time:**
-- Duration: **637.98 seconds** (~10.6 minutes)
-- Samples per second: **4.12**
-
-#### ✅ Validation Loss / Evaluation Metrics
-
-**Baseline (Pre-Training):**
-```
-BLEU-4:  0.0143
-ROUGE-L: 0.1387
-```
-
-**After Fine-Tuning (dengan bug):**
-```
-BLEU-4:  0.0133  (-7.6%)  ❌
-ROUGE-L: 0.1224  (-11.8%) ❌
-BERTScore F1: 0.6305
-```
-
-**Kesimpulan:**
-- Metrics **TURUN** setelah training → konfirmasi model tidak belajar
-- BERTScore 0.63 menunjukkan output masih semantically related (base model capability)
-
----
-
-### 4. Tokenizer Testing
-
-#### ✅ Test Hasil Tokenization
-
-**Dari `error.md` - Test Tokenization:**
-
-```
-Input IDs length: 319
-Label IDs length: 201
-
-Input padding tokens: 0 (seharusnya 0) ✅
-Label padding tokens: 0 (seharusnya 0) ✅
-
-Non-zero label tokens: 201 / 201 ✅
-✓ Labels mengandung token non-zero (BAGUS)
-```
-
-**Analisis:**
-- Tokenization **BENAR** ✅
-- Tidak ada padding di tahap preprocessing ✅
-- Semua labels valid (tidak ada -100 prematur) ✅
-
-#### ✅ Token Overflow Issues
-
-**TIDAK ADA token overflow** yang terdeteksi.
-
-**Statistik:**
-- Max length: **512 tokens**
-- Avg input length: **821 chars** (~250 tokens estimated)
-- Avg target length: **344 chars** (~100 tokens estimated)
-- Total: ~350 tokens (well below 512 limit)
-
----
-
-### 5. Current Error Context
-
-#### ✅ Error dari Training Pertama atau Iterasi?
-
-**Ini adalah hasil dari ITERASI KEDUA:**
-
-1. **Iterasi Pertama** (IndoNanoT5):
-   - Model: LazarusNLP/IndoNanoT5-base (248M params)
-   - Hasil: Model terlalu kecil untuk complex AQG task
-   - Keputusan: Switch ke IndoT5-base (580M params)
-
-2. **Iterasi Kedua** (IndoT5 - Current):
-   - Model: Wikidepia/IndoT5-base (297M params)
-   - Bug: DataCollator masking issue
-   - Status: **Bug sudah diidentifikasi dan di-fix**
-
-#### ✅ Perubahan Format Dataset
-
-**Perubahan yang Sudah Dilakukan:**
-
-1. **Hapus format `span_corruption`** dari task-specific dataset
-   - Alasan: Tidak cocok untuk AQG task
-   - Hanya gunakan format `qa_generic`
-
-2. **Drop kolom `metadata`** sebelum training
-   - Alasan: Metadata menyebabkan dataset size mismatch
-   - Fix: `dataset.remove_columns(['metadata'])`
-
-3. **Normalisasi `source_file` path**
-   - Gunakan forward slash (`/`) di semua OS
-   - Implementasi: `pathlib.PurePosixPath`
-
----
-
-## 🔍 Informasi yang Perlu Anda Berikan
-
-### 1. ❓ Apakah Fix DataCollator Sudah Diterapkan?
-
-**Pertanyaan:**
-- Apakah Anda sudah **re-run training** setelah fix DataCollator?
-- Apakah training loss sekarang **> 0.0** dan eval loss **bukan NaN**?
-
-**Yang Perlu Dilakukan:**
-```python
-# Pastikan DataCollator TIDAK menggunakan max_length
+# Di task_trainer.py → train()
 data_collator = DataCollatorForSeq2Seq(
     tokenizer=tokenizer,
     model=model,
-    label_pad_token_id=-100,
-    padding=True,
-    pad_to_multiple_of=8
-    # ❌ JANGAN tambahkan max_length parameter!
+    label_pad_token_id=-100,  # ⭐ Mask padding di labels
+    padding=True,              # Dynamic padding
+    pad_to_multiple_of=8       # GPU optimization
 )
 ```
 
-### 2. ❓ Apakah Ada Training Log Terbaru?
+**Lokasi Code**:
+- Module: `src/finetuned/training/task_trainer.py`
+- Method: `train()` (line ~175-181)
+- Digunakan di: `Seq2SeqTrainer` initialization
 
-**Pertanyaan:**
-- Apakah ada file `training_results.json` atau log training setelah fix?
-- Bagaimana loss progression per epoch setelah fix?
-
-**Yang Perlu Diperiksa:**
-```bash
-# Cek file training results
-{
-  "training_loss": 0.0,
-  "metrics": {
-    "train_runtime": 637.9805,
-    "train_samples_per_second": 4.119,
-    "train_steps_per_second": 0.132,
-    "total_flos": 1580075954012160.0,
-    "train_loss": 0.0,
-    "epoch": 3.0
-  },
-  "training_history": [
-    {
-      "eval_loss": NaN,
-      "eval_bleu_1": 0.027711943751850796,
-      "eval_bleu_4": 0.027711943751850796,
-      "eval_rouge_l": 0.0,
-      "eval_runtime": 114.8499,
-      "eval_samples_per_second": 1.524,
-      "eval_steps_per_second": 0.192,
-      "epoch": 1.0,
-      "step": 28
-    },
-    {
-      "loss": 0.0,
-      "grad_norm": NaN,
-      "learning_rate": 9.8e-05,
-      "epoch": 1.8,
-      "step": 50
-    },
-    {
-      "eval_loss": NaN,
-      "eval_bleu_1": 0.027711943751850796,
-      "eval_bleu_4": 0.027711943751850796,
-      "eval_rouge_l": 0.0,
-      "eval_runtime": 118.4421,
-      "eval_samples_per_second": 1.478,
-      "eval_steps_per_second": 0.186,
-      "epoch": 2.0,
-      "step": 56
-    },
-    {
-      "eval_loss": NaN,
-      "eval_bleu_1": 0.027711943751850796,
-      "eval_bleu_4": 0.027711943751850796,
-      "eval_rouge_l": 0.0,
-      "eval_runtime": 118.0967,
-      "eval_samples_per_second": 1.482,
-      "eval_steps_per_second": 0.186,
-      "epoch": 3.0,
-      "step": 84
-    },
-    {
-      "train_runtime": 637.9805,
-      "train_samples_per_second": 4.119,
-      "train_steps_per_second": 0.132,
-      "total_flos": 1580075954012160.0,
-      "train_loss": 0.0,
-      "epoch": 3.0,
-      "step": 84
-    },
-    {
-      "eval_loss": NaN,
-      "eval_bleu_1": 0.027711943751850796,
-      "eval_bleu_4": 0.027711943751850796,
-      "eval_rouge_l": 0.0,
-      "eval_runtime": 119.5063,
-      "eval_samples_per_second": 1.464,
-      "eval_steps_per_second": 0.184,
-      "epoch": 3.0,
-      "step": 84
-    }
-  ]
-}
-
-```
-
-### 3. ❓ Apakah Perlu Tambah Data?
-
-**Pertanyaan:**
-- Apakah Anda ingin **menambah dataset** dari 1,262 samples?
-- Target: 1,500-3,000 samples (sesuai spec)
-
-**Opsi:**
-1. Generate lebih banyak synthetic data via LLM
-2. Implementasi Augmentor (task 10 di tasks.md - optional)
-3. Manual annotation
-
-### 4. ❓ Hyperparameter Tuning?
-
-**Pertanyaan:**
-- Apakah Anda ingin **experiment dengan hyperparameters**?
-
-**Rekomendasi untuk Dicoba:**
+**Contoh**:
 ```python
-# Option 1: Lower learning rate
-learning_rate = 5e-5  # dari 1e-4
+# Batch 1: max_len dalam batch = 128
+# → Semua sequences di-pad ke 128
 
-# Option 2: More epochs
-num_train_epochs = 5  # dari 3
+# Batch 2: max_len dalam batch = 256  
+# → Semua sequences di-pad ke 256
 
-# Option 3: Larger batch size
-per_device_train_batch_size = 16  # dari 8
-gradient_accumulation_steps = 2   # dari 4
+# ✅ Lebih efisien daripada pad semua ke 512!
 ```
 
-### 5. ❓ Evaluation Strategy?
-
-**Pertanyaan:**
-- Apakah Anda ingin **qualitative analysis** dari generated outputs?
-- Apakah perlu **error analysis** untuk identify failure patterns?
-
-**Yang Bisa Dilakukan:**
-1. Analisis sample outputs 
-2. Kategorisasi error types (format, content, hallucination)
-3. Identify misconception tags yang sulit di-generate
+**Output per Batch**:
+```python
+{
+    "input_ids": [[234, 567, ..., 0, 0]],      # Padded
+    "attention_mask": [[1, 1, ..., 0, 0]],     # 1=real, 0=pad
+    "labels": [[890, 456, ..., -100, -100]]    # -100=ignored in loss
+}
+```
 
 ---
 
-## 📋 Ringkasan Status
+### 5. Training Execution
 
-### ✅ Yang Sudah Benar
+**Apa itu**: Eksekusi training loop dengan preprocessed data
 
-1. **Dataset format**: JSONL dengan `input`, `target`, `metadata` ✅
-2. **Tokenization**: Benar, tidak ada overflow ✅
-3. **Preprocessing**: Case-sensitive, code preservation ✅
-4. **Bug identification**: DataCollator issue sudah diidentifikasi ✅
-5. **Model selection**: IndoT5-base (297M) cocok untuk task ✅
+**Cara Kerja**:
+```python
+# Di notebook Section 6
+results = trainer.train(
+    train_dataset=train_dataset,  # Raw dataset (akan di-preprocess)
+    eval_dataset=val_dataset,
+    early_stopping=True
+)
+```
 
-### ⚠️ Yang Perlu Diperbaiki
+**Lokasi Code**:
+- Notebook: Section 6 - Start Training
+- Module: `src/finetuned/training/task_trainer.py` → `train()`
 
-1. **Re-run training** dengan DataCollator fix
-2. **Verify loss > 0.0** dan eval loss bukan NaN
-3. **Monitor metrics improvement** setelah fix
-
-### 🎯 Next Steps
-
-1. **Immediate**: Re-run training dengan fix, verify loss progression
-2. **Short-term**: Evaluate metrics, analyze sample outputs
-3. **Long-term**: Consider data augmentation, hyperparameter tuning
+**Flow Internal**:
+1. Preprocess datasets (tokenization)
+2. Setup DataCollator (dynamic padding)
+3. Initialize Seq2SeqTrainer
+4. Run training loop
 
 ---
 
-**Prepared by:** Kiro AI Assistant  
-**Last Updated:** 20 April 2026
+## Perbandingan: Implementasi vs Spec Design
+
+| Aspek | Spec Design | Implementasi | Status |
+|-------|-------------|--------------|--------|
+| **Tokenizer** | AutoTokenizer | ✅ `AutoTokenizer.from_pretrained()` | ✅ |
+| **T5-Specific** | `text_target` parameter | ✅ Implemented | ✅ |
+| **Padding Strategy** | NO padding di tokenization | ✅ NO `padding=True` | ✅ |
+| **Dynamic Padding** | DataCollator handles it | ✅ `DataCollatorForSeq2Seq` | ✅ |
+| **Label Masking** | `-100` untuk padding | ✅ `label_pad_token_id=-100` | ✅ |
+| **Truncation** | `max_length=512` | ✅ Implemented | ✅ |
+| **Batch Processing** | `batched=True` | ✅ `dataset.map(batched=True)` | ✅ |
+
+---
+
+## Flow Diagram: Text → Model Input
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 1. Raw JSONL Dataset                                        │
+│    {"input": "Apa itu variabel?", "target": "Pertanyaan..."} │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ 2. Load Dataset (DatasetLoader)                             │
+│    Dataset object: [input, target, metadata]                │
+│    Location: Section 3 notebook                             │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ 3. Tokenization (NO Padding)                                │
+│    {"input_ids": [234, 567, ...], "labels": [890, ...]}     │
+│    Location: task_trainer.py → tokenize_function()          │
+│    ⚠️  Variable length, NO padding yet                      │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ 4. Batch Collation (Dynamic Padding)                        │
+│    Batch 1: pad to 128 tokens                               │
+│    Batch 2: pad to 256 tokens                               │
+│    Location: DataCollatorForSeq2Seq                         │
+│    ⚠️  Padding per-batch, memory efficient                  │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ 5. Training Batch (Ready for Model)                         │
+│    {                                                         │
+│      "input_ids": [[234, 567, ..., 0, 0]],                  │
+│      "attention_mask": [[1, 1, ..., 0, 0]],                 │
+│      "labels": [[890, 456, ..., -100, -100]]                │
+│    }                                                         │
+│    Location: Seq2SeqTrainer training loop                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Key Takeaways
+
+### ✅ Best Practices Implemented
+
+1. **AutoTokenizer**: Flexible, auto-detect tokenizer type
+2. **T5-Specific**: `text_target` parameter untuk target sequences
+3. **Memory Efficient**: NO padding di tokenization, dynamic padding per-batch
+4. **Label Masking**: `-100` untuk padding tokens (ignored in loss calculation)
+5. **GPU Optimization**: `pad_to_multiple_of=8` untuk Tensor Cores
+
+### 📊 Memory Savings
+
+- **Static Padding** (pad semua ke 512): ~100% memory usage
+- **Dynamic Padding** (pad per-batch): ~40-60% memory usage
+- **Savings**: 40-60% memory reduction ✅
+
+### 🎯 Kesesuaian dengan Spec
+
+Implementasi preprocessing **100% sesuai** dengan spec design yang telah dibuat:
+- Separation of Concerns (Tokenization ≠ Padding) ✅
+- Dynamic Padding Strategy ✅
+- T5-Specific Parameters ✅
+- Label Masking ✅
+- GPU Optimization ✅
+
+---
+
+## Referensi
+
+- **HuggingFace T5 Documentation**: https://huggingface.co/docs/transformers/model_doc/t5
+- **DataCollatorForSeq2Seq**: https://huggingface.co/docs/transformers/main_classes/data_collator#transformers.DataCollatorForSeq2Seq
+- **Spec Design**: `.kiro/specs/indot5-finetuning/design.md`
+- **Implementation**: `src/finetuned/training/task_trainer.py`
+
+====
+
+
+Baik, saya akan jawab semua pertanyaan Anda secara langsung:
+
+## 1. Apakah kita tidak melakukan preprocessing seperti lowercase, remove special characters, dll?
+
+**TIDAK, kita TIDAK melakukan preprocessing tradisional seperti itu!** 
+
+### Kenapa?
+
+**Alasan 1: Model T5 Sudah Pre-trained dengan Text Asli**
+- IndoNanoT5 di-train dengan text dalam format asli (mixed case, dengan punctuation)
+- Jika kita lowercase/remove special chars → **MISMATCH** dengan training data model
+- Model tidak akan recognize pattern yang sudah dipelajari
+
+**Alasan 2: Informasi Penting Hilang**
+```python
+# ❌ SALAH - Informasi hilang
+"Apa itu variabel?" → "apa itu variabel"  # Kehilangan tanda tanya!
+"Python" → "python"  # Kehilangan kapitalisasi (proper noun)
+
+# ✅ BENAR - Pertahankan format asli
+"Apa itu variabel?" → tetap "Apa itu variabel?"
+```
+
+**Alasan 3: Code Blocks Rusak**
+```python
+# Dataset kita punya code Python
+"print('Hello')" 
+
+# Jika lowercase:
+"print('hello')"  # ❌ Semantik berubah!
+
+# Jika remove special chars:
+"printhello"  # ❌ Code rusak total!
+```
+
+**Alasan 4: Tokenizer Sudah Handle Semuanya**
+- T5Tokenizer sudah dilatih untuk handle:
+  - Mixed case (uppercase/lowercase)
+  - Special characters (!, ?, `, ", dll)
+  - Code syntax (parentheses, quotes, dll)
+  - Markdown formatting (#, **, dll)
+
+### Preprocessing yang Kita Lakukan HANYA:
+1. ✅ **Tokenization** (text → token IDs)
+2. ✅ **Truncation** (potong jika > 512 tokens)
+3. ✅ **Padding** (dynamic, per-batch)
+
+**Tidak ada**: lowercase, remove punctuation, stemming, lemmatization, dll.
+
+---
+
+## 2. Perbedaan Tahap 2 (Tokenizer Loading) vs Tahap 3 (Tokenization)
+
+### **Tahap 2: Tokenizer Loading** = Menyiapkan ALAT
+
+```python
+# Load tokenizer (ALAT untuk tokenize)
+tokenizer = AutoTokenizer.from_pretrained('LazarusNLP/IndoNanoT5-base')
+
+# Ini seperti membeli pisau, tapi belum memotong apa-apa
+```
+
+**Output**: Tokenizer object (alat)
+
+---
+
+### **Tahap 3: Tokenization** = MENGGUNAKAN ALAT
+
+```python
+# Gunakan tokenizer untuk convert text → token IDs
+tokens = tokenizer("Apa itu variabel?")
+
+# Ini seperti MENGGUNAKAN pisau untuk memotong sayuran
+```
+
+**Output**: Token IDs (hasil tokenisasi)
+
+---
+
+### Analogi Sederhana:
+
+| Tahap | Analogi | Dalam Code |
+|-------|---------|------------|
+| **Tokenizer Loading** | Beli pisau | `tokenizer = AutoTokenizer.from_pretrained()` |
+| **Tokenization** | Potong sayuran dengan pisau | `tokenizer("text")` |
+
+**Kesimpulan**: 
+- Tahap 2 = **Persiapan alat** (load tokenizer)
+- Tahap 3 = **Pakai alat** (tokenize text)
+
+---
+
+## 3. Perbedaan Pakai Padding vs Tidak Pakai Padding
+
+### **Tanpa Padding** (Variable Length)
+
+```python
+# Batch dengan 3 samples
+[
+  [234, 567, 890],           # Length: 3
+  [123, 456],                # Length: 2
+  [789, 012, 345, 678, 901]  # Length: 5
+]
+
+# ❌ TIDAK BISA di-process oleh GPU!
+# GPU butuh tensor dengan shape yang sama
+```
+
+**Masalah**: GPU tidak bisa process array dengan panjang berbeda-beda.
+
+---
+
+### **Dengan Padding** (Fixed Length)
+
+```python
+# Pad semua ke length 5 (max dalam batch)
+[
+  [234, 567, 890, 0, 0],     # Length: 5 (padded)
+  [123, 456, 0, 0, 0],       # Length: 5 (padded)
+  [789, 012, 345, 678, 901]  # Length: 5 (original)
+]
+
+# ✅ BISA di-process oleh GPU!
+# Semua array punya panjang yang sama
+```
+
+**Solusi**: Padding membuat semua sequences punya panjang yang sama.
+
+---
+
+### Kenapa Padding Dibutuhkan?
+
+**GPU/Neural Network butuh tensor dengan shape konsisten**:
+```python
+# ❌ TIDAK BISA
+input_shape = (batch_size, variable_length)  # Error!
+
+# ✅ BISA
+input_shape = (batch_size, fixed_length)  # OK!
+```
+
+---
+
+## 4. Apa itu Dynamic Padding dan Kenapa Dibutuhkan?
+
+### **Static Padding** (Buruk ❌)
+
+```python
+# Pad SEMUA sequences ke max_length global (512)
+Batch 1:
+  Sample 1: [234, 567, 890, 0, 0, 0, ..., 0]  # 509 padding tokens!
+  Sample 2: [123, 456, 0, 0, 0, ..., 0]       # 510 padding tokens!
+  
+# Waste memory: 99% adalah padding!
+```
+
+**Masalah**: 
+- Boros memory (banyak padding yang tidak perlu)
+- Slow training (process banyak padding tokens)
+
+---
+
+### **Dynamic Padding** (Bagus ✅)
+
+```python
+# Pad hanya ke max_length DALAM BATCH
+
+Batch 1 (max_len = 5):
+  Sample 1: [234, 567, 890, 0, 0]      # 2 padding
+  Sample 2: [123, 456, 0, 0, 0]        # 3 padding
+  
+Batch 2 (max_len = 10):
+  Sample 3: [789, 012, ..., 0, 0, 0]   # 3 padding
+  Sample 4: [456, 789, ..., 0]         # 1 padding
+
+# Hemat memory: hanya pad seperlunya per batch!
+```
+
+**Keuntungan**:
+- ✅ Hemat memory 40-60%
+- ✅ Training lebih cepat
+- ✅ Flexible (setiap batch beda panjang)
+
+---
+
+### Perbandingan Memory Usage:
+
+| Strategy | Batch 1 | Batch 2 | Total Memory |
+|----------|---------|---------|--------------|
+| **Static Padding** | 512 × 8 = 4,096 | 512 × 8 = 4,096 | 8,192 tokens |
+| **Dynamic Padding** | 128 × 8 = 1,024 | 256 × 8 = 2,048 | 3,072 tokens |
+| **Savings** | - | - | **62% less!** |
+
+---
+
+## 5. Kenapa Perlu Label Masking dengan -100?
+
+### **Masalah: Loss Calculation pada Padding**
+
+```python
+# Target sequence dengan padding
+labels = [890, 456, 789, 0, 0, 0]  # 0 = padding token
+
+# Model prediction
+prediction = [890, 456, 789, 123, 456, 789]
+
+# Loss calculation:
+loss = CrossEntropy(prediction, labels)
+
+# ❌ MASALAH: Model di-penalize karena predict padding!
+# Padding bukan "real" target, tapi model dihukum karena salah predict padding
+```
+
+**Masalah**: Model belajar predict padding tokens (yang tidak penting!)
+
+---
+
+### **Solusi: Label Masking dengan -100**
+
+```python
+# Target dengan label masking
+labels = [890, 456, 789, -100, -100, -100]  # -100 = ignore
+
+# Loss calculation:
+loss = CrossEntropy(prediction, labels)
+# PyTorch IGNORE token dengan value -100
+
+# ✅ SOLUSI: Model TIDAK di-penalize untuk padding
+# Loss hanya dihitung untuk token yang real (890, 456, 789)
+```
+
+**Keuntungan**:
+- ✅ Model fokus belajar predict real tokens
+- ✅ Padding tidak mempengaruhi loss
+- ✅ Training lebih akurat
+
+---
+
+### Visualisasi Loss Calculation:
+
+```python
+# Tanpa masking (-100)
+labels:      [890, 456, 789, 0,    0,    0   ]
+prediction:  [890, 456, 789, 123,  456,  789 ]
+loss:        [0,   0,   0,   HIGH, HIGH, HIGH]  # ❌ Penalized!
+total_loss = (0 + 0 + 0 + HIGH + HIGH + HIGH) / 6
+
+# Dengan masking (-100)
+labels:      [890, 456, 789, -100, -100, -100]
+prediction:  [890, 456, 789, 123,  456,  789 ]
+loss:        [0,   0,   0,   SKIP, SKIP, SKIP]  # ✅ Ignored!
+total_loss = (0 + 0 + 0) / 3  # Hanya hitung real tokens
+```
+
+---
+
+## Summary Jawaban:
+
+1. **Preprocessing tradisional TIDAK dilakukan** karena:
+   - Model sudah pre-trained dengan text asli
+   - Informasi penting hilang (case, punctuation, code)
+   - Tokenizer sudah handle semuanya
+
+2. **Tokenizer Loading vs Tokenization**:
+   - Loading = Persiapan alat (load tokenizer object)
+   - Tokenization = Pakai alat (convert text → tokens)
+
+3. **Padding vs No Padding**:
+   - No padding = Variable length (GPU tidak bisa process)
+   - Padding = Fixed length (GPU bisa process)
+
+4. **Dynamic Padding**:
+   - Pad hanya ke max length dalam batch (bukan global)
+   - Hemat memory 40-60%
+   - Setiap batch bisa beda panjang
+
+5. **Label Masking -100**:
+   - Ignore padding tokens dalam loss calculation
+   - Model tidak di-penalize untuk predict padding
+   - Training lebih akurat dan fokus pada real tokens

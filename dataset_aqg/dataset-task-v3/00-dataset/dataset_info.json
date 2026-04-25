@@ -1,0 +1,102 @@
+{
+  "total": 3181,
+  "splits": {
+    "train": 2544,
+    "validation": 318,
+    "test": 319
+  },
+  "difficulty_distribution": {
+    "overall": {
+      "Mudah": 1154,
+      "Sedang": 1405,
+      "Sulit": 622
+    },
+    "train": {
+      "Sulit": 494,
+      "Sedang": 1114,
+      "Mudah": 936
+    },
+    "validation": {
+      "Sedang": 143,
+      "Sulit": 60,
+      "Mudah": 115
+    },
+    "test": {
+      "Mudah": 103,
+      "Sulit": 68,
+      "Sedang": 148
+    }
+  },
+  "section_distribution": {
+    "overall": {
+      "01-perkenalan-python": 572,
+      "02-berinteraksi-dengan-data": 686,
+      "03-ekspresi": 387,
+      "04-aksi-sekuensial": 480,
+      "05-control-flow": 455,
+      "06-array": 601
+    },
+    "train": {
+      "04-aksi-sekuensial": 387,
+      "01-perkenalan-python": 452,
+      "06-array": 486,
+      "03-ekspresi": 317,
+      "02-berinteraksi-dengan-data": 538,
+      "05-control-flow": 364
+    },
+    "validation": {
+      "05-control-flow": 48,
+      "03-ekspresi": 36,
+      "02-berinteraksi-dengan-data": 78,
+      "01-perkenalan-python": 57,
+      "04-aksi-sekuensial": 50,
+      "06-array": 49
+    },
+    "test": {
+      "04-aksi-sekuensial": 43,
+      "02-berinteraksi-dengan-data": 70,
+      "03-ekspresi": 34,
+      "01-perkenalan-python": 63,
+      "05-control-flow": 43,
+      "06-array": 66
+    }
+  },
+  "deduplication": {
+    "original_count": 3465,
+    "unique_count": 3181,
+    "duplicates_removed": 284
+  },
+  "validation_errors": 0,
+  "file_stats": {
+    "01-perkenalan-python\\01-perkenalan-python.jsonl": 110,
+    "01-perkenalan-python\\02-menjalankan-kode-program-pertama.jsonl": 110,
+    "01-perkenalan-python\\03-bersiap-membuat-kode-program-pertama-di-lokal.jsonl": 124,
+    "01-perkenalan-python\\04-menjalankan-kode-di-program-lokal.jsonl": 105,
+    "01-perkenalan-python\\05-variable-and-assignment.jsonl": 104,
+    "01-perkenalan-python\\06-input-output-and-comment.jsonl": 100,
+    "01-perkenalan-python\\07-rangkuman.jsonl": 119,
+    "02-berinteraksi-dengan-data\\1_abstraksi_data.jsonl": 117,
+    "02-berinteraksi-dengan-data\\2_data_typing.jsonl": 113,
+    "02-berinteraksi-dengan-data\\3_type_data.jsonl": 120,
+    "02-berinteraksi-dengan-data\\4_transformasi_string.jsonl": 120,
+    "02-berinteraksi-dengan-data\\5_operasi_list_set_string.jsonl": 121,
+    "02-berinteraksi-dengan-data\\6_rangkuman.jsonl": 120,
+    "03-ekspresi\\materi1.jsonl": 95,
+    "03-ekspresi\\materi2.jsonl": 86,
+    "03-ekspresi\\materi3.jsonl": 120,
+    "03-ekspresi\\materi4.jsonl": 120,
+    "04-aksi-sekuensial\\materi1.jsonl": 120,
+    "04-aksi-sekuensial\\materi2.jsonl": 120,
+    "04-aksi-sekuensial\\materi3.jsonl": 120,
+    "04-aksi-sekuensial\\materi4.jsonl": 120,
+    "05-control-flow\\materi1.jsonl": 120,
+    "05-control-flow\\materi2.jsonl": 120,
+    "05-control-flow\\materi3.jsonl": 120,
+    "05-control-flow\\materi4.jsonl": 120,
+    "06-array\\materi1.jsonl": 120,
+    "06-array\\materi2.jsonl": 120,
+    "06-array\\materi3.jsonl": 120,
+    "06-array\\materi4.jsonl": 120,
+    "06-array\\materi5.jsonl": 121
+  }
+}

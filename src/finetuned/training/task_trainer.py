@@ -76,9 +76,12 @@ class TaskSpecificTrainer:
                 truncation=True
             )
             
+            # Support both 'target' (v2) and 'output' (v3) field names
+            target_field = "target" if "target" in examples else "output"
+            
             # Tokenize targets - NO PADDING (collator will handle it)
             labels = self.tokenizer(
-                text_target=examples["target"],
+                text_target=examples[target_field],
                 max_length=self.max_length,
                 truncation=True
             )

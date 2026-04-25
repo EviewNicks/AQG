@@ -1,213 +1,387 @@
-Generating 20 sample outputs...
+# 2 Load Model with LoRA 
 
---- Sample 1 ---
-Input: Konteks: # Memformat Kode
+```
+from src.finetuned.utils.model_loader import load_model_with_lora, print_model_info
 
-Jika proses lint atau linting hanya melakukan pengecekan, kali ini adalah arahan gaya penulisan kode agar bisa sesuai denga...
-Reference: Pertanyaan: Untuk menginstal formatter yang dikembangkan di repository Google dengan lisensi Apache, paket yang tepat untuk melengkapi perintah `pip i...
-Prediction: kode. Proses memformat kode sama halnya dengan proses linting atau linning. Memformat Kode Memformat kode adalah proses memformat script. memformat ko...
-BLEU: 0.0000
+# Load model with LoRA - UPDATED: Using IndoT5 (580M params) instead of IndoNanoT5 (248M)
+# IndoNanoT5 was insufficient for complex AQG task
+peft_model, tokenizer = load_model_with_lora(
+    model_name='LazarusNLP/IndoNanoT5-base',  
+    lora_r=8,
+    lora_alpha=16,
+    lora_dropout=0.1,
+    target_modules=['q', 'v']
+)
 
---- Sample 2 ---
-Input: Konteks: ## Lint
+# Print detailed info
+print_model_info(peft_model, tokenizer)
+```
 
-Lint adalah proses pengecekan kode atas kemungkinan terjadi kesalahan (error), termasuk dalam proses ini adalah mengecek kesesuaian ...
-Reference: Pertanyaan: Berdasarkan deskripsi fungsi pada teks, string apa yang tepat untuk melengkapi perintah terminal berikut agar fokus secara spesifik pada p...
-Prediction: lint dan linting.  Konteks Konteks: ## Lint Lint adalah proses pengecekan kode Python atas kemungkinan terjadi kesalahan( warning) pemrograman. ```bas...
-BLEU: 0.0000
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/utils/_auth.py:103: UserWarning: 
+Error while fetching `HF_TOKEN` secret value from your vault: 'Requesting secret HF_TOKEN timed out. Secrets can only be fetched when running from the Colab UI.'.
+You are not authenticated with the Hugging Face Hub in this notebook.
+If the error persists, please let us know by opening an issue on GitHub (https://github.com/huggingface/huggingface_hub/issues/new).
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
 
---- Sample 3 ---
-Input: Konteks: ## Penamaan Deskriptif
+✓ Base model loaded
+✓ LoRA applied: r=8, alpha=16, target=['q', 'v']
+  Trainable: 884,736 (0.36%)
+  Total:     248,462,592
+✓ Model device: cuda:0
+  GPU allocated: 1.00 GB
 
-Penamaan deskriptif adalah cara untuk memberikan nama yang informatif, jelas, dan sesuai dengan tujuan dari elemen ko...
-Reference: Pertanyaan: Berdasarkan teks, manakah contoh penamaan bergaya CapWords yang benar untuk singkatan atau akronim? Jawaban benar: HTTPServerError. Distra...
-Prediction: Case / camelCases  mixedCaSE / CameralCate Campuran CampurCasing CamppurCampCampCampCampCampCampCampCamp dengan garis bawah  Huruf besar semua BesarDi...
-BLEU: 0.0000
+=== Model Information ===
+Model type: PeftModelForSeq2SeqLM
+Tokenizer: T5Tokenizer
+Vocab size: 32000
+Pad token: <pad> (ID: 0)
+EOS token: </s> (ID: 1)
 
---- Sample 4 ---
-Input: Konteks: ## Matriks dalam Matematika
+Parameters:
+  Total: 248,462,592
+  Trainable: 884,736 (0.36%)
+  Frozen: 247,577,856
 
-Matriks dalam matematika merupakan sekumpulan bilangan, simbol, atau ekspresi yang disusun berdasarkan **baris**...
-Reference: Pertanyaan: Apa perbedaan tipe data elemen antara Matriks Pengukuran dan Matriks Satuan berdasarkan teks? Jawaban benar: Matriks Pengukuran bertipe fl...
-Prediction: ) Matriks dalam Matematika : ## Matrik dalam Matematika ## Konteks: Konteks  Matrik Matrik Matrik Matrik Matrik Matrik Matrik Matrik Matrik Matrik Mat...
-BLEU: 0.0000
+# 3 Load Dataset 
 
---- Sample 5 ---
-Input: Konteks: ## Mengalikan Elemen Matriks dengan Konstanta
+```
 
-Mari pelajari salah satu operasi — **mengalikan elemen matriks dengan konstanta**. Dalam matem...
-Reference: Pertanyaan: Berdasarkan logika operasi matriks dengan konstanta yang dijelaskan dalam konteks, apa hasil representasi list Python dari matriks [[5, 0]...
-Prediction: matriks dengan konstanta `2` ( matriks 2×2 ) . perkalian elemen matriks dengan Konstanta ## Mengalikan Elemen Matriks dengan Konstanta Dalam Matematik...
-BLEU: 0.0000
+from src.finetuned.data.dataset_loader import DatasetLoader
 
---- Sample 6 ---
-Input: Konteks: ## Override
+loader = DatasetLoader()
+TASK_DIR = '/content/dataset_aqg/dataset-task-spesifc/'
 
-Ketika kita membuat method baru di kelas turunan dengan nama yang **sama** seperti method di kelas induk, method baru tersebut a...
-Reference: Pertanyaan: Berdasarkan contoh kode, angka berapakah yang tepat mengisi bagian kosong pada baris `self.kecepatan += ___` di dalam method `tambah_kecep...
-Prediction: (override) method dari kelas induk akan menimpa( override methode) methods dari kelas induknya.( over ride ) metod dari kelas turunan ke kelas turunan...
-BLEU: 0.1146
+# Copy dataset from Drive if needed
+if not os.path.exists(TASK_DIR + 'train.jsonl'):
+    drive_task = f'{DRIVE_ROOT}/dataset-task-spesifc'
+    os.makedirs(TASK_DIR, exist_ok=True)
+    for f in ['train.jsonl', 'validation.jsonl', 'test.jsonl']:
+        shutil.copy(f'{drive_task}/{f}', f'{TASK_DIR}{f}')
+    print('✓ Dataset copied from Drive')
 
---- Sample 7 ---
-Input: Konteks: ## Super
+# Load datasets
+train_dataset = loader.load_dataset(TASK_DIR, split='train')
+val_dataset = loader.load_dataset(TASK_DIR, split='validation')
+test_dataset = loader.load_dataset(TASK_DIR, split='test')
 
-Bagaimana jika kita ingin menggunakan method dari kelas induk sekaligus menambahkan perilaku baru, tanpa menulis ulang semua kode? ...
-Reference: Pertanyaan: Pada kelas MobilSport, untuk menjalankan method tambah_kecepatan milik kelas induk sebelum menambahkan pesan peringatan, kode yang tepat u...
-Prediction: kecepatan! Hati-Hati!" ## Super Konteks Konteks: ## super class Konteksnya: # Kecepatan Anda meningkat! Hati... Konteks _kecepatan Konteks_kelambatan_...
-BLEU: 0.0000
+print(f'\nDataset loaded:')
+print(f'  Train: {len(train_dataset)} samples')
+print(f'  Val:   {len(val_dataset)} samples')
+print(f'  Test:  {len(test_dataset)} samples') 
 
---- Sample 8 ---
-Input: Konteks: # Menjalankan Kode Program Pertama
+```
 
-Setelah Anda mengerti sejarah singkat Python, mari kita belajar menjalankan kode program pertama Anda. Me...
-Reference: Pertanyaan: Apa fungsi dari sintaks `print()` dalam Python berdasarkan konteks di atas? Jawaban benar: Memberikan perintah menampilkan pesan ke layar ...
-Prediction: pemrograman Python. Konteks Konteks: Konteks # Konteks Menjalankan Kode Program Pertama Konteks konteks: # Menjalani Kode Program pertama Konteks Menj...
-BLEU: 0.0000
 
---- Sample 9 ---
-Input: Konteks: # Rangkuman: Array dan Pemrosesannya
+✓ Loaded 211 entries from /content/dataset_aqg/dataset-task-spesifc/test.jsonl
 
-Kita sudah berada di penghujung materi Array dan Pemrosesannya. Sampai sini, Anda telah mempelajari sal...
-Reference: Pertanyaan: Apa yang dimaksud dengan pemrosesan sekuensial pada array? Jawaban benar: Memproses elemen array satu per satu secara berurutan. Distrakto...
-Prediction: Konteks: Konteks Konteks Rangkuman Konteks # Konteks# KonteksKonteks: # Koneksi Konteks Penyusunanray dan Pemrosesannya Konteks Konteks Konteks Array ...
-BLEU: 0.0000
+Dataset loaded:
+  Train: 876 samples
+  Val:   175 samples
+  Test:  211 samples
 
---- Sample 10 ---
-Input: Konteks: ### Contoh: Urutan mempengaruhi hasil
+```
+# Validate and preview dataset
+validation_results = loader.validate_dataset(train_dataset)
+
+sample = train_dataset[0]
+print('\n=== Sample Entry ===')
+print(f"Input: {sample['input']}...")
+print(f"Target: {sample['target']}...")
+
+```
+
+=== Dataset Validation Summary ===
+Total Entries: 876
+Duplicate Count: 649
+Avg Input Length: 707.47 chars
+Avg Target Length: 140.21 chars
+Has Metadata: False
+⚠ Warning: Found 649 duplicate entries
+
+=== Sample Entry ===
+Input: ### Perbandingan Penggunaan Memori
 
 ```python
-a = 6
-b = 9
+import numpy
+import sys
 
-print(a**2)
-print(b//3)
+var_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+var_array = numpy.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+print("Ukuran keseluruhan elemen list dalam bytes =", sys.getsizeof(var_list) * len(var_list))
+print("Ukuran keseluruhan elemen NumPy dalam bytes =", var_array.size * var_array.itemsize)
 
 """
 Output:
-36
-3
+Ukuran keseluruhan elemen list dalam bytes = 240
+Ukuran keseluruhan elemen NumPy dalam bytes = 72
 """
 ```
-Jika urutan `print()` diubah:...
-Reference: Pertanyaan: Perhatikan kode berikut!
-```python
-a = 6
-b = 9
+Dengan matriks yang sama, NumPy hanya menggunakan **72 bytes** dibanding list Python yang menggunakan **240 bytes** — inilah alasan banyak programmer memilih NumPy untuk memproses matriks. > **Catatan:** Seluruh materi pada modul ini akan menggunakan list Python untuk mengimplementasikan matriks, agar kita memahami fundamental matriks tanpa melibatkan library apa pun....
+Target: Sesuai catatan modul yang menggunakan list Python untuk matriks, lengkapi kode berikut untuk menghitung ukuran memori list: import sys; var_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]; ukuran_memori = ________________.?...
 
-print(a**2)
-print(b//3)
+# 4  Baseline Evaluation ( Pre-Training )
+
+
 ```
-Apa output yang ditampilkan pada baris pertama? Jawaban benar:...
-Prediction: Urutan mempengaruhi hasil `print() `python a = 6 b = 9 print( b//3) print( assets/urutan-print. jpeg) ### Konteks:### Contoh: Urutan mempengaruhi urut...
-BLEU: 0.2780
+from src.finetuned.evaluation.metrics_calculator import MetricsCalculator
+from src.finetuned.evaluation.model_evaluator import ModelEvaluator
 
---- Sample 11 ---
-Input: Konteks: ## List Comprehension
+metrics_calc = MetricsCalculator()
+evaluator = ModelEvaluator(
+    model=peft_model,
+    tokenizer=tokenizer,
+    metrics_calculator=metrics_calc
+)
 
-Cara ringkas untuk menghasilkan list baru berdasarkan list atau iterable yang sudah ada. **Cara konvensional:**
-```pyt...
-Reference: Pertanyaan: Perhatikan kode berikut!
-```python
-angka = [1, 2, 3, 4]
-pangkat = []
-for n in angka:
-    ________
-print(pangkat)
+print('Computing baseline metrics (10 samples)...')
+baseline_metrics = evaluator.evaluate_on_test_set(
+    test_dataset=val_dataset,
+    num_beams=4,
+    include_bertscore=False,
+    max_samples=10
+)
+
+print(f"\nBaseline Metrics:")
+print(f"  BLEU-4:  {baseline_metrics.get('bleu_4', 0):.4f}")
+print(f"  ROUGE-L: {baseline_metrics.get('rouge_l', 0):.4f}")
+
 ```
-Kode di atas akan men...
-Prediction: list comprehension atau iterable yang sudah ada sebelumnya List Comprehension ## List Completion List Commprehension List com list atau list iter list...
-BLEU: 0.0486
 
---- Sample 12 ---
-Input: Konteks: ## Operator Logika
+Computing baseline metrics (10 samples)...
 
-Operator untuk melakukan operasi logika dengan operan bertipe boolean. Asumsikan `p = True` dan `q = False`:
+============================================================
+EVALUATING ON TEST SET
+============================================================
 
-| Operator ...
-Reference: Pertanyaan: Perhatikan kode berikut!
-```python
-p = True
-q = False
-hasil = (not p and q) or (p and not q)
-print(hasil)
+Evaluating 10 samples...
+  Processed 10/10 samples...
+✓ Generated 10 predictions
+Computing metrics for 10 samples...
+  Computing BLEU...
+
+Computing Diversity...
+✓ All metrics computed
+
+============================================================
+Test Set Evaluation Results
+============================================================
+
+BLEU Scores:
+  BLEU:     0.0199
+  BLEU-1:   0.1240
+  BLEU-2:   0.0291
+  BLEU-3:   0.0131
+  BLEU-4:   0.0033
+
+ROUGE Scores:
+  ROUGE-1:  0.1037
+  ROUGE-2:  0.0167
+  ROUGE-L:  0.0940
+
+Diversity:
+  Distinct-1: 0.5016
+  Distinct-2: 0.8070
+
+============================================================
+
+Baseline Metrics:
+  BLEU-4:  0.0033
+  ROUGE-L: 0.0940
+
+
+# 5 Configure Training
+
 ```
-Berdasarkan tabel kebenaran ...
-Prediction:  `not q` → `False`  AND `AND` hanya menghasilkan `True` jika **salah satu** operan bernilai `false`:   operator logika operator logika operator logika...
-BLEU: 0.0455
+from src.finetuned.training.task_trainer import TaskSpecificTrainer
 
---- Sample 13 ---
-Input: Konteks: # Pengenalan Python
+CHECKPOINT_DIR = '/content/drive/MyDrive/dataset_aqg/checkpoints/aqg'
 
-Halo, calon programmer! Selamat datang pada modul pertama kelas **Memulai Pemrograman dengan Python**. Sebelum Anda mula...
-Reference: Pertanyaan: Apa ciri khas Python yang paling dikenal terkait penggunaan tanda baca pada akhir kode program? Jawaban benar: Python tidak mewajibkan pen...
-Prediction: ``` python print( "Hello world!") ` ``python `print( `Hello World!" ` ` Halo, calon programmer! Selamat datang di kelas pengenalan Python. pengenalan ...
-BLEU: 0.0000
+# Initialize trainer (all logic in task_trainer.py)
+trainer = TaskSpecificTrainer(
+    model=peft_model,
+    tokenizer=tokenizer,
+    output_dir=CHECKPOINT_DIR,
+    max_length=512,
+    metrics_calculator=metrics_calc
+)
 
---- Sample 14 ---
-Input: Konteks: ## Case-sensitive
+print('✓ Trainer initialized')
+print(f'  Checkpoints will be saved to: {CHECKPOINT_DIR}')
 
-Python adalah bahasa pemrograman yang **case-sensitive** — huruf besar dan kecil diperlakukan sebagai karakter yang berbed...
-Reference: Pertanyaan: Perhatikan kode berikut:
-```python
-teks = "Dicoding"
-Teks = "Indonesia"
-
-print(teks)
-print(Teks)
-print(TEks)
 ```
-Apa yang akan terjadi saa...
-Prediction: Python case-sensitive Conteks: ## Case-sensitivity Python case sensitive Python adalah bahasa pemrograman yang (case-sensitive**) Python Python Python...
-BLEU: 0.0000
 
---- Sample 15 ---
-Input: Konteks: ## One-liner
+✓ Trainer initialized
+  Checkpoints will be saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/aqg
 
-**One-liner** adalah gaya penulisan Python yang memungkinkan Anda membuat kode hanya dalam satu baris — singkat dan jelas. Sala...
-Reference: Pertanyaan: Apa yang dimaksud dengan one-liner dalam Python? Jawaban benar: Gaya penulisan Python yang memungkinkan membuat kode hanya dalam satu bari...
-Prediction: One-liner Python one-liner python one liner One-line Python One-Line Python adalah gaya penulisan Python. One-lining python adalah one-line python.-li...
-BLEU: 0.0000
+# 6 Start Training
 
---- Sample 16 ---
-Input: Konteks: ### Langkah-langkah
+```
+import time
 
-1. Buka IDE atau editor kode Anda, misalnya **Visual Studio Code**. 2. Buka folder kerja melalui **File > Open Folder** ...
-Reference: Pertanyaan: Berdasarkan langkah-langkah yang dijelaskan, perintah apa yang harus diketikkan di terminal untuk menjalankan file Python bernama "first-p...
-Prediction: Python first-program. py nama-file. pl ```bash python First-Program. Python First Program. Py First-Program. PY  Nama-file Python PythonFirst-program ...
-BLEU: 0.0000
+start_time = time.time()
 
---- Sample 17 ---
-Input: Konteks: ## Akses Elemen Matriks
+print('Starting task-specific AQG training...')
+print('='*60)
 
-Untuk mengakses elemen matriks, gunakan metode *indexing* dengan mengetahui indeks **baris** dan **kolom**. ![Strukt...
-Reference: Pertanyaan: Manakah definisi yang benar untuk setiap komponen dalam sintaks `<namamatriks>[<nbrs>][<nkol>]`? Jawaban benar: `<namamatriks>` variabel m...
-Prediction: ) Konteks Konteks: ## Akses Elemen Matriks Konteks konteks Koneksi Konteks ## Konteks Conteks Konektivitas: # # Akses Element Matrik Akses Eleman Matr...
-BLEU: 0.0000
+# Train (all logic in task_trainer.py)
+results = trainer.train(
+    train_dataset=train_dataset,
+    eval_dataset=val_dataset,
+    early_stopping=True,
+    early_stopping_patience=2
+)
 
---- Sample 18 ---
-Input: Konteks: ## Assignment
+elapsed = (time.time() - start_time) / 3600
+print(f'\n✓ Training completed in {elapsed:.2f} hours')
+print(f'  Final training loss: {results["training_loss"]:.4f}')
 
-Assignment merupakan proses **pemberian atau penetapan nilai pada sebuah variabel**. Dalam Python, proses assignment mengikuti...
-Reference: Pertanyaan: Dalam proses assignment Python, apa yang harus berada di ruas kiri? Jawaban benar: variabel. Distraktor: 1) ekspresi 2) nilai 3) konstanta...
-Prediction: kiri dan ruas kanan. ## Assignment Konteks: ## Python Assignmen Assign merupakan proses pemberian atau penetapan nilai pada sebuah variabel. kanan dan...
-BLEU: 0.0000
+```
 
---- Sample 19 ---
-Input: Konteks: # Membuat matriks 2x2
 
-var_mat = [[5, 0],
-           [1, -2]]
-def_mat = [[0 for j in range(2)] for i in range(2)]
+Parameter 'function'=<function TaskSpecificTrainer.preprocess_dataset.<locals>.tokenize_function at 0x7f347561eca0> of the transform datasets.arrow_dataset.Dataset._map_single couldn't be hashed properly, a random hash was used instead. Make sure your transforms and parameters are serializable with pickle or dill for the dataset fingerprinting and caching to work. If you reuse this transform, the caching mechanism will consider it to be different from the previous calls and recompute everything. This warning is only showed once. Subsequent hashing failures won't be showed.
+WARNING:datasets.fingerprint:Parameter 'function'=<function TaskSpecificTrainer.preprocess_dataset.<locals>.tokenize_function at 0x7f347561eca0> of the transform datasets.arrow_dataset.Dataset._map_single couldn't be hashed properly, a random hash was used instead. Make sure your transforms and parameters are serializable with pickle or dill for the dataset fingerprinting and caching to work. If you reuse this transform, the caching mechanism will consider it to be different from the previous calls and recompute everything. This warning is only showed once. Subsequent hashing failures won't be showed.
+Starting task-specific AQG training...
 
-for i in range(len(var_mat...
-Reference: Pertanyaan: Berdasarkan kode pada konteks, pada baris `for j in range(____):`, nilai apa yang mengisi bagian `____` agar sesuai dengan logika iterasi ...
-Prediction: "" Output: 10, 0, 2, -4 """ "" " ""Output: "" Output output: 0, "0"  print( def_mat) """, .an: var_mat = 1 + 2  matriks matriks. 2 matriks...
-BLEU: 0.0590
 
---- Sample 20 ---
-Input: Konteks: # Rangkuman: Ekspresi
+Starting task-specific AQG training...
+============================================================
 
-Kita sudah berada di penghujung materi Ekspresi. Sampai sini, Anda memiliki pemahaman mendasar mengenai ekspresi yang ...
-Reference: Pertanyaan: Apa tujuan utama dari sebuah ekspresi dalam pemrograman berdasarkan definisi yang diberikan? Jawaban benar: menghasilkan suatu nilai dalam...
-Prediction: : # Rangkuman Ekspresi Konteks Konteks: # Konteks # Koneksi Konteks Konteks# Konteks Ekspresi # Kontext:an: #an Ekspresian:an:an Ekspresan:an:an: Eksp...
-BLEU: 0.0000
+============================================================
+STARTING TASK-SPECIFIC AQG TRAINING
+============================================================
+
+Preprocessing datasets...
+Preprocessing 876 samples...
+
+✓ Preprocessed 175 samples
+  Note: Padding and label masking will be handled by DataCollatorForSeq2Seq
+
+=== Training Configuration ===
+Epochs: 3
+Batch size: 8
+Gradient accumulation: 4
+Effective batch size: 32
+Learning rate: 0.0001
+Warmup steps: 50
+FP16: True
+Train samples: 876
+Eval samples: 175
+Metrics: BLEU-4, ROUGE-L
+
+Starting training...
+
+=== Final Evaluation Metrics ===
+eval_loss: nan
+eval_bleu_1: 0.0240
+eval_bleu_4: 0.0240
+eval_rouge_l: 0.0000
+eval_runtime: 101.6246
+eval_samples_per_second: 1.7220
+eval_steps_per_second: 0.2160
+✓ Training results saved to /content/drive/MyDrive/dataset_aqg/checkpoints/aqg/training_results.json
+
+✓ Training completed in 0.19 hours
+  Final training loss: 0.0000
+
+# Evaluasi AKhir 
+
+```
+import json
+from pathlib import Path
+
+# Compare with baseline
+comparison = evaluator_final.compare_with_baseline(
+    finetuned_metrics=final_metrics,
+    baseline_metrics=baseline_metrics
+)
+
+# Save evaluation report
+Path(EVAL_DIR).mkdir(parents=True, exist_ok=True)
+report = {
+    'baseline_metrics': baseline_metrics,
+    'final_metrics': final_metrics,
+    'comparison': comparison,
+    'training_time_hours': elapsed,
+    'model_path': model_path,
+    'config': {
+        'learning_rate': 1e-4,
+        'batch_size': 32,
+        'epochs': 3,
+        'lora_r': 8,
+        'lora_alpha': 16
+    }
+}
+
+with open(f'{EVAL_DIR}/evaluation_report.json', 'w') as f:
+    json.dump(report, f, indent=2, default=str)
+
+# Print summary
+print('\n' + '='*60)
+print('TASK-SPECIFIC AQG TRAINING SUMMARY')
+print('='*60)
+print(f'Training Time: {elapsed:.2f} hours')
+print(f'Model saved: {model_path}')
+print(f'\nMetrics Comparison:')
+print(f"  BLEU-4:       {baseline_metrics.get('bleu_4',0):.4f} → {final_metrics.get('bleu_4',0):.4f}")
+print(f"  ROUGE-L:      {baseline_metrics.get('rouge_l',0):.4f} → {final_metrics.get('rouge_l',0):.4f}")
+print(f"  BERTScore F1: {baseline_metrics.get('bertscore_f1',0):.4f} → {final_metrics.get('bertscore_f1',0):.4f}")
+
+bleu_improvement = comparison.get('bleu_4_improvement_pct', 0)
+print(f'\nBLEU-4 Improvement: {bleu_improvement:+.1f}%')
+
+if final_metrics.get('bleu_4', 0) >= 0.35:
+    print('\n✓ SUCCESS: BLEU-4 target achieved (>= 0.35)')
+else:
+    print(f"\n⚠ BLEU-4 = {final_metrics.get('bleu_4',0):.4f} (target: >= 0.35)")
+    print('  Consider: more epochs, lower lr, or larger dataset')
+
+print('\n✓ Fine-tuning pipeline complete!')
+print(f'  Evaluation report: {EVAL_DIR}/evaluation_report.json')
+print(f'  Sample outputs: {EVAL_DIR}/sample_outputs.json')
+
+```
+
+============================================================
+COMPARING WITH BASELINE
+============================================================
+
+Metric                        Baseline   Fine-tuned  Improvement
+-----------------------------------------------------------------
+bleu                            0.0336       0.0303       -9.72%
+bleu_1                          0.1578       0.1330      -15.69%
+bleu_2                          0.0504       0.0388      -22.96%
+bleu_3                          0.0198       0.0175      -11.44%
+bleu_4                          0.0081       0.0093       15.50%
+brevity_penalty                 1.0000       1.0000        0.00%
+length_ratio                    1.6752       1.7371        3.70%
+rouge_1                         0.1715       0.1638       -4.49%
+rouge_2                         0.0573       0.0546       -4.79%
+rouge_l                         0.1379       0.1335       -3.22%
+rouge_1_fmeasure                0.1715       0.1638       -4.49%
+rouge_2_fmeasure                0.0573       0.0546       -4.79%
+rouge_l_fmeasure                0.1379       0.1335       -3.22%
+distinct_1                      0.5610       0.2068      -63.14%
+distinct_2                      0.8646       0.5051      -41.58%
+
+============================================================
+TASK-SPECIFIC AQG TRAINING SUMMARY
+============================================================
+Training Time: 0.19 hours
+Model saved: /content/drive/MyDrive/dataset_aqg/checkpoints/aqg/indot5-python-aqg
+
+Metrics Comparison:
+  BLEU-4:       0.0081 → 0.0093
+  ROUGE-L:      0.1379 → 0.1335
+  BERTScore F1: 0.0000 → 0.6383
+
+BLEU-4 Improvement: +15.5%
+
+⚠ BLEU-4 = 0.0093 (target: >= 0.35)
+  Consider: more epochs, lower lr, or larger dataset
+
+✓ Fine-tuning pipeline complete!
+  Evaluation report: /content/drive/MyDrive/dataset_aqg/evaluation_results/evaluation_report.json
+  Sample outputs: /content/drive/MyDrive/dataset_aqg/evaluation_results/sample_outputs.json

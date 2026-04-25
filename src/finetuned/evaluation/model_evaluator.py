@@ -144,7 +144,10 @@ class ModelEvaluator:
                 print(f"  Processed {i + 1}/{len(test_dataset)} samples...")
             
             input_text = sample["input"]
-            reference = sample["target"]
+            # Support both 'target' (v2) and 'output' (v3) field names
+            reference = sample.get("target") or sample.get("output")
+            if reference is None:
+                raise ValueError(f"Sample {i} missing both 'target' and 'output' fields")
             
             # Generate prediction
             prediction = self.generate_prediction(
@@ -203,7 +206,10 @@ class ModelEvaluator:
         for i, idx in enumerate(indices):
             sample = test_dataset[idx]
             input_text = sample["input"]
-            reference = sample["target"]
+            # Support both 'target' (v2) and 'output' (v3) field names
+            reference = sample.get("target") or sample.get("output")
+            if reference is None:
+                raise ValueError(f"Sample {idx} missing both 'target' and 'output' fields")
             
             # Generate prediction
             prediction = self.generate_prediction(
