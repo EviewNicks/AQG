@@ -64,8 +64,10 @@ def process_jsonl_file(filepath):
 
 if __name__ == '__main__':
     files = [
-        'dataset_aqg/dataset-task-v3/01-perkenalan-python/05-variable-and-assignment.jsonl',
-        'dataset_aqg/dataset-task-v3/01-perkenalan-python/06-input-output-and-comment.jsonl',
+        'dataset_aqg\dataset-task-v3/00-dataset/accumulated.jsonl',
+        'dataset_aqg\dataset-task-v3/00-dataset/test.jsonl',
+        'dataset_aqg\dataset-task-v3/00-dataset/train.jsonl',
+        'dataset_aqg\dataset-task-v3/00-dataset/validation.jsonl',
     ]
     
     total_changes = 0

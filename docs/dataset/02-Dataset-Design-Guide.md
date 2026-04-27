@@ -345,6 +345,40 @@ buat_soal_pilihan_ganda: [PLAIN TEXT CONTEXT]
 - Jangan membuat terlalu banyak variasi code yang mirip
 - Fokus pada pemahaman konsep, bukan hanya sintaks
 
+### 4.5 Knowledge-Only Dataset (Khusus Materi Tertentu)
+
+**SPECIAL CASE:** Untuk materi rangkuman/review ATAU materi yang secara eksplisit diminta knowledge-only, dataset dapat dibuat 100% konseptual tanpa code blocks.
+
+**Karakteristik:**
+- 100% soal konseptual/knowledge-based
+- Tidak ada code blocks dalam input maupun output
+- Fokus pada pemahaman teori, definisi, dan konsep
+- Cocok untuk materi rangkuman yang merangkum konsep-konsep sebelumnya
+
+**Contoh Knowledge-Only Sample:**
+```json
+{
+  "input": "buat_soal_pilihan_ganda: Matriks dalam matematika merupakan himpunan bilangan atau elemen yang disusun berdasarkan baris dan kolom. Setiap elemen dapat diakses melalui metode indexing jika kedua indeks diketahui.",
+  "output": "question: Apa yang dimaksud dengan matriks dalam matematika?\nanswer: Himpunan bilangan atau elemen yang disusun berdasarkan baris dan kolom\ndistractors: Kumpulan data yang disusun secara acak | Array satu dimensi dengan banyak elemen | Struktur data yang hanya memiliki baris"
+}
+```
+
+**Kapan Menggunakan:**
+- Materi rangkuman/review
+- Materi yang fokus pada teori dan konsep
+- Materi pengenalan tanpa implementasi praktis
+- Materi yang secara eksplisit diminta knowledge-only oleh pengguna (misalnya: inheritance, duck typing, prosedur, dll.)
+
+**Daftar Materi yang Menggunakan Knowledge-Only (Confirmed):**
+- `09-oop/03-inheritence.md` → Knowledge-only (konsep pewarisan, override, super)
+- `09-oop/01-duck-typing.md` → Knowledge-only (konsep duck typing)
+
+**Aturan Tambahan untuk Knowledge-Only:**
+- Input context harus menjelaskan konsep secara lengkap dalam 2-3 kalimat
+- Distractor harus plausibel secara konseptual, bukan hanya kata-kata acak
+- Soal harus menguji pemahaman konsep, bukan hafalan istilah semata
+- Variasikan tipe pertanyaan: definisi, perbandingan, tujuan/manfaat, mekanisme
+
 ---
 
 ## 8. COMPARISON: JSON vs JSONL vs CSV
