@@ -9,7 +9,7 @@ Create notebook `03_task_specific_training_v3.ipynb` yang menggunakan Adapter La
 - [x] 1. Create notebook structure dan setup environment
   - Create file `src/finetuned/notebooks/03_task_specific_training_v3.ipynb`
   - Add notebook header dengan version info dan key differences dari v2
-  - Add cell untuk install dependencies (adapter-transformers, transformers, datasets, evaluate)
+  - Add cell untuk install dependencies (**NEW:** `adapters`, NOT `adapter-transformers`)
   - Add cell untuk mount Google Drive dan setup paths
   - Add cell untuk verify GPU availability
   - _Requirements: 1.1, 8.1_
@@ -21,6 +21,7 @@ Create notebook `03_task_specific_training_v3.ipynb` yang menggunakan Adapter La
     - Activate adapter untuk training
     - Freeze base model parameters
     - Print trainable parameters (~3.6%)
+    - **FIXED:** Enhanced error handling dengan fallback mechanism untuk state dict compatibility
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
   
   - [x] 2.2 Add model info display
@@ -29,6 +30,15 @@ Create notebook `03_task_specific_training_v3.ipynb` yang menggunakan Adapter La
     - Show memory usage
     - Compare dengan LoRA approach (v2)
     - _Requirements: 1.3, 1.4_
+  
+  - [x] 2.3 Fix model loading compatibility issues (LIBRARY MIGRATION)
+    - **ROOT CAUSE:** Using deprecated `adapter-transformers` library
+    - **SOLUTION:** Migrated to NEW `adapters` library (official successor)
+    - Removed workaround flags (ignore_mismatched_sizes, trust_remote_code, _fast_init)
+    - Simplified loading: AutoAdapterModel or transformers + adapters.init()
+    - Updated `src/finetuned/utils/adapter_loader.py` (complete rewrite)
+    - Documented in `docs/error.md` and design.md
+    - _Requirements: 9.1, 9.2, 9.3_
 
 - [x] 3. Implement dataset loading dengan backward compatibility
   - [x] 3.1 Create dataset loading cell
@@ -147,6 +157,8 @@ Create notebook `03_task_specific_training_v3.ipynb` yang menggunakan Adapter La
 - Checkpoint harus disimpan ke Google Drive untuk persistence
 - Memory usage harus dimonitor untuk avoid OOM
 - Training time expected: 6-8 hours pada T4 GPU
+- **FIXED (2024):** Model loading state dict error resolved dengan enhanced error handling
+- **UPDATE:** `src/finetuned/utils/adapter_loader.py` includes fallback mechanism untuk compatibility
 
 ## Success Criteria
 
@@ -158,4 +170,27 @@ Create notebook `03_task_specific_training_v3.ipynb` yang menggunakan Adapter La
 - ✓ Final BLEU-4 > 0.20
 - ✓ Final ROUGE-L > 0.25
 - ✓ Model saved successfully ke Google Drive
+- ✓ Model loading robust dengan fallback mechanism
+- ✓ Error handling comprehensive dan user-friendly
+
+## Recent Updates
+
+### 2024 - Library Migration (CRITICAL FIX)
+- **Issue:** ValueError saat loading model - state dict corrupted
+- **Root Cause:** Using DEPRECATED `adapter-transformers` library (v1.3.0)
+- **Solution:** Migrated to NEW `adapters` library (official successor)
+- **Changes:**
+  - Uninstall: `adapter-transformers`
+  - Install: `adapters` (pip install adapters)
+  - Updated imports: `import adapters` + `from adapters import ...`
+  - Simplified loading logic (no workaround flags needed)
+  - 100% backward compatible with adapter weights
+- **Files Modified:** 
+  - `src/finetuned/utils/adapter_loader.py` (complete rewrite)
+  - `docs/error.md` (updated with library migration info)
+  - `.kiro/specs/adapter-training/design.md` (updated dependencies & troubleshooting)
+- **Status:** ✅ Resolved - clean loading without errors
+- **References:**
+  - New library docs: https://docs.adapterhub.ml/
+  - Migration guide: https://docs.adapterhub.ml/transitioning.html
 

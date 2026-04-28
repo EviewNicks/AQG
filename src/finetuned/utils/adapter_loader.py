@@ -1,11 +1,17 @@
 """
 Adapter Model Loader for IndoNanoT5
 Handles loading base model and adding adapter layers for parameter-efficient fine-tuning.
+
+IMPORTANT: This module uses the NEW 'adapters' library (not 'adapter-transformers').
+- adapter-transformers is DEPRECATED and has compatibility issues
+- adapters is the official successor with full backward compatibility
+- Install: pip install adapters (NOT adapter-transformers)
 """
 
 import torch
+import adapters
 from adapters import AutoAdapterModel, AdapterConfig
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from typing import Tuple
 
 
@@ -41,15 +47,29 @@ def load_model_with_adapter(
     print("LOADING MODEL WITH ADAPTER LAYERS")
     print(f"{'='*60}")
     
-    # Load base model
+    # Load base model using NEW adapters library approach
     print(f'Loading base model: {model_name}')
-    model = AutoAdapterModel.from_pretrained(model_name)
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    print('✓ Base model loaded')
+    print('  Using NEW adapters library (not adapter-transformers)')
     
-    # Configure adapter
+    # Method 1: Use AutoAdapterModel (recommended for T5)
+    try:
+        model = AutoAdapterModel.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        print('✓ Base model loaded with AutoAdapterModel')
+    except Exception as e:
+        # Method 2: Load with transformers, then initialize adapters
+        print(f'⚠ AutoAdapterModel failed: {str(e)[:80]}...')
+        print('  Trying alternative: Load with transformers + adapters.init()')
+        
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+        adapters.init(model)  # Initialize adapter support
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        print('✓ Base model loaded with transformers + adapters.init()')
+    
+    # Configure adapter (using new config names)
+    # Note: 'pfeiffer' is now 'seq_bn' in new library (but old names still work)
     config = AdapterConfig.load(
-        adapter_config,
+        adapter_config,  # 'pfeiffer' or 'seq_bn' both work
         reduction_factor=reduction_factor,
         non_linearity=non_linearity
     )

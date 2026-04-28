@@ -52,6 +52,7 @@ class ModelEvaluator:
         input_text: str,
         num_beams: int = 4,
         max_length: Optional[int] = None,
+        do_sample: bool = False,
         temperature: float = 1.0,
         top_k: int = 50,
         top_p: float = 0.95
@@ -63,9 +64,10 @@ class ModelEvaluator:
             input_text: Input text
             num_beams: Number of beams for beam search
             max_length: Maximum generation length
-            temperature: Sampling temperature
-            top_k: Top-k sampling
-            top_p: Top-p sampling
+            do_sample: Whether to use sampling (if False, uses beam search)
+            temperature: Sampling temperature (only used if do_sample=True)
+            top_k: Top-k sampling (only used if do_sample=True)
+            top_p: Top-p sampling (only used if do_sample=True)
             
         Returns:
             Generated text
@@ -84,18 +86,31 @@ class ModelEvaluator:
         # Move to device
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         
+        # Build generation config based on do_sample
+        gen_kwargs = {
+            'max_length': max_length,
+            'early_stopping': True,
+            'no_repeat_ngram_size': 3,
+        }
+        
+        if do_sample:
+            # Sampling mode: use temperature, top_k, top_p
+            gen_kwargs.update({
+                'do_sample': True,
+                'temperature': temperature,
+                'top_k': top_k,
+                'top_p': top_p,
+            })
+        else:
+            # Beam search mode: don't use sampling parameters
+            gen_kwargs.update({
+                'num_beams': num_beams,
+                'do_sample': False,
+            })
+        
         # Generate
         with torch.no_grad():
-            outputs = self.model.generate(
-                **inputs,
-                max_length=max_length,
-                num_beams=num_beams,
-                early_stopping=True,
-                no_repeat_ngram_size=3,
-                temperature=temperature,
-                top_k=top_k,
-                top_p=top_p
-            )
+            outputs = self.model.generate(**inputs, **gen_kwargs)
         
         # Decode
         prediction = self.tokenizer.decode(

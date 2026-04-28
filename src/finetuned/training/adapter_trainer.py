@@ -1,6 +1,9 @@
 """
 Adapter Trainer for Task-Specific Fine-tuning
 Handles training configuration and execution for adapter-based fine-tuning.
+
+COMPATIBILITY FIX: This module includes fixes for transformers 4.46+ compatibility
+where num_items_in_batch parameter causes issues with adapter models.
 """
 
 import numpy as np
@@ -12,6 +15,34 @@ from transformers import (
     EarlyStoppingCallback
 )
 from typing import Dict, Any, Optional
+
+
+class CompatibleSeq2SeqTrainer(Seq2SeqTrainer):
+    """
+    Custom Seq2SeqTrainer that handles num_items_in_batch parameter compatibility.
+    
+    Fixes compatibility issue between transformers 4.46+ and adapters library
+    where 'num_items_in_batch' parameter causes TypeError.
+    
+    Solution: Override compute_loss to accept but ignore num_items_in_batch parameter.
+    """
+    
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        """
+        Compute loss with compatibility for num_items_in_batch parameter.
+        
+        Args:
+            model: The model to compute loss for
+            inputs: Input batch
+            return_outputs: Whether to return model outputs
+            num_items_in_batch: Number of items in batch (ignored for compatibility)
+            
+        Returns:
+            Loss value (and optionally outputs)
+        """
+        # Call parent's compute_loss WITHOUT num_items_in_batch parameter
+        # This fixes the TypeError with adapters library
+        return super().compute_loss(model, inputs, return_outputs=return_outputs)
 
 
 class AdapterTrainer:
@@ -255,8 +286,8 @@ class AdapterTrainer:
         )
         print(f"✓ Data collator configured")
         
-        # Initialize trainer
-        self.trainer = Seq2SeqTrainer(
+        # Initialize trainer with compatibility fix for transformers 4.46+
+        self.trainer = CompatibleSeq2SeqTrainer(
             model=self.model,
             args=training_args,
             train_dataset=train_processed,
@@ -266,7 +297,7 @@ class AdapterTrainer:
             compute_metrics=self.compute_metrics,
             callbacks=[EarlyStoppingCallback(early_stopping_patience=early_stopping_patience)]
         )
-        print(f"✓ Trainer initialized")
+        print(f"✓ Trainer initialized (with transformers 4.46+ compatibility fix)")
         
         # Train
         print(f"\n{'='*60}")
