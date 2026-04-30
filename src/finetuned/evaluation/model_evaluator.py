@@ -249,15 +249,25 @@ class ModelEvaluator:
             
             samples.append(sample_result)
             
-            # Print sample
-            print(f"\n--- Sample {i + 1} ---")
-            print(f"Input: {input_text[:150]}...")
-            print(f"Reference: {reference[:150]}...")
-            print(f"Prediction: {prediction[:150]}...")
-            print(f"BLEU: {bleu_score:.4f}")
+            # Print sample (full output for manual inspection)
+            print(f"\n{'='*80}")
+            print(f"Sample {i + 1}/{len(indices)}")
+            print(f"{'='*80}")
+            print(f"\n📥 INPUT:")
+            print(f"{input_text}")
+            print(f"\n✅ REFERENCE:")
+            print(f"{reference}")
+            print(f"\n🤖 PREDICTION:")
+            print(f"{prediction}")
+            print(f"\n📊 BLEU Score: {bleu_score:.4f}")
+            print(f"{'='*80}")
         
         # Save to file if specified
         if save_path:
+            # Create directory if it doesn't exist
+            save_dir = Path(save_path).parent
+            save_dir.mkdir(parents=True, exist_ok=True)
+            
             with open(save_path, "w", encoding="utf-8") as f:
                 json.dump(samples, f, indent=2, ensure_ascii=False)
             print(f"\n✓ Samples saved to {save_path}")

@@ -249,7 +249,8 @@ class AdapterTrainer:
         train_dataset,
         eval_dataset,
         training_args: Optional[Seq2SeqTrainingArguments] = None,
-        early_stopping_patience: int = 2
+        early_stopping_patience: int = 2,
+        resume_from_checkpoint: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
         Train the model with adapter layers.
@@ -259,10 +260,16 @@ class AdapterTrainer:
             eval_dataset: Evaluation dataset (raw, will be preprocessed)
             training_args: Training arguments (if None, will use defaults)
             early_stopping_patience: Patience for early stopping
+            resume_from_checkpoint: Whether to resume from checkpoint (True/False/path)
+                - True: Auto-detect and resume from last checkpoint
+                - False/None: Start fresh training
+                - str: Resume from specific checkpoint path
             
         Returns:
             Training results dictionary
         """
+        import os
+        
         print(f"\n{'='*60}")
         print("PREPROCESSING DATASETS")
         print(f"{'='*60}")
@@ -299,15 +306,42 @@ class AdapterTrainer:
         )
         print(f"✓ Trainer initialized (with transformers 4.46+ compatibility fix)")
         
+        # Handle resume_from_checkpoint logic
+        checkpoint_to_resume = None
+        if resume_from_checkpoint is True:
+            # Auto-detect last checkpoint
+            if os.path.exists(self.output_dir):
+                checkpoints = [
+                    d for d in os.listdir(self.output_dir) 
+                    if d.startswith('checkpoint-') and os.path.isdir(os.path.join(self.output_dir, d))
+                ]
+                if checkpoints:
+                    # Sort by checkpoint number
+                    checkpoints_sorted = sorted(checkpoints, key=lambda x: int(x.split('-')[1]))
+                    checkpoint_to_resume = os.path.join(self.output_dir, checkpoints_sorted[-1])
+                    print(f"📂 Found {len(checkpoints)} checkpoint(s): {checkpoints_sorted}")
+                    print(f"🔄 Resuming from: {checkpoints_sorted[-1]}")
+                else:
+                    print("🆕 No checkpoints found - starting fresh training")
+        elif isinstance(resume_from_checkpoint, str):
+            # Use specific checkpoint path
+            checkpoint_to_resume = resume_from_checkpoint
+            print(f"🔄 Resuming from specified checkpoint: {checkpoint_to_resume}")
+        else:
+            print("🆕 Starting fresh training (no resume)")
+        
         # Train
         print(f"\n{'='*60}")
         print("STARTING TRAINING")
         print(f"{'='*60}")
         print(f"Training with Adapter Layers (d=64, ~3.6% trainable params)")
         print(f"Expected time: 6-8 hours on T4 GPU")
+        print(f"Total epochs: {training_args.num_train_epochs}")
         print(f"{'='*60}\n")
         
-        train_result = self.trainer.train()
+        # Pass checkpoint_to_resume to underlying HuggingFace Trainer
+        # This ensures training continues from checkpoint to completion
+        train_result = self.trainer.train(resume_from_checkpoint=checkpoint_to_resume)
         
         return {
             "training_loss": train_result.training_loss,

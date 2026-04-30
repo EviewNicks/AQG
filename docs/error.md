@@ -1,158 +1,57 @@
-Generating 20 sample outputs...
+============================================================
+COMPARING WITH BASELINE
+============================================================
 
---- Sample 1 ---
-Input: buat_soal_pilihan_ganda: Duck typing tidak berkaitan langsung dengan dynamic typing atau loosely typed. Konsep duck typing lebih erat dengan pemrogram...
-Reference: question: Dengan konsep apa duck typing lebih erat kaitannya?
-answer: Pemrograman berorientasi objek (OOP)
-distractors: Dynamic typing | Loosely typed...
-Prediction: question: apa yang dimaksud dengan duck typing? answer: dynamic typing lebih erat dengan pemrograman berorientasi objek (oop) dan fokus pada kemampuan...
-BLEU: 0.0000
+Metric                        Baseline   Fine-tuned  Improvement
+-----------------------------------------------------------------
+bleu                            0.0286       0.2907      914.77%
+bleu_1                          0.1304       0.6357      387.39%
+bleu_2                          0.0338       0.4389     1197.60%
+bleu_3                          0.0173       0.3196     1749.91%
+bleu_4                          0.0088       0.2632     2880.83%
+brevity_penalty                 1.0000       0.7426      -25.74%
+length_ratio                    1.0000       0.7706      -22.94%
+rouge_1                         0.1827       0.5325      191.47%
+rouge_2                         0.0714       0.3472      386.57%
+rouge_l                         0.1682       0.4826      186.94%
+rouge_1_fmeasure                0.1827       0.5325      191.47%
+rouge_2_fmeasure                0.0714       0.3472      386.57%
+rouge_l_fmeasure                0.1682       0.4826      186.94%
+distinct_1                      0.3979       0.1470      -63.05%
+distinct_2                      0.6996       0.4510      -35.53%
 
---- Sample 2 ---
-Input: buat_soal_pilihan_ganda: Notebook seperti Jupyter atau Colab menyediakan lingkungan pengembangan interaktif dengan sel-sel yang dapat dijalankan satu ...
-Reference: question: Apa keunggulan sistem sel pada Notebook?
-answer: Dapat menjalankan kode satu per satu
-distractors: Lebih cepat dari script | Tidak perlu Pyt...
-Prediction: question: apa yang dimaksud dengan jupyter atau colab? answer: lingkungan pengembangan interaktif dengan sel-sel yang dapat dijalankan satu per satu d...
-BLEU: 0.1404
+============================================================
+ADAPTER-BASED AQG TRAINING SUMMARY
+============================================================
+Method: Adapter Layers (d=64)
+Training Time: 0.02 hours
+Trainable: 1.88%
 
---- Sample 3 ---
-Input: buat_soal_pilihan_ganda: Dalam NumPy, kita dapat membuat matriks dengan nilai default menggunakan fungsi numpy.zeros() untuk matriks berisi 0, atau nu...
-Reference: question: Fungsi NumPy apa yang digunakan untuk membuat matriks berisi nilai 0?
-answer: numpy.zeros()
-distractors: numpy.empty() | numpy.zero() | nump...
-Prediction: question: bagaimana cara membuat matriks dengan nilai default? answer: menggunakan fungsi numpy.zeros() untuk matriks berisi 0 distractors: menggunaka...
-BLEU: 0.1766
+Metrics Comparison:
+  BLEU-4:  0.0088 → 0.2632
+  ROUGE-L: 0.1682 → 0.4826
 
---- Sample 4 ---
-Input: buat_soal_pilihan_ganda: Method overriding adalah kemampuan child class untuk memberikan implementasi berbeda dari method yang diwarisi dari parent cl...
-Reference: question: Apa yang dimaksud dengan method overriding?
-answer: Child class memberikan implementasi berbeda dari method yang diwarisi dari parent class
-...
-Prediction: question: apa yang dimaksud dengan method overriding? answer: kemampuan child class untuk memberikan implementasi berbeda dari method di parent class ...
-BLEU: 0.3510
+BLEU-4 Improvement: +2880.8%
 
---- Sample 5 ---
-Input: buat_soal_pilihan_ganda: Unpacking memungkinkan assignment nilai dari list atau tuple ke beberapa variabel sekaligus....
-Reference: question: Apa yang dimaksud dengan unpacking?
-answer: Assignment nilai dari list/tuple ke beberapa variabel
-distractors: Menghapus variabel | Menggabu...
-Prediction: question: apa yang dimaksud dengan unpacking? answer: assignment nilai dari list atau tuple ke beberapa variabel sekaligus distractors: hanya list | h...
-BLEU: 0.3681
+✓ SUCCESS: BLEU-4 target achieved (>= 0.20)
 
---- Sample 6 ---
-Input: buat_soal_pilihan_ganda: Prosedur dapat digunakan untuk denormalization, yaitu menggabungkan data untuk meningkatkan performa query. Denormalization p...
-Reference: question: Apa trade-off dari denormalization prosedur?
-answer: Antara storage dan speed
-distractors: Antara security dan usability | Tidak ada trade-o...
-Prediction: question: apa fungsi denormalization prosedur? answer: menggabungkan data untuk meningkatkan performa query distractors: membuat query lebih lambat | ...
-BLEU: 0.1623
+✓ Fine-tuning pipeline complete!
+  Adapter: /content/drive/MyDrive/dataset_aqg/checkpoints/08-indonanoot5-report/adapter_mcq_generation
+  Report: /content/drive/MyDrive/dataset_aqg/evaluation_results/08-indonanoot5-report/evaluation_report.json
+  Samples: /content/drive/MyDrive/dataset_aqg/evaluation_results/08-indonanoot5-report/sample_outputs.json
 
---- Sample 7 ---
-Input: buat_soal_pilihan_ganda: Function body adalah blok kode yang diindentasi dan menentukan apa yang dilakukan fungsi. Body berisi instruksi-instruksi yan...
-Reference: question: Apa yang dimaksud dengan function body?
-answer: Blok kode yang diindentasi berisi instruksi yang dieksekusi
-distractors: Nama fungsi yang di...
-Prediction: question: apa yang dimaksud dengan function body? answer: blok kode yang diindentasi dan menentukan apa yang dilakukan fungsi distractors: kode yang t...
-BLEU: 0.2800
+============================================================
+HOW TO LOAD TRAINED ADAPTER
+============================================================
+from adapters import AutoAdapterModel
+from transformers import AutoTokenizer
 
---- Sample 8 ---
-Input: buat_soal_pilihan_ganda: Dalam implementasi perkalian matriks dengan konstanta menggunakan list Python, kita memerlukan nested loop untuk mengiterasi ...
-Reference: question: Mengapa kita memerlukan nested loop (dua perulangan) untuk mengalikan matriks dengan konstanta menggunakan list Python?
-answer: Karena matri...
-Prediction: question: apa fungsi nested loop dalam perkalian matriks? answer: mengiterasi setiap elemen dengan konstanta distractors: mengalikan semua elemen | me...
-BLEU: 0.0000
+model = AutoAdapterModel.from_pretrained("LazarusNLP/IndoNanoT5-base")
+tokenizer = AutoTokenizer.from_pretrained("LazarusNLP/IndoNanoT5-base")
+model.load_adapter("/content/drive/MyDrive/dataset_aqg/checkpoints/08-indonanoot5-report/adapter_mcq_generation")
+model.set_active_adapters("mcq_generation")
 
---- Sample 9 ---
-Input: buat_soal_pilihan_ganda: Case-sensitive juga berlaku untuk nama modul dan package dalam Python. Import statement harus menggunakan kapitalisasi yang t...
-Reference: question: Apakah case-sensitive berlaku untuk nama modul?
-answer: Ya, harus sesuai dengan nama file
-distractors: Tidak, bisa menggunakan kapitalisasi ...
-Prediction: question: apa yang dimaksud dengan case-sensitive dalam python? answer: nama modul dan package dalam python distractors: nama file dan package | nama ...
-BLEU: 0.0000
-
---- Sample 10 ---
-Input: buat_soal_pilihan_ganda: Ketika menggunakan black, formatter akan memformat kode secara konsisten bahkan untuk kode yang sangat kompleks. Black menggu...
-Reference: question: Apakah black dapat memformat kode Python yang sangat kompleks dengan benar?
-answer: Ya, black menggunakan algoritma yang dapat menangani ber...
-Prediction: question: mengapa black menggunakan algoritma yang dapat menangani berbagai pola kode python? answer: karena black dapat memformat kode secara konsist...
-BLEU: 0.2384
-
---- Sample 11 ---
-Input: buat_soal_pilihan_ganda: Dalam Python, proses assignment mengikuti formula: <Ruas Kiri> = <Ruas Kanan>, di mana ruas kiri adalah variabel dan ruas kan...
-Reference: question: Dalam formula assignment, apa yang berada di ruas kiri?
-answer: Variabel
-distractors: Ekspresi | Nilai | Operator...
-Prediction: question: apa yang dimaksud dengan <ruas kanan> dalam python? answer: ruas kanan adalah ekspresi, nilai, atau variabel distractors: ruas kiri adalah e...
-BLEU: 0.0000
-
---- Sample 12 ---
-Input: buat_soal_pilihan_ganda: Dalam formula assignment <Ruas Kiri> = <Ruas Kanan>, ruas kiri adalah variabel....
-Reference: question: Dalam formula assignment, apa yang berada di ruas kiri?
-answer: Variabel
-distractors: Ekspresi | Nilai | Operator...
-Prediction: question: apa yang dimaksud dengan <ruas kanan> dalam formula assignment? answer: ruas kanan adalah variabel distractors: ruas kiri adalah variabel | ...
-BLEU: 0.0000
-
---- Sample 13 ---
-Input: buat_soal_pilihan_ganda: Inisialisasi merujuk kepada pemberian nilai awal pada variabel yang sebelumnya telah dideklarasikan. Contoh: age = 17;...
-Reference: question: Apa definisi dari inisialisasi variabel?
-answer: Pemberian nilai awal pada variabel
-distractors: Penentuan tipe data variabel | Pembuatan na...
-Prediction: question: apa yang dimaksud dengan inisialisasi? answer: pemberian nilai awal pada variabel yang sebelumnya telah dideklarasikan distractors: mengemba...
-BLEU: 0.1370
-
---- Sample 14 ---
-Input: buat_soal_pilihan_ganda: Dalam matriks matematika, transpose adalah operasi yang menukar baris menjadi kolom dan kolom menjadi baris. Jika matriks A b...
-Reference: question: Apa yang dimaksud dengan transpose matriks?
-answer: Operasi yang menukar baris menjadi kolom dan kolom menjadi baris
-distractors: Operasi ya...
-Prediction: question: apa yang dimaksud dengan transpose dalam matriks? answer: operasi yang mengubah baris menjadi kolom dan kolom menjadi baris distractors: ope...
-BLEU: 0.3192
-
---- Sample 15 ---
-Input: buat_soal_pilihan_ganda: Function return mengembalikan nilai atau hasil eksekusi fungsi. Statement return digunakan untuk mengirim nilai kembali ke pe...
-Reference: question: Apa fungsi dari statement return?
-answer: Mengembalikan nilai hasil eksekusi ke pemanggil fungsi
-distractors: Memulai definisi fungsi | Mene...
-Prediction: question: apa fungsi statement return? answer: mengirim nilai kembali ke pemanggil fungsi distractors: mengembalikan nilai | mengembalikan nilai...
-BLEU: 0.2340
-
---- Sample 16 ---
-Input: buat_soal_pilihan_ganda: Dalam OOP, singleton pattern memastikan bahwa hanya ada satu instance dari kelas tertentu. Singleton berguna untuk resource y...
-Reference: question: Apa tujuan singleton pattern?
-answer: Memastikan hanya ada satu instance dari kelas
-distractors: Membuat banyak instance | Menghapus semua i...
-Prediction: question: apa fungsi singleton pattern dalam oop? answer: memastikan bahwa hanya ada satu instance dari kelas tertentu distractors: menghapus semua in...
-BLEU: 0.3023
-
---- Sample 17 ---
-Input: buat_soal_pilihan_ganda: Operator aritmetika meliputi: +, -, *, /, **, %. Operator-operator ini digunakan dalam ekspresi biner untuk melakukan perhitu...
-Reference: question: Manakah yang merupakan operator aritmetika?
-answer: +, -, *, /, **, %
-distractors: <, <=, >, >= | and, or, not | =, +=, -=...
-Prediction: question: apa yang dimaksud dengan operator aritmetika? answer: operator-operator dalam ekspresi biner untuk menghitung numerik distractors: operator ...
-BLEU: 0.0976
-
---- Sample 18 ---
-Input: buat_soal_pilihan_ganda: Integrasi linter ke dalam editor kode memberikan umpan balik secara real-time saat programmer menulis kode. Ini berbeda denga...
-Reference: question: Apa keuntungan mengintegrasikan linter langsung ke dalam editor kode dibandingkan menjalankannya secara manual?
-answer: Memberikan umpan bal...
-Prediction: question: bagaimana integrasi linter ke dalam editor kode? answer: memberikan umpan balik secara real-time saat programmer menulis kode distractors: m...
-BLEU: 0.2737
-
---- Sample 19 ---
-Input: buat_soal_pilihan_ganda: One-liner adalah contoh dari Python's readability principle. Kode yang readable lebih mudah dipahami dan di-collaborate....
-Reference: question: Prinsip Python apa yang diwakili one-liner?
-answer: Readability principle
-distractors: Performance principle | Security principle | Complexi...
-Prediction: question: apa yang dimaksud dengan one-liner dalam python? answer: kode yang readable lebih mudah dipahami dan di-collaborate distractors: kode tidak ...
-BLEU: 0.0000
-
---- Sample 20 ---
-Input: buat_soal_pilihan_ganda: Python adalah bahasa case-sensitive untuk semua identifier, termasuk nama modul yang diimpor. Misalnya, import Math akan erro...
-Reference: question: Apa yang terjadi jika menulis import Math?
-answer: Error karena seharusnya import math
-distractors: Berhasil diimpor | Otomatis dikoreksi | ...
-Prediction: question: apa yang terjadi jika import math error? answer: modul yang diimpor tidak error distractors: modul tidak bisa diimpor | modul yang tidak bis...
-BLEU: 0.0000
+# Generate
+inputs = tokenizer("generate_mcq: [CONTEXT]", return_tensors="pt")
+outputs = model.generate(**inputs, max_length=512, num_beams=4)
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))

@@ -287,7 +287,7 @@ eval_steps_per_second: 0.2980
 ✓ Training results saved to /content/drive/MyDrive/dataset_aqg/checkpoints/aqg/training_results.json
 
 ✓ Training completed in 0.21 hours
-  Final training loss: 38.8484
+  Final training loss: 38.8484 
 
 
 ## 7 Final Evaluation 

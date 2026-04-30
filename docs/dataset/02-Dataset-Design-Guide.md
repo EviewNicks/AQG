@@ -88,6 +88,20 @@ answer: 0
 distractors: 1 | -1 | n
 ```
 
+example :
+
+```
+
+{"input": "buat_soal_pilihan_ganda: Perhatikan kode berikut:\n```python\nvar_mat = [[10, 20],\n  [30, 40],\n [50, 60]]\nprint(var_mat[0][1] + var_mat[2][1])\n```\n Kode ini menjumlahkan elemen kolom kedua dari baris pertama dan baris terakhir.", "output": "question: Perhatikan kode berikut:\n```python\nvar_mat = [[10, 20],\n           [30, 40],\n           [50, 60]]\nprint(var_mat[0][1] + var_mat[2][1])\n```\nApa output dari kode tersebut?\nanswer: 80\ndistractors: 70 | 90 | 60", "metadata": {"difficulty": "Sedang", "source_section": "07-matriks", "source_file": "materi2.jsonl"}}
+
+{"input": "buat_soal_pilihan_ganda: Fungsi min() dan max() dapat digunakan pada tuple.", "output": "question: Perhatikan kode berikut:\n```python\ndata = (5, 2, 8, 1)\nprint(max(data))\n```\nApa output dari kode di atas?\nanswer: 8\ndistractors: 5 | 1 | Error", "metadata": {"difficulty": "Mudah", "source_section": "02-berinteraksi-dengan-data", "source_file": "5_operasi_list_set_string.jsonl"}}
+
+{"input": "buat_soal_pilihan_ganda: Variadic function adalah fungsi yang dapat menerima jumlah argumen yang bervariasi. Dalam Python, variadic function dibuat dengan *args dan **kwargs.", "output": "question: Apa yang dimaksud dengan variadic function?\nanswer: Fungsi yang dapat menerima jumlah argumen yang bervariasi\ndistractors: Fungsi yang hanya menerima satu argumen | Fungsi yang tidak menerima argumen | Fungsi yang selalu error", "metadata": {"difficulty": "Sedang", "source_section": "08-subprogram", "source_file": "materi4.jsonl"}}
+
+
+
+```
+
 **Why This Format?**
 - Structured but parseable
 - No special tokens needed

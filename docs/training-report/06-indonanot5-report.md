@@ -1,5 +1,21 @@
 # IndonanoT5 fine-tuned D=64 With Dataset V3 
 
+Model:           IndoNanoT5-base (248M params)
+Adapter:         Pfeiffer, d=64 (reduction_factor=12)
+Trainable:       2.38M params (0.95%)
+Dataset:         dataset-task-spesifc/ (4,529 train)
+Epochs:          8
+Batch Size:      4 (effective: 8 with grad_accum=2)
+Learning Rate:   1e-4
+Warmup:          50 steps
+
+Results:
+  BLEU-4:        0.2598
+  ROUGE-L:       0.4809
+  Training Time: 3.92 hours
+
+
+
 ## 1 setup environtment 
 
 Python:  3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]
