@@ -4,7 +4,8 @@
 **Task Type:** Multiple Choice Question Generation (MCQ-G)  
 **Model:** LazarusNLP/IndoNanoT5-base  
 **Format:** JSONL (JSON Lines)  
-**Date:** 22 April 2026
+**Date:** 22 April 2026  
+**Version:** 2.0
 
 ---
 
@@ -88,20 +89,6 @@ answer: 0
 distractors: 1 | -1 | n
 ```
 
-example :
-
-```
-
-{"input": "buat_soal_pilihan_ganda: Perhatikan kode berikut:\n```python\nvar_mat = [[10, 20],\n  [30, 40],\n [50, 60]]\nprint(var_mat[0][1] + var_mat[2][1])\n```\n Kode ini menjumlahkan elemen kolom kedua dari baris pertama dan baris terakhir.", "output": "question: Perhatikan kode berikut:\n```python\nvar_mat = [[10, 20],\n           [30, 40],\n           [50, 60]]\nprint(var_mat[0][1] + var_mat[2][1])\n```\nApa output dari kode tersebut?\nanswer: 80\ndistractors: 70 | 90 | 60", "metadata": {"difficulty": "Sedang", "source_section": "07-matriks", "source_file": "materi2.jsonl"}}
-
-{"input": "buat_soal_pilihan_ganda: Fungsi min() dan max() dapat digunakan pada tuple.", "output": "question: Perhatikan kode berikut:\n```python\ndata = (5, 2, 8, 1)\nprint(max(data))\n```\nApa output dari kode di atas?\nanswer: 8\ndistractors: 5 | 1 | Error", "metadata": {"difficulty": "Mudah", "source_section": "02-berinteraksi-dengan-data", "source_file": "5_operasi_list_set_string.jsonl"}}
-
-{"input": "buat_soal_pilihan_ganda: Variadic function adalah fungsi yang dapat menerima jumlah argumen yang bervariasi. Dalam Python, variadic function dibuat dengan *args dan **kwargs.", "output": "question: Apa yang dimaksud dengan variadic function?\nanswer: Fungsi yang dapat menerima jumlah argumen yang bervariasi\ndistractors: Fungsi yang hanya menerima satu argumen | Fungsi yang tidak menerima argumen | Fungsi yang selalu error", "metadata": {"difficulty": "Sedang", "source_section": "08-subprogram", "source_file": "materi4.jsonl"}}
-
-
-
-```
-
 **Why This Format?**
 - Structured but parseable
 - No special tokens needed
@@ -135,126 +122,139 @@ buat_soal_pilihan_ganda: [PLAIN TEXT CONTEXT]
 
 ## 3. CONTOH DATASET (3 SAMPLES)
 
-### Sample 1: Array Indexing
+### Sample 1: Knowledge-Based Question
 
 ```json
 {
   "input": "buat_soal_pilihan_ganda: Dalam Python, array atau list menggunakan indexing untuk mengakses elemen. Indexing dimulai dari 0, bukan 1. Contoh: jika Anda memiliki list = [10, 20, 30], maka list[0] adalah 10, list[1] adalah 20, dan list[2] adalah 30.",
-  "output": "question: Jika list = [10, 20, 30], apa nilai dari list[1]?\nanswer: 20\ndistractors: 10 | 30 | 1"
+  "output": "question: Jika list = [10, 20, 30], apa nilai dari list[1]?\nanswer: 20\ndistractors: 10 | 30 | 1",
+  "metadata": {"difficulty": "Mudah", "type": "knowledge", "source_section": "06-array", "source_file": "materi1.jsonl"}
 }
 ```
 
-### Sample 2: Code Execution
+### Sample 2: Code Execution Question
 
 ```json
 {
   "input": "buat_soal_pilihan_ganda: Perhatikan kode berikut:\n```python\nvar_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\nprint(var_list[1][2])\n```\nKode ini mengakses elemen pada baris kedua (indeks 1) dan kolom ketiga (indeks 2) dari nested list.",
-  "output": "question: Perhatikan kode berikut:\n```python\nvar_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\nprint(var_list[1][2])\n```\nApa output dari kode di atas?\nanswer: 6\ndistractors: 5 | 8 | 9"
+  "output": "question: Perhatikan kode berikut:\n```python\nvar_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\nprint(var_list[1][2])\n```\nApa output dari kode di atas?\nanswer: 6\ndistractors: 5 | 8 | 9",
+  "metadata": {"difficulty": "Sedang", "type": "code", "source_section": "07-matriks", "source_file": "materi1.jsonl"}
 }
 ```
 
 **PENTING:** Question harus menyertakan code block agar self-contained!
 
-### Sample 3: String Operations
+### Sample 3: Conceptual Question
 
 ```json
 {
   "input": "buat_soal_pilihan_ganda: String dalam Python bersifat immutable, artinya tidak dapat diubah setelah dibuat. Jika Anda mencoba mengubah karakter dalam string dengan indexing seperti s[0] = 'A', Python akan menampilkan error TypeError. Untuk mengubah string, Anda harus membuat string baru.",
-  "output": "question: Apa yang terjadi jika Anda mencoba mengubah karakter string dengan s[0] = 'A'?\nanswer: TypeError\ndistractors: ValueError | IndexError | AttributeError"
+  "output": "question: Apa yang terjadi jika Anda mencoba mengubah karakter string dengan s[0] = 'A'?\nanswer: TypeError\ndistractors: ValueError | IndexError | AttributeError",
+  "metadata": {"difficulty": "Sedang", "type": "knowledge", "source_section": "05-control-flow", "source_file": "materi2.jsonl"}
 }
 ```
 
-
 ---
 
-## 5. REFERENSI
+## 4. METADATA STRUCTURE
 
-### 5.1 T5 Text-to-Text Framework
+### 4.1 Required Metadata Fields
 
-**Reference:** Raffel, C., Shazeer, N., Roberts, A., et al. (2019). "Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer." arXiv:1910.10683
+Every dataset sample MUST include metadata with the following fields:
 
-**Key Points:**
-- T5 converts all NLP tasks to text-to-text format
-- Task prefixes guide model behavior
-- No task-specific architectures needed
-- Format: `[prefix]: [input] → [output]`
+```json
+{
+  "input": "...",
+  "output": "...",
+  "metadata": {
+    "difficulty": "Mudah|Sedang|Sulit",
+    "type": "knowledge|code",
+    "source_section": "section-name",
+    "source_file": "filename.jsonl"
+  }
+}
+```
 
+### 4.2 Metadata Field Definitions
 
+**difficulty** (Required)
+- Values: `"Mudah"`, `"Sedang"`, `"Sulit"`
+- Indicates cognitive complexity of the question
+- Guidelines:
+  - **Mudah**: Direct recall, simple concepts, basic syntax
+  - **Sedang**: Application, analysis, multi-step reasoning
+  - **Sulit**: Synthesis, complex scenarios, edge cases
 
----
+**type** (Required)
+- Values: `"knowledge"`, `"code"`
+- Indicates question category
+- Guidelines:
+  - **knowledge**: Conceptual questions, definitions, theory, explanations
+  - **code**: Questions with code blocks, output prediction, code analysis
 
-### 5.2 IndoNanoT5 Documentation
+**source_section** (Required)
+- Format: kebab-case string
+- Example: `"06-array"`, `"08-subprogram"`, `"09-oop"`
+- Tracks which learning module the question comes from
 
-**Reference:** LazarusNLP/IndoNanoT5-base (HuggingFace Hub)
+**source_file** (Required)
+- Format: filename with extension
+- Example: `"materi1.jsonl"`, `"materi2.jsonl"`
+- Tracks source file for traceability
 
-**Model Details:**
-- Architecture: T5 (Encoder-Decoder)
-- Language: Indonesian
-- Pretraining: 4B tokens from CulturaX corpus
-- Input length: 512 tokens
-- License: Apache 2.0
+### 4.3 Type Distribution Requirements
 
-**URL:** https://huggingface.co/LazarusNLP/IndoNanoT5-base
+**CRITICAL RULE:** Dataset MUST maintain balanced type distribution!
 
----
+**Target Ratio:**
+- `type: "knowledge"` → **≥ 60%** of total samples
+- `type: "code"` → **≤ 40%** of total samples
 
-### 5.3 Question Generation with T5
+**Example Distribution (100 samples):**
+- 60+ knowledge questions ✅
+- 40 or fewer code questions ✅
 
-**Reference:** Patil, S. (2021). "Question Generation using Transformers." GitHub Repository
+**Why This Ratio?**
+- Model needs strong conceptual understanding
+- Prevents overfitting on code patterns
+- Improves generalization across question types
+- Balances theory and practice
 
-**Key Insights:**
-- T5 can handle multiple QG variants (answer-aware, end-to-end, MCQ)
-- Task prefixes: `generate_question:`, `generate_mcq:`, etc.
-- Output format: Structured text with separators
-- JSONL format recommended for large datasets
+### 4.4 Metadata Examples
 
-**URL:** https://github.com/patil-suraj/question_generation
+**Knowledge-Type Sample:**
+```json
+{
+  "input": "buat_soal_pilihan_ganda: Variadic function adalah fungsi yang dapat menerima jumlah argumen yang bervariasi. Dalam Python, variadic function dibuat dengan *args dan **kwargs.",
+  "output": "question: Apa yang dimaksud dengan variadic function?\nanswer: Fungsi yang dapat menerima jumlah argumen yang bervariasi\ndistractors: Fungsi yang hanya menerima satu argumen | Fungsi yang tidak menerima argumen | Fungsi yang selalu error",
+  "metadata": {
+    "difficulty": "Sedang",
+    "type": "knowledge",
+    "source_section": "08-subprogram",
+    "source_file": "materi4.jsonl"
+  }
+}
+```
 
----
-
-### 5.4 MCQ Generation Literature
-
-**Reference:** Automatic Generation of Multiple-Choice Questions (arXiv:2303.14576)
-
-**Key Findings:**
-- Two-stage approach: QG + Distractor generation
-- T5 can be fine-tuned for end-to-end MCQ generation
-- Output format: Structured text (question + answer + distractors)
-- Evaluation: BLEU, ROUGE, human evaluation
-
----
-
-### 5.5 HuggingFace Question Answering Documentation
-
-**Reference:** HuggingFace Transformers - Seq2Seq QA
-
-**Best Practices:**
-- JSONL format preferred for streaming
-- Separate input/output fields
-- Tokenization: max_length=512 for input, 256 for output
-- Batch size: 16-32 for fine-tuning
-
-**URL:** https://huggingface.co/docs/transformers/tasks/question_answering
-
-
-
----
-
-## 7. EXAMPLE JSONL FILE
-
-**File: train.jsonl**
-
-```jsonl
-{"input": "buat_soal_pilihan_ganda: Dalam Python, array atau list menggunakan indexing untuk mengakses elemen. Indexing dimulai dari 0, bukan 1.", "output": "question: Jika list = [10, 20, 30], apa nilai dari list[1]?\nanswer: 20\ndistractors: 10 | 30 | 1"}
-{"input": "buat_soal_pilihan_ganda: Perhatikan kode berikut:\n```python\nvar_list = [[1, 2, 3], [4, 5, 6]]\nprint(var_list[1][2])\n```", "output": "question: Perhatikan kode berikut:\n```python\nvar_list = [[1, 2, 3], [4, 5, 6]]\nprint(var_list[1][2])\n```\nApa output dari kode di atas?\nanswer: 6\ndistractors: 5 | 8 | 9"}
-{"input": "buat_soal_pilihan_ganda: String dalam Python bersifat immutable, artinya tidak dapat diubah setelah dibuat.", "output": "question: Apa yang terjadi jika Anda mencoba mengubah karakter string?\nanswer: TypeError\ndistractors: ValueError | IndexError | AttributeError"}
+**Code-Type Sample:**
+```json
+{
+  "input": "buat_soal_pilihan_ganda: Perhatikan kode berikut:\n```python\nvar_mat = [[10, 20], [30, 40]]\nprint(var_mat[0][1])\n```\nKode ini mengakses elemen pada baris pertama, kolom kedua.",
+  "output": "question: Perhatikan kode berikut:\n```python\nvar_mat = [[10, 20], [30, 40]]\nprint(var_mat[0][1])\n```\nApa output dari kode tersebut?\nanswer: 20\ndistractors: 10 | 30 | 40",
+  "metadata": {
+    "difficulty": "Mudah",
+    "type": "code",
+    "source_section": "07-matriks",
+    "source_file": "materi2.jsonl"
+  }
+}
 ```
 
 ---
 
-## 4. ATURAN PENTING: CODE BLOCKS DALAM QUESTION
+## 5. ATURAN PENTING: CODE BLOCKS DALAM QUESTION
 
-### 4.1 Prinsip Self-Contained Output
+### 5.1 Prinsip Self-Contained Output
 
 **CRITICAL RULE:** Output (question) harus **self-contained** dan tidak bergantung pada input!
 
@@ -275,7 +275,7 @@ buat_soal_pilihan_ganda: [PLAIN TEXT CONTEXT]
 }
 ```
 
-### 4.2 Kapan Menyertakan Code Block?
+### 5.2 Kapan Menyertakan Code Block?
 
 **Sertakan code block jika:**
 - Question merujuk "kode di atas/berikut"
@@ -286,7 +286,7 @@ buat_soal_pilihan_ganda: [PLAIN TEXT CONTEXT]
 - Question hanya menyebutkan syntax inline: `print()`
 - Question konseptual tanpa code spesifik
 
-### 4.3 Input Context Harus Lengkap dan Deskriptif
+### 5.3 Input Context Harus Lengkap dan Deskriptif
 
 **CRITICAL RULE:** Input context harus memberikan penjelasan yang cukup, tidak hanya topik singkat!
 
@@ -330,68 +330,122 @@ buat_soal_pilihan_ganda: [PLAIN TEXT CONTEXT]
 - Untuk code: jelaskan apa yang dilakukan kode tersebut
 - Berikan konteks yang cukup untuk memahami topik
 
-### 4.4 Keseimbangan Soal Konseptual dan Code Blocks
+### 5.4 Type Distribution Validation
 
-**CRITICAL RULE:** Dataset harus seimbang antara soal konseptual (text/penjelasan) dan soal code blocks!
+**CRITICAL RULE:** Always validate type distribution before finalizing dataset!
 
-**Target Rasio:**
-- Soal konseptual (text): ≥ 50%
-- Soal code blocks: ≤ 50%
-- Idealnya: 60% konseptual, 40% code blocks
+**Validation Steps:**
+1. Count total samples in dataset
+2. Count samples with `type: "knowledge"`
+3. Count samples with `type: "code"`
+4. Calculate percentages:
+   - Knowledge % = (knowledge_count / total) × 100
+   - Code % = (code_count / total) × 100
+5. Verify: Knowledge % ≥ 60% AND Code % ≤ 40%
 
-**Mengapa Penting?**
-- Model perlu memahami konsep teori, bukan hanya code
-- Mencegah overfitting pada pattern code
-- Meningkatkan kemampuan generalisasi
-- Dataset lebih seimbang dan komprehensif
-
-**Contoh Distribusi yang BAIK (120 samples):**
-- 70 soal konseptual (definisi, konsep, teori)
-- 50 soal code blocks (output, analisis, eksekusi)
-
-**Contoh Distribusi yang BURUK:**
-- 30 soal konseptual
-- 90 soal code blocks ❌ (terlalu banyak code)
-
-**Tips:**
-- Buat soal tentang definisi, konsep, dan teori terlebih dahulu
-- Tambahkan soal code blocks untuk validasi praktis
-- Jangan membuat terlalu banyak variasi code yang mirip
-- Fokus pada pemahaman konsep, bukan hanya sintaks
-
-### 4.5 Knowledge-Only Dataset (Khusus Materi Tertentu)
-
-**SPECIAL CASE:** Untuk materi rangkuman/review ATAU materi yang secara eksplisit diminta knowledge-only, dataset dapat dibuat 100% konseptual tanpa code blocks.
-
-**Karakteristik:**
-- 100% soal konseptual/knowledge-based
-- Tidak ada code blocks dalam input maupun output
-- Fokus pada pemahaman teori, definisi, dan konsep
-- Cocok untuk materi rangkuman yang merangkum konsep-konsep sebelumnya
-
-**Contoh Knowledge-Only Sample:**
-```json
-{
-  "input": "buat_soal_pilihan_ganda: Matriks dalam matematika merupakan himpunan bilangan atau elemen yang disusun berdasarkan baris dan kolom. Setiap elemen dapat diakses melalui metode indexing jika kedua indeks diketahui.",
-  "output": "question: Apa yang dimaksud dengan matriks dalam matematika?\nanswer: Himpunan bilangan atau elemen yang disusun berdasarkan baris dan kolom\ndistractors: Kumpulan data yang disusun secara acak | Array satu dimensi dengan banyak elemen | Struktur data yang hanya memiliki baris"
-}
+**Example Validation (120 samples):**
+```
+Total: 120
+Knowledge: 72 (60%) ✅
+Code: 48 (40%) ✅
+Status: VALID
 ```
 
-**Kapan Menggunakan:**
-- Materi rangkuman/review
-- Materi yang fokus pada teori dan konsep
-- Materi pengenalan tanpa implementasi praktis
-- Materi yang secara eksplisit diminta knowledge-only oleh pengguna (misalnya: inheritance, duck typing, prosedur, dll.)
+**Example Invalid (120 samples):**
+```
+Total: 120
+Knowledge: 50 (42%) ❌
+Code: 70 (58%) ❌
+Status: INVALID - Too many code questions!
+Action: Add 22 knowledge questions, remove 22 code questions
+```
 
-**Daftar Materi yang Menggunakan Knowledge-Only (Confirmed):**
-- `09-oop/03-inheritence.md` → Knowledge-only (konsep pewarisan, override, super)
-- `09-oop/01-duck-typing.md` → Knowledge-only (konsep duck typing)
+**Tips for Maintaining Ratio:**
+- Create knowledge questions first (definitions, concepts, theory)
+- Add code questions for practical validation
+- Don't create too many code variations
+- Focus on conceptual understanding over syntax
 
-**Aturan Tambahan untuk Knowledge-Only:**
-- Input context harus menjelaskan konsep secara lengkap dalam 2-3 kalimat
-- Distractor harus plausibel secara konseptual, bukan hanya kata-kata acak
-- Soal harus menguji pemahaman konsep, bukan hafalan istilah semata
-- Variasikan tipe pertanyaan: definisi, perbandingan, tujuan/manfaat, mekanisme
+---
+
+## 6. EXAMPLE JSONL FILE
+
+**File: train.jsonl**
+
+```jsonl
+{"input": "buat_soal_pilihan_ganda: Dalam Python, array atau list menggunakan indexing untuk mengakses elemen. Indexing dimulai dari 0, bukan 1.", "output": "question: Jika list = [10, 20, 30], apa nilai dari list[1]?\nanswer: 20\ndistractors: 10 | 30 | 1", "metadata": {"difficulty": "Mudah", "type": "knowledge", "source_section": "06-array", "source_file": "materi1.jsonl"}}
+{"input": "buat_soal_pilihan_ganda: Perhatikan kode berikut:\n```python\nvar_list = [[1, 2, 3], [4, 5, 6]]\nprint(var_list[1][2])\n```\nKode ini mengakses elemen baris kedua, kolom ketiga.", "output": "question: Perhatikan kode berikut:\n```python\nvar_list = [[1, 2, 3], [4, 5, 6]]\nprint(var_list[1][2])\n```\nApa output dari kode di atas?\nanswer: 6\ndistractors: 5 | 8 | 9", "metadata": {"difficulty": "Sedang", "type": "code", "source_section": "07-matriks", "source_file": "materi2.jsonl"}}
+{"input": "buat_soal_pilihan_ganda: String dalam Python bersifat immutable, artinya tidak dapat diubah setelah dibuat. Untuk mengubah string, Anda harus membuat string baru.", "output": "question: Apa yang terjadi jika Anda mencoba mengubah karakter string?\nanswer: TypeError\ndistractors: ValueError | IndexError | AttributeError", "metadata": {"difficulty": "Sedang", "type": "knowledge", "source_section": "05-control-flow", "source_file": "materi2.jsonl"}}
+```
+
+---
+
+## 7. REFERENSI
+
+### 7.1 T5 Text-to-Text Framework
+
+**Reference:** Raffel, C., Shazeer, N., Roberts, A., et al. (2019). "Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer." arXiv:1910.10683
+
+**Key Points:**
+- T5 converts all NLP tasks to text-to-text format
+- Task prefixes guide model behavior
+- No task-specific architectures needed
+- Format: `[prefix]: [input] → [output]`
+
+---
+
+### 7.2 IndoNanoT5 Documentation
+
+**Reference:** LazarusNLP/IndoNanoT5-base (HuggingFace Hub)
+
+**Model Details:**
+- Architecture: T5 (Encoder-Decoder)
+- Language: Indonesian
+- Pretraining: 4B tokens from CulturaX corpus
+- Input length: 512 tokens
+- License: Apache 2.0
+
+**URL:** https://huggingface.co/LazarusNLP/IndoNanoT5-base
+
+---
+
+### 7.3 Question Generation with T5
+
+**Reference:** Patil, S. (2021). "Question Generation using Transformers." GitHub Repository
+
+**Key Insights:**
+- T5 can handle multiple QG variants (answer-aware, end-to-end, MCQ)
+- Task prefixes: `generate_question:`, `generate_mcq:`, etc.
+- Output format: Structured text with separators
+- JSONL format recommended for large datasets
+
+**URL:** https://github.com/patil-suraj/question_generation
+
+---
+
+### 7.4 MCQ Generation Literature
+
+**Reference:** Automatic Generation of Multiple-Choice Questions (arXiv:2303.14576)
+
+**Key Findings:**
+- Two-stage approach: QG + Distractor generation
+- T5 can be fine-tuned for end-to-end MCQ generation
+- Output format: Structured text (question + answer + distractors)
+- Evaluation: BLEU, ROUGE, human evaluation
+
+---
+
+### 7.5 HuggingFace Question Answering Documentation
+
+**Reference:** HuggingFace Transformers - Seq2Seq QA
+
+**Best Practices:**
+- JSONL format preferred for streaming
+- Separate input/output fields
+- Tokenization: max_length=512 for input, 256 for output
+- Batch size: 16-32 for fine-tuning
+
+**URL:** https://huggingface.co/docs/transformers/tasks/question_answering
 
 ---
 
@@ -433,9 +487,30 @@ buat_soal_pilihan_ganda: [PLAIN TEXT CONTEXT]
 **Cause:** Missing or incorrect task prefix
 **Solution:** Ensure all inputs start with `buat_soal_pilihan_ganda:`
 
+### Problem: Type distribution imbalanced
+
+**Cause:** Too many code questions, not enough knowledge questions
+**Solution:** Follow validation steps in Section 5.4, maintain 60/40 ratio
+
 ---
 
-**Version:** 1.0  
-**Last Updated:** 22 April 2026  
-**Status:** READY FOR IMPLEMENTATION
+## 10. CHECKLIST VALIDASI DATASET
 
+Before finalizing dataset, verify:
+
+- [ ] All inputs start with `buat_soal_pilihan_ganda:`
+- [ ] Input context minimal 1-2 kalimat penjelasan
+- [ ] Questions are self-contained (tidak bergantung input)
+- [ ] Code blocks di-copy ke question jika dirujuk
+- [ ] All samples have complete metadata (difficulty, type, source_section, source_file)
+- [ ] Type distribution: knowledge ≥ 60%, code ≤ 40%
+- [ ] Plain text format (hapus markdown kecuali code blocks)
+- [ ] Output format: `question:`, `answer:`, `distractors:`
+- [ ] Distractors plausibel dan relevan
+- [ ] No duplicate samples
+
+---
+
+**Version:** 2.0  
+**Last Updated:** 1 May 2026  
+**Status:** READY FOR IMPLEMENTATION

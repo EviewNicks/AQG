@@ -1,281 +1,167 @@
-# Code Review: transform_dataset.py
+# Plan: Dataset Generation & Integration - dataset-task-v4
 
-**Tanggal:** 20 April 2026  
-**Status:** Comprehensive Review Complete  
-**Reviewer:** NLP Research Assistant  
-**Confidence Level:** HIGH (95%)
-
----
-
-## EXECUTIVE SUMMARY
-
-### Overall Assessment: ✅ **GOOD (85/100)**
-
-Script Anda sudah **sangat baik** dan mengimplementasikan transformasi format dengan benar. Namun ada **beberapa gap kecil** yang perlu ditambahkan untuk completeness dan robustness.
-
-### Score Breakdown
-
-| Aspek | Score | Status |
-|-------|-------|--------|
-| **Format Transformation** | 95% | ✅ Excellent |
-| **Error Handling** | 60% | ⚠️ Needs improvement |
-| **Markdown Preservation** | 100% | ✅ Perfect |
-| **Metadata Management** | 0% | ❌ Missing |
-| **Data Validation** | 70% | ⚠️ Partial |
-| **Documentation** | 90% | ✅ Good |
-| **Edge Case Handling** | 50% | ⚠️ Needs improvement |
-| **Logging & Reporting** | 85% | ✅ Good |
+**Date:** 1 May 2026  
+**Goal:** Generate 220 MCQ samples per materi file compliant with 03-Dataset-Design-Guide-v3.md  
+**Target:** Each materi file has minimum 220 valid samples
 
 ---
 
-## BAGIAN 1: WHAT'S GOOD ✅
+## Current State
 
-### 1.1 Format Transformation (95/100)
+**File:** `dataset_aqg/dataset-task-v4/01-perkenalan-python/01-perkenalan-python.jsonl`
+- Total samples: 110
+- Valid samples: 15
+- Invalid samples: 95 (duplicates to remove)
+- Gap: 205 samples needed to reach 220 target
 
-**Strengths:**
-```python
-✅ Correctly removes 'Konteks: ' prefix
-✅ Correctly removes prompt instruction ('\n\nPrompt:')
-✅ Correctly removes 'Pertanyaan: ' prefix
-✅ Correctly extracts only question (before '? Jawaban benar:')
-✅ Handles both '? Jawaban benar:' and '? Jawaban benar' variants
-✅ Preserves markdown formatting (##, **, ``, etc.)
-✅ Maintains UTF-8 encoding
-✅ Proper file handling with context managers
+---
+
+## Pipeline Overview
+
 ```
+Phase 1: Cleanup (Remove Invalid Samples)
+  └── Remove 95 duplicate/invalid samples
+      └── Result: 15 valid samples remain
 
-### 1.2 Markdown Preservation (100/100)
+Phase 2: Generate New Samples
+  └── Create 205 new MCQ samples
+      ├── Follow 03-Dataset-Design-Guide-v3.md rules
+      ├── Maintain 60/40 knowledge/code ratio
+      ├── Distribute difficulty: Mudah/Sedang/Sulit
+      └── Save to temporary file: `01-perkenalan-python_generated.jsonl`
 
-**Excellent:**
-```python
-✅ Does NOT remove markdown syntax
-✅ Does NOT convert to plain text
-✅ Does NOT remove code blocks
-✅ Does NOT lowercase content
-✅ Preserves semantic structure
-```
-
-### 1.3 Backup Strategy (90/100)
-
-**Good:**
-```python
-✅ Creates backup of original files
-✅ Checks if backup already exists
-✅ Uses proper file operations (shutil.copy)
-✅ Informative messages
-```
-
-### 1.4 Verification (85/100)
-
-**Good:**
-```python
-✅ Verifies transformation was successful
-✅ Checks for remaining problematic prefixes
-✅ Reports issues with line numbers
-✅ Shows sample output
-```
-
-### 1.5 Documentation (90/100)
-
-**Good:**
-```python
-✅ Clear docstrings
-✅ Type hints
-✅ Informative print statements
-✅ Step-by-step output
+Phase 3: Merge & Validate
+  └── Append generated samples to main file
+      ├── Result: 220 total samples
+      ├── Validate no duplicates
+      └── Confirm all rules compliance
 ```
 
 ---
 
-## BAGIAN 2: WHAT'S MISSING ❌
+## Phase 1: Cleanup
 
-### 2.1 Metadata Management (0/100) - **CRITICAL GAP**
+**Action:** Remove 95 invalid samples (lines 16-110)
+- Reason: Duplicate input text
+- Keep: 15 valid samples (lines 1-15)
+- Result: Clean base file with 15 samples
 
-**Issue:** Script menghapus metadata tanpa menyimpannya terpisah
+---
 
-```python
-# CURRENT (WRONG):
-transformed.append({
-    'input': clean_input(original_input),
-    'target': clean_target(original_target)
-    # ❌ Metadata hilang!
-})
+## Phase 2: Generate New Samples (205 samples)
 
-# SHOULD BE:
-transformed.append({
-    'input': clean_input(original_input),
-    'target': clean_target(original_target)
-    # ✅ Metadata disimpan terpisah
-})
+**Format Reference:** `docs/dataset/03-Dataset-Design-Guide-v3.md`
 
-# Save metadata separately
-with open(metadata_path, 'w') as f:
-    for meta in metadata_list:
-        f.write(json.dumps(meta) + '\n')
+### Sample Structure (JSONL format)
+```json
+{
+  "input": "buat_soal_pilihan_ganda: [CONTEXT 1-2 SENTENCES]",
+  "output": "question: [CLEAR QUESTION]\nanswer: [CONCISE ANSWER]\ndistractors: [OPT1] | [OPT2] | [OPT3]",
+  "metadata": {
+    "difficulty": "Mudah|Sedang|Sulit",
+    "type": "knowledge|code"
+  }
+}
 ```
 
-**Why Important:**
-- Metadata (difficulty, question_type, concept, misconception_tags) berguna untuk:
-  - Post-processing dan analysis
-  - Filtering dataset berdasarkan difficulty
-  - Error analysis dan debugging
-  - Future data augmentation
-  - Evaluation dan reporting
+### Generation Rules (from 03-Dataset-Design-Guide-v3.md)
 
-### 2.2 Error Handling (60/100) - **IMPORTANT GAP**
+**Input Requirements:**
+- ✅ Start with `buat_soal_pilihan_ganda:`
+- ✅ Plain text only (no markdown except code blocks)
+- ✅ 1-2 sentences minimum explanation
+- ✅ 50-200 words recommended (max ~400 words / 512 tokens)
+- ✅ For code: explain what code does
 
-**Issues:**
-```python
-# CURRENT: No error handling
-with open(input_path, 'r', encoding='utf-8') as f:
-    data = [json.loads(line) for line in f]  # ❌ Bisa error jika JSON invalid
+**Output Requirements:**
+- ✅ Questions self-contained (complete without input)
+- ✅ Include code block in question if referenced
+- ✅ Answers concise (1-5 words preferred)
+- ✅ Distractors plausible & distinct (3 options separated by `|`)
+- ✅ Format: `question:`, `answer:`, `distractors:`
 
-# SHOULD BE:
-try:
-    with open(input_path, 'r', encoding='utf-8') as f:
-        data = []
-        for line_num, line in enumerate(f, 1):
-            try:
-                data.append(json.loads(line))
-            except json.JSONDecodeError as e:
-                print(f"❌ Line {line_num}: Invalid JSON - {e}")
-                # Handle error appropriately
-except FileNotFoundError:
-    print(f"❌ File not found: {input_path}")
-except Exception as e:
-    print(f"❌ Error reading file: {e}")
+**Metadata Requirements:**
+- ✅ `difficulty`: Mudah (direct recall) | Sedang (application) | Sulit (synthesis)
+- ✅ `type`: knowledge (conceptual) | code (with code blocks)
+
+**Type Distribution (CRITICAL):**
+- Knowledge: ≥ 60% (132 samples minimum)
+- Code: ≤ 40% (88 samples maximum)
+
+**Difficulty Distribution (Target):**
+- Mudah: ~40% (88 samples)
+- Sedang: ~45% (99 samples)
+- Sulit: ~15% (33 samples)
+
+**Language Quality:**
+- ✅ Follow EYD (Ejaan Yang Disempurnakan)
+- ✅ Formal/educational tone
+- ✅ Technical terms in English acceptable
+- ✅ Avoid colloquial language
+
+**Quality Checks:**
+- ✅ No duplicate inputs
+- ✅ No duplicate questions
+- ✅ No duplicate text within questions
+- ✅ All samples have required fields
+- ✅ All samples have valid metadata
+
+### Output File
+- **Temporary file:** `dataset_aqg/dataset-task-v4/01-perkenalan-python/01-perkenalan-python_generated.jsonl`
+- **Content:** 205 new samples (one JSON object per line)
+
+---
+
+## Phase 3: Merge & Validate
+
+**Action:** Merge generated samples directly into main file
+```
+1. Generate samples in batches to temporary _generated.jsonl file
+2. Append all generated samples directly to main file (01-perkenalan-python.jsonl)
+3. Result: 220 total samples in main file
+4. Delete temporary _generated.jsonl file after merge
 ```
 
-### 2.3 Edge Case Handling (50/100) - **IMPORTANT GAP**
+**Merge Process:**
+- Read from: `01-perkenalan-python_generated.jsonl` (temporary)
+- Write to: `01-perkenalan-python.jsonl` (main file - DIRECT MERGE)
+- Keep only main file after merge complete
 
-**Missing Cases:**
-
-```python
-# Case 1: Multiple '? Jawaban benar:' in target
-# CURRENT: Hanya split di yang pertama (OK, tapi bisa lebih robust)
-# SHOULD: Validate dan handle dengan lebih hati-hati
-
-# Case 2: Empty input/target
-if not item['input'].strip() or not item['target'].strip():
-    print(f"⚠️ Line {i}: Empty input or target")
-
-# Case 3: Very long input/target
-if len(item['input']) > 10000 or len(item['target']) > 1000:
-    print(f"⚠️ Line {i}: Very long text (might cause issues)")
-
-# Case 4: Missing 'input' or 'target' keys
-if 'input' not in item or 'target' not in item:
-    print(f"⚠️ Line {i}: Missing required keys")
-
-# Case 5: Non-string values
-if not isinstance(item['input'], str) or not isinstance(item['target'], str):
-    print(f"⚠️ Line {i}: Non-string values")
-```
-
-### 2.4 Data Validation (70/100) - **PARTIAL**
-
-**Missing Validations:**
-
-```python
-# Validate markdown structure
-def validate_markdown(text):
-    issues = []
-    if text.count('```') % 2 != 0:
-        issues.append("Unclosed code blocks")
-    if text.count('**') % 2 != 0:
-        issues.append("Unbalanced bold markers")
-    return issues
-
-# Validate encoding
-def validate_encoding(text):
-    try:
-        text.encode('utf-8')
-        return True
-    except UnicodeEncodeError:
-        return False
-
-# Validate format
-def validate_format(item):
-    if not isinstance(item.get('input'), str):
-        return False, "Input is not string"
-    if not isinstance(item.get('target'), str):
-        return False, "Target is not string"
-    if len(item['input'].strip()) == 0:
-        return False, "Input is empty"
-    if len(item['target'].strip()) == 0:
-        return False, "Target is empty"
-    return True, "OK"
-```
+**Validation:**
+- ✅ Total count: 220 samples in main file
+- ✅ Type ratio: knowledge ≥ 60%, code ≤ 40%
+- ✅ No duplicates (input, question, or text)
+- ✅ All samples have required fields
+- ✅ All samples follow format rules
+- ✅ All samples follow language rules
 
 ---
 
----
+## Execution Order
+
+1. **Phase 1:** Remove 95 invalid samples → 15 valid remain in main file
+2. **Phase 2:** Generate 224 new samples → save to `_generated.jsonl` (temporary)
+3. **Phase 3:** Merge directly → append all from `_generated.jsonl` to main file (01-perkenalan-python.jsonl)
+4. **Cleanup:** Delete temporary `_generated.jsonl` file
+5. **Validate:** Confirm 220 total samples in main file with all rules compliance
 
 ---
 
-## BAGIAN 5: KEY IMPROVEMENTS SUMMARY
+## Key References
 
-| Improvement               | Before    | After              | Impact |
-| ---------------------------| -----------| --------------------| --------|
-| **Metadata preservation** | ❌ Lost    | ✅ Saved separately | HIGH   |
-| **Error handling**        | ❌ None    | ✅ Comprehensive    | HIGH   |
-| **Data validation**       | ⚠️ Partial | ✅ Complete         | MEDIUM |
-| **Edge case handling**    | ❌ None    | ✅ Added            | MEDIUM |
-| **Markdown validation**   | ❌ None    | ✅ Added            | MEDIUM |
-| **Reporting**             | ✅ Good    | ✅ Better           | LOW    |
-| **Documentation**         | ✅ Good    | ✅ Improved         | LOW    |
+- **Design Guide:** `docs/dataset/03-Dataset-Design-Guide-v3.md`
+- **Main File (Final):** `dataset_aqg/dataset-task-v4/01-perkenalan-python/01-perkenalan-python.jsonl`
+- **Temporary File (Delete after merge):** `dataset_aqg/dataset-task-v4/01-perkenalan-python/01-perkenalan-python_generated.jsonl`
+- **Report:** `scripts/03-dataset-design/report-dataset.md`
 
 ---
 
-## BAGIAN 6: IMPLEMENTATION CHECKLIST
+## Notes
 
-- [ ] **Replace current script** dengan improved version
-- [ ] **Test on sample data** (verify metadata saved)
-- [ ] **Check metadata files** (train_metadata.jsonl, etc.)
-- [ ] **Verify no errors** during transformation
-- [ ] **Validate markdown** in transformed files
-- [ ] **Compare before/after** samples
-- [ ] **Document changes** in README
-- [ ] **Run full transformation** on all datasets
-
----
-
-## KESIMPULAN
-
-### Overall Assessment
-
-**Script Anda sudah GOOD (85/100), tapi bisa EXCELLENT (95/100) dengan improvements:**
-
-1. ✅ **Format transformation**: Sudah benar
-2. ✅ **Markdown preservation**: Sudah benar
-3. ❌ **Metadata management**: MISSING (critical)
-4. ⚠️ **Error handling**: Perlu ditambah
-5. ⚠️ **Data validation**: Perlu ditambah
-6. ⚠️ **Edge case handling**: Perlu ditambah
-
-### Rekomendasi Prioritas
-
-**CRITICAL (harus ditambah):**
-1. Metadata preservation dan saving terpisah
-2. Error handling untuk JSON parsing
-3. Data validation
-
-**IMPORTANT (sebaiknya ditambah):**
-4. Edge case handling
-5. Markdown validation
-6. Better reporting
-
-**OPTIONAL (nice to have):**
-7. Logging ke file
-8. Progress bar untuk large datasets
-9. Configuration file support
-
-### Expected Outcome
-
-Dengan improvements ini, script akan:
-- ✅ Preserve semua informasi penting (metadata)
-- ✅ Handle errors gracefully
-- ✅ Validate data quality
-- ✅ Provide comprehensive reporting
-- ✅ Ready untuk production use
-
+- Generate samples to temporary `_generated.jsonl` file for batching
+- **MERGE DIRECTLY to main file** (01-perkenalan-python.jsonl) - not to _generated.jsonl
+- Delete temporary `_generated.jsonl` after successful merge
+- Follow all rules from 03-Dataset-Design-Guide-v3.md strictly
+- Validate each batch before appending to main file
+- Maintain data integrity throughout process
+- Final result: 220 samples in main file only
