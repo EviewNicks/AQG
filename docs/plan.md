@@ -147,12 +147,99 @@ Phase 3: Merge & Validate
 
 ---
 
+## Scripts Pipeline (Main Workflow)
+
+**Core Pipeline Scripts** (located in `scripts/03-dataset-design/`):
+
+### 1. Analysis Script
+```bash
+python 01_analyze_dataset.py <dataset_file>
+```
+- **Purpose:** Analyze dataset status and generate report
+- **Output:** `report-dataset.md` with:
+  - Total/valid/invalid sample counts
+  - Type distribution (knowledge/code %)
+  - Difficulty distribution
+  - Issues list (duplicates, missing distractors, etc.)
+  - Gap calculation (samples needed to reach 220)
+- **Usage:** Run FIRST to check current status
+
+### 2. Cleanup Script
+```bash
+python 02_clean_dataset.py <dataset_file>
+```
+- **Purpose:** Remove invalid samples (duplicates, missing distractors, incomplete metadata)
+- **Process:**
+  - Identifies invalid samples based on rules
+  - Removes them from dataset
+  - Creates backup file (.bak)
+  - Saves cleaned dataset
+- **Usage:** Run AFTER analysis to remove invalid samples
+
+### 3. Merge Batches Script
+```bash
+python 03_merge_batches.py <main_file> <batch_file_1> <batch_file_2> ...
+```
+- **Purpose:** Merge batch files into main dataset file
+- **Process:**
+  - Reads main file
+  - Appends all batch files sequentially
+  - Writes merged result back to main file
+  - Cleans up batch files after merge
+- **Usage:** Run AFTER generating batch files to consolidate
+
+### 4. Add Type Metadata Script
+```bash
+python 04_add_type_metadata.py <dataset_file>
+```
+- **Purpose:** Add/detect type metadata (knowledge/code) based on code blocks
+- **Detection Logic:**
+  - If output contains ``` → type = 'code'
+  - Otherwise → type = 'knowledge'
+- **Process:**
+  - Analyzes each sample
+  - Adds type field to metadata
+  - Validates type distribution (≥60% knowledge, ≤40% code)
+  - Reports distribution status
+- **Usage:** Run AFTER merging to add type metadata
+
+### Recommended Workflow
+
+```
+Step 1: Analyze current status
+  └── python 01_analyze_dataset.py <dataset_file>
+      └── Check report-dataset.md for issues
+
+Step 2: Clean invalid samples (if any)
+  └── python 02_clean_dataset.py <dataset_file>
+      └── Removes duplicates and invalid samples
+
+Step 3: Generate new samples
+  └── Create batch files (batch_1.jsonl, batch_2.jsonl, etc.)
+      └── Follow 03-Dataset-Design-Guide-v3.md rules
+
+Step 4: Merge batches into main file
+  └── python 03_merge_batches.py <main_file> <batch_1> <batch_2> ...
+      └── Consolidates all batches
+
+Step 5: Add type metadata
+  └── python 04_add_type_metadata.py <dataset_file>
+      └── Detects and adds type field
+
+Step 6: Validate final result
+  └── python 01_analyze_dataset.py <dataset_file>
+      └── Confirm 220 samples, valid type distribution, no issues
+```
+
+---
+
 ## Key References
 
 - **Design Guide:** `docs/dataset/03-Dataset-Design-Guide-v3.md`
 - **Main File (Final):** `dataset_aqg/dataset-task-v4/01-perkenalan-python/01-perkenalan-python.jsonl`
 - **Temporary File (Delete after merge):** `dataset_aqg/dataset-task-v4/01-perkenalan-python/01-perkenalan-python_generated.jsonl`
 - **Report:** `scripts/03-dataset-design/report-dataset.md`
+- **Scripts Location:** `scripts/03-dataset-design/`
 
 ---
 
@@ -165,3 +252,5 @@ Phase 3: Merge & Validate
 - Validate each batch before appending to main file
 - Maintain data integrity throughout process
 - Final result: 220 samples in main file only
+- **Always use the 4-script pipeline** (analyze → clean → merge → add-type) for consistency
+- Run analysis script first to understand current state before taking action
