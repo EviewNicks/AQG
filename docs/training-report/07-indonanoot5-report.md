@@ -1,14 +1,16 @@
 # IndonanoT5 fine-tuned D=64 With Dataset V3  no-code 
 Note = letaknya di akun gmail diansyahardi139@gmail.com
 
+
 Model:           IndoNanoT5-base (248M params)
-Adapter:         Pfeiffer, d=128 (reduction_factor=12)
+Adapter:         Pfeiffer, d=64 (reduction_factor=12)
 Trainable:       2.38M params (0.95%)
 Dataset:         dataset-task-spesifc/ (4,529 train)
 Epochs:          8
 Batch Size:      4 (effective: 8 with grad_accum=2)
-Learning Rate:   5e-5
+Learning Rate:   1e-4
 Warmup:          50 steps
+
 
 
 

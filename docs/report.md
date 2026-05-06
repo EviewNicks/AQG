@@ -1,65 +1,117 @@
-# 3. Metodologi
+# 1. Eksperiment Pertama Parameter LoRA 
 
-## 3.1. Akuisisi & Deskripsi Dataset
+Dataset :
 
-### Tujuan
-Mempersiapkan dataset berkualitas tinggi untuk fine-tuning model IndoT5 pada tugas pembuatan soal pilihan ganda (MCQ) dan pertanyaan pemrograman Python dalam bahasa Indonesia.
+✓ Metadata dropped
+  Columns: ['input', 'output', 'metadata']
+  Train: 1332 | Val: 166 | Test: 168
 
-### Deskripsi Dataset
 
-Dataset dikumpulkan dari platform pembelajaran dan diproses menjadi format terstruktur untuk task-specific instruction tuning. Dataset terdiri dari dua kategori utama:
+ peft_model, tokenizer = load_model_with_lora(
+    model_name='LazarusNLP/IndoNanoT5-base',  
+    lora_r=8,
+    lora_alpha=16,
+    lora_dropout=0.1,
+    target_modules=['q', 'v']
+)
 
-**Komposisi Dataset:**
-- **Knowledge + Code**: 5,662 entri (soal dengan kode dan konsep)
-- **No-Code**: 3,515 entri (soal konseptual tanpa mengambil dataset sample yang punya kode blocks )
-- **Total**: 5,662 entri
+✓ Base model loaded
+✓ LoRA applied: r=8, alpha=16, target=['q', 'v']
+  Trainable: 884,736 (0.36%)
+  Total:     248,462,592
+✓ Model device: cuda:0
+  GPU allocated: 1.00 GB
 
-tujuanna mengaa kita memiliki 2 kategoru ytama datatste adlaha karna modle indonanot5 hanya dilatih dnegan domain bahasa indoensia saja , kurnag memiliki pemahaman terkiat text bahasa ingris ( untuk istilah python) dan pemahaman code yang baik , dengan membagi 2 jenis datset ini , kita melakuakn experiment apakha modle lazaaruzNLP/indonanot5 tetap dapat emmahami dna mmembuat strctured code di generated nya dengan baik atau tidak 
+=== Model Information ===
+Model type: PeftModelForSeq2SeqLM
+Tokenizer: T5Tokenizer
+Vocab size: 32000
+Pad token: <pad> (ID: 0)
+EOS token: </s> (ID: 1)
 
-### Struktur Data
+Parameters:
+  Total: 248,462,592
+  Trainable: 884,736 (0.36%)
+  Frozen: 247,577,856
+  Total: 
 
-Setiap entri dataset memiliki struktur JSONL dengan tiga komponen utama:
+Jika pelru detail coba lihat : src\finetuned\notebooks\03_task_specific_training_v2.ipynb 
 
-```json
-{
-  "input": "buat_soal_pilihan_ganda: [konteks materi 1-2 kalimat]",
-  "output": "question: [soal]\nanswer: [jawaban]\ndistractors: [opsi1] | [opsi2] | [opsi3]",
-  "metadata": {
-    "difficulty": "Mudah|Sedang|Sulit",
-    "type": "knowledge|code"
-  }
-}
-```
 
-**Penjelasan Komponen:**
-- **Input**: Konteks materi dengan instruksi tugas, berisi 1-2 kalimat penjelasan (50-200 kata)
-- **Output**: Soal terstruktur dengan pertanyaan, jawaban benar, dan tiga distraktor yang plausibel
-- **Metadata**:
-  - `difficulty`: Tingkat kesulitan (Mudah = recall langsung, Sedang = aplikasi, Sulit = sintesis)
-  - `type`: Jenis soal (knowledge = konseptual, code = dengan blok kode)
+# 2 Eksperimen Keduan Adapter 
 
-### Distribusi dan Validasi
+## Dataset Loaded V3 
 
-**Distribusi Tipe Soal:**
-- Knowledge: ≥ 60% (mencegah overfitting pada pola kode)
-- Code: ≤ 40% (menjaga keseimbangan dengan soal konseptual)
+Dataset loaded Versi Completed  :
+  Train: 4529 samples
+  Val:   566 samples
+  Test:  566 samples
+✓ Using output field: 'output'
 
-**Distribusi Kesulitan:**
-- Mudah: ~40%
-- Sedang: ~45%
-- Sulit: ~15%
+Dataset loaded Versi No Code :
+  Train: 2812 samples
+  Val:   351 samples
+  Test:  352 samples
+✓ Using output field: 'output'
 
-**Validasi Kualitas:**
-Dataset divalidasi melalui automated checks yang memverifikasi:
-- Format struktur JSONL dan kelengkapan field (input, output, metadata)
-- Kehadiran semua komponen output (question, answer, distractors)
-- Kualitas distraktor (plausibel, distinct, berbasis miskonsepsi umum)
-- Konsistensi bahasa Indonesia (EYD, tone formal/edukatif)
-- Tidak ada duplikasi dalam input atau pertanyaan
-- Distribusi tipe dan kesulitan sesuai target
+Model:           IndoNanoT5-base (248M params)
+Adapter:         Pfeiffer, d=64 (reduction_factor=12)
+Trainable:       2.38M params (0.95%)
+Dataset:         dataset-task-spesifc/ (4,529 train)
+Epochs:          8
+Batch Size:      4 (effective: 8 with grad_accum=2)
+Learning Rate:   1e-4
+Warmup:          50 steps
 
-Proses validasi mengikuti pipeline yang didokumentasikan yang  mencakup tahap analisis, pembersihan, penggabungan batch, dan penambahan metadata tipe.
+# 3 Eksperimen Ketiga Adapter 
 
-### Sumber dan Cakupan
+## Dataset Loaded V3 
 
-Dataset mencakup 60+ konsep pemrograman Python dari 11 modul pembelajaran, dengan stratifikasi berdasarkan topik untuk memastikan representasi seimbang di setiap kategori. Semua soal dirancang untuk konteks pendidikan tingkat menengah dengan fokus pada pemahaman konsep dan kemampuan coding praktis.
+Dataset loaded Versi Completed  :
+  Train: 4529 samples
+  Val:   566 samples
+  Test:  566 samples
+✓ Using output field: 'output'
+
+Dataset loaded Versi No Code :
+  Train: 2812 samples
+  Val:   351 samples
+  Test:  352 samples
+✓ Using output field: 'output'
+
+Model:           IndoNanoT5-base (248M params)
+Adapter:         Pfeiffer, d=128 (reduction_factor=6) ⬆️
+Trainable:       ~9.5M params (3.8%) ⬆️
+Dataset:         dataset-task-v3/00-dataset/ (5,560 train) ⬆️
+Epochs:          10 ⬆️
+Batch Size:      4 (effective: 8 with grad_accum=2)
+Learning Rate:   5e-5 ⬇️ (lebih kecil untuk model lebih besar)
+Warmup:          100 steps ⬆️
+
+
+# 4 Eksperimen Keempat Adapter 
+
+## Dataset Loaded V4  
+
+
+Dataset loaded Versi Completed  :
+  Train: 8680 samples
+  Val:   1085 samples
+  Test:  1086 samples
+✓ Using output field: 'output'
+
+Dataset loaded Versi No Code :
+  Train: 6356 samples
+  Val:   794 samples
+  Test:  794 samples
+✓ Using output field: 'output'
+
+Model:           IndoNanoT5-base (248M params)
+Adapter:         Pfeiffer, d=128 (reduction_factor=6) ⬆️
+Trainable:       ~9.5M params (3.8%) ⬆️
+Dataset:         dataset-task-v3/00-dataset/ (5,560 train) ⬆️
+Epochs:          10 ⬆️
+Batch Size:      4 (effective: 8 with grad_accum=2)
+Learning Rate:   5e-5 ⬇️ (lebih kecil untuk model lebih besar)
+Warmup:          100 steps ⬆️
+

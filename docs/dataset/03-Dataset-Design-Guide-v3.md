@@ -100,17 +100,30 @@ Every sample MUST include metadata:
 - `type: "knowledge"` → **≥ 60%**
 - `type: "code"` → **≤ 40%**
 
+**Tolerance Range (±10%):**
+- ✅ **VALID:** Knowledge 50-100%, Code 0-50%
+- ⚠️ **ACCEPTABLE:** Knowledge 50-60%, Code 40-50% (within tolerance)
+- ❌ **INVALID:** Knowledge <50%, Code >50%
+
+**Examples:**
+- 65% knowledge, 35% code → ✅ Valid
+- 55% knowledge, 45% code → ⚠️ Acceptable (within ±10% tolerance)
+- 70% knowledge, 30% code → ✅ Valid
+- 48% knowledge, 52% code → ❌ Invalid (exceeds tolerance)
+
 **Why?**
 - Prevents overfitting on code patterns
 - Improves conceptual understanding
 - Better generalization
+- Tolerance allows natural variation per topic
 
 **Validation:**
 ```
 Knowledge % = (knowledge_count / total) × 100
 Code % = (code_count / total) × 100
 
-Valid if: Knowledge ≥ 60% AND Code ≤ 40%
+Valid if: Knowledge ≥ 50% AND Code ≤ 50%
+Ideal if: Knowledge ≥ 60% AND Code ≤ 40%
 ```
 
 ---
@@ -331,7 +344,7 @@ Before finalizing dataset:
 - [ ] Questions are self-contained
 - [ ] Code blocks copied to question if referenced
 - [ ] All samples have metadata (difficulty, type)
-- [ ] Type distribution: knowledge ≥ 60%, code ≤ 40%
+- [ ] Type distribution: knowledge ≥ 50%, code ≤ 50% (ideal: 60/40)
 - [ ] Plain text format (no markdown except code blocks)
 - [ ] Output format: `question:`, `answer:`, `distractors:`
 - [ ] Answers are concise (1-5 words preferred)

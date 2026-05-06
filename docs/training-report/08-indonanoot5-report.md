@@ -79,6 +79,44 @@ Tokenizer:
   Pad token:  <pad> (ID: 0)
   EOS token:  </s> (ID: 1)
 
+✓ Loaded 567 entries from /content/dataset_aqg/dataset-task-spesifc/test.jsonl
+
+Dataset loaded:
+  Train: 4529 samples
+  Val:   566 samples
+  Test:  567 samples
+✓ Using output field: 'output'
+
+=== Dataset Validation Summary ===
+Total Entries: 4529
+Duplicate Count: 0
+Avg Input Length: 195.65 chars
+Avg Target Length: 239.35 chars
+Has Metadata: True
+✓ No duplicates found
+
+=== Sample Entry ===
+Input: buat_soal_pilihan_ganda: Perhatikan kode berikut:
+```python
+var_mat = [[10, 20],
+           [30, 40],
+           [50, 60]]
+print(var_mat[0][1] + var_mat[2][1])
+```
+Kode ini menjumlahkan elemen kolom kedua dari baris pertama dan baris terakhir....
+Output: question: Perhatikan kode berikut:
+```python
+var_mat = [[10, 20],
+           [30, 40],
+           [50, 60]]
+print(var_mat[0][1] + var_mat[2][1])
+```
+Apa output dari kode tersebut?
+answer: 80
+distractors: 70 | 90 | 60...
+
+✓ Dataset ready (supports both v2 and v3 formats)
+
 ## 4 baseline Evaluation
 
 ```

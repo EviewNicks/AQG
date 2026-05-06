@@ -1,119 +1,103 @@
-Baik, saya paham. Anda ingin saya menjalankan script `04_add_type_metadata.py` untuk semua file `.jsonl` di folder `dataset_aqg/dataset-task-v4/08-subprogram` untuk menambahkan metadata `type` jika belum ada.
+Ah, saya paham sekarang! Jadi strategi Anda adalah:
 
-Mari saya lakukan ini. Pertama, saya akan melihat file apa saja yang ada di folder tersebut.
+## 🎯 STRATEGI YANG BENAR
 
-Bagus! Ada 4 file `.jsonl` di folder tersebut. Sekarang saya akan menjalankan script `04_add_type_metadata.py` untuk setiap file.
+**TIDAK menghapus knowledge samples**, tapi **MENAMBAH code samples** untuk menyeimbangkan ratio!
 
-Sempurna! Script telah dijalankan untuk semua 4 file di folder `08-subprogram`. Berikut ringkasannya:
+### **Logika:**
+- Section 07-11 terlalu banyak knowledge (97-100%)
+- Solusi: Tambah code samples (bukan hapus knowledge)
+- Target: Mencapai ratio yang lebih seimbang (mendekati 60/40 atau dalam tolerance 50/50)
 
-**Hasil Pemrosesan:**
+---
 
-| File | Total Samples | Type Updated | Knowledge % | Code % | Status |
-|------|---|---|---|---|---|
-| materi1.jsonl | 220 | 0 | 97.7% | 2.3% | ✅ Valid |
-| materi2.jsonl | 244 | 0 | 99.2% | 0.8% | ✅ Valid |
-| materi3.jsonl | 220 | 0 | 100.0% | 0.0% | ✅ Valid |
-| materi4.jsonl | 220 | 0 | 99.1% | 0.9% | ✅ Valid |
+## 📊 ANALISIS KEBUTUHAN CODE SAMPLES
 
-**Kesimpulan:**
-- ✅ Semua 4 file sudah memiliki metadata `type`
-- ✅ Semua file memiliki distribusi type yang valid (knowledge ≥60%, code ≤40%)
-- ✅ Tidak ada file yang perlu penyesuaian
-- ℹ️ Folder ini fokus pada knowledge type (hampir 100% knowledge)
+Mari saya hitung berapa code samples yang perlu ditambahkan di setiap section:
 
-Folder `08-subprogram` sudah lengkap dan valid! Apakah Anda ingin saya melanjutkan dengan folder lainnya?
+### **Section 07: Matriks (4 files)**
 
+| File | Current | Knowledge | Code | Target Ratio | Code Needed |
+|------|---------|-----------|------|--------------|-------------|
+| materi1 | 220 | 106 (48%) | 114 (52%) | 60/40 | **+48 code** → 268 total |
+| materi2 | 220 | 121 (55%) | 99 (45%) | 60/40 | **+66 code** → 286 total |
+| materi3 | 220 | 109 (50%) | 111 (50%) | 60/40 | **+73 code** → 293 total |
+| materi4 | 220 | 170 (77%) | 50 (23%) | 60/40 | **+63 code** → 283 total |
 
-Baik, saya paham. Anda ingin saya menjalankan script `04_add_type_metadata.py` untuk semua file `.jsonl` di folder `dataset_aqg/dataset-task-v4/09-oop` untuk menambahkan metadata `type` jika belum ada.
+**Subtotal Section 07: ~250 code samples**
 
-Mari saya lakukan ini. Pertama, saya akan melihat file apa saja yang ada di folder tersebut.
+### **Section 08: Subprogram (4 files)**
 
-Bagus! Ada 4 file `.jsonl` di folder tersebut. Sekarang saya akan menjalankan script `04_add_type_metadata.py` untuk setiap file.
+| File | Current | Knowledge | Code | Target Ratio | Code Needed |
+|------|---------|-----------|------|--------------|-------------|
+| materi1 | 220 | 215 (98%) | 5 (2%) | 60/40 | **+138 code** → 358 total |
+| materi2 | 244 | 242 (99%) | 2 (1%) | 60/40 | **+159 code** → 403 total |
+| materi3 | 220 | 218 (99%) | 2 (1%) | 60/40 | **+143 code** → 363 total |
+| materi4 | 220 | 218 (99%) | 2 (1%) | 60/40 | **+143 code** → 363 total |
 
-Sempurna! Script telah dijalankan untuk semua 4 file di folder `09-oop`. Berikut ringkasannya:
+**Subtotal Section 08: ~583 code samples**
 
-**Hasil Pemrosesan:**
+### **Section 09: OOP (4 files)**
 
-| File | Total Samples | Type Updated | Knowledge % | Code % | Status |
-|------|---|---|---|---|---|
-| materi1.jsonl | 220 | 158 | 77.7% | 22.3% | ✅ Valid |
-| materi2.jsonl | 220 | 163 | 76.8% | 23.2% | ✅ Valid |
-| materi3.jsonl | 220 | 0 | 100.0% | 0.0% | ✅ Valid |
-| materi4.jsonl | 220 | 111 | 100.0% | 0.0% | ✅ Valid |
+| File | Current | Knowledge | Code | Target Ratio | Code Needed |
+|------|---------|-----------|------|--------------|-------------|
+| materi1 | 220 | 171 (78%) | 49 (22%) | 60/40 | **+65 code** → 285 total |
+| materi2 | 220 | 169 (77%) | 51 (23%) | 60/40 | **+62 code** → 282 total |
+| materi3 | 220 | 171 (78%) | 49 (22%) | 60/40 | **+65 code** → 285 total |
+| materi4 | 220 | 220 (100%) | 0 (0%) | 60/40 | **+147 code** → 367 total |
 
-**Kesimpulan:**
-- ✅ Semua 4 file sudah memiliki metadata `type`
-- ✅ Semua file memiliki distribusi type yang valid (knowledge ≥60%, code ≤40%)
-- ✅ Tidak ada file yang perlu penyesuaian
-- ℹ️ 592 samples ditambahkan metadata `type` (158 + 163 + 111)
+**Subtotal Section 09: ~339 code samples**
 
-Folder `09-oop` sudah lengkap dan valid! Apakah Anda ingin saya melanjutkan dengan folder lainnya?\
+### **Section 10: Style Guide (5 files)**
 
+| File | Current | Knowledge | Code | Target Ratio | Code Needed |
+|------|---------|-----------|------|--------------|-------------|
+| materi1 | 220 | 220 (100%) | 0 (0%) | 60/40 | **+147 code** → 367 total |
+| materi2 | 220 | 220 (100%) | 0 (0%) | 60/40 | **+147 code** → 367 total |
+| materi3 | 220 | 220 (100%) | 0 (0%) | 60/40 | **+147 code** → 367 total |
+| materi4 | 214 | 214 (100%) | 0 (0%) | 60/40 | **+143 code** → 357 total |
+| materi5 | 221 | 221 (100%) | 0 (0%) | 60/40 | **+147 code** → 368 total |
 
-Baik, saya paham. Anda ingin saya menjalankan script `04_add_type_metadata.py` untuk semua file `.jsonl` di folder `dataset_aqg/dataset-task-v4/10-style-guide` untuk menambahkan metadata `type` jika belum ada.
+**Subtotal Section 10: ~731 code samples**
 
-Mari saya lakukan ini. Pertama, saya akan melihat file apa saja yang ada di folder tersebut.
+### **Section 11: Unit Testing (3 files)**
 
-Bagus! Ada 5 file `.jsonl` di folder tersebut. Sekarang saya akan menjalankan script `04_add_type_metadata.py` untuk setiap file.
+| File    | Current | Knowledge  | Code   | Target Ratio | Code Needed               |
+| ---------| ---------| ------------| --------| --------------| ---------------------------|
+| materi1 | 220     | 220 (100%) | 0 (0%) | 60/40        | **+147 code** → 367 total |
+| materi2 | 220     | 220 (100%) | 0 (0%) | 60/40        | **+147 code** → 367 total |
+| materi3 | 220     | 220 (100%) | 0 (0%) | 60/40        | **+147 code** → 367 total |
 
-Sempurna! Script telah dijalankan untuk semua 5 file di folder `10-style-guide`. Berikut ringkasannya:
+**Subtotal Section 11: ~441 code samples**
 
-**Hasil Pemrosesan:**
+---
 
-| File | Total Samples | Type Updated | Knowledge % | Code % | Status |
-|------|---|---|---|---|---|
-| materi1.jsonl | 220 | 113 | 100.0% | 0.0% | ✅ Valid |
-| materi2.jsonl | 220 | 112 | 100.0% | 0.0% | ✅ Valid |
-| materi3.jsonl | 220 | 0 | 100.0% | 0.0% | ✅ Valid |
-| materi4.jsonl | 214 | 0 | 100.0% | 0.0% | ✅ Valid |
-| materi5.jsonl | 221 | 0 | 100.0% | 0.0% | ✅ Valid |
+## 📋 TOTAL KEBUTUHAN
 
-**Kesimpulan:**
-- ✅ Semua 5 file sudah memiliki metadata `type`
-- ✅ Semua file memiliki distribusi type yang valid (knowledge ≥60%, code ≤40%)
-- ✅ Tidak ada file yang perlu penyesuaian
-- ℹ️ 225 samples ditambahkan metadata `type` (113 + 112)
-- ℹ️ Folder ini fokus pada knowledge type (100% knowledge)
+| Section | Files | Code Samples Needed | Avg per File |
+|---------|-------|---------------------|--------------|
+| 07-matriks | 4 | ~250 | ~63 |
+| 08-subprogram | 4 | ~583 | ~146 |
+| 09-oop | 4 | ~339 | ~85 |
+| 10-style-guide | 5 | ~731 | ~146 |
+| 11-unit-testing | 3 | ~441 | ~147 |
+| **TOTAL** | **20 files** | **~2,344 code samples** | **~117** |
 
-Folder `10-style-guide` sudah lengkap dan valid! Apakah Anda ingin saya melanjutkan dengan folder terakhir `11-unit-testing`?
+---
 
-Baik, saya paham. Anda ingin saya menjalankan script `04_add_type_metadata.py` untuk semua file `.jsonl` di folder `dataset_aqg/dataset-task-v4/11-unit-testing` untuk menambahkan metadata `type` jika belum ada.
+## ✅ KONFIRMASI PEMAHAMAN
 
-Mari saya lakukan ini. Pertama, saya akan melihat file apa saja yang ada di folder tersebut.
+**Apakah ini yang Anda maksud?**
 
-Bagus! Ada 3 file `.jsonl` di folder tersebut. Sekarang saya akan menjalankan script `04_add_type_metadata.py` untuk setiap file.
+1. ✅ **TIDAK menghapus** knowledge samples yang sudah ada
+2. ✅ **MENAMBAH code samples** (dengan code blocks) di setiap file
+3. ✅ **Target:** Mencapai ratio 60/40 (knowledge/code) atau minimal dalam tolerance
+4. ✅ **Fokus:** Section 07-11 (20 files total)
+5. ✅ **Estimasi:** ~2,344 code samples total (~117 per file)
 
-Sempurna! Script telah dijalankan untuk semua 3 file di folder `11-unit-testing`. Berikut ringkasannya:
+**Catatan:**
+- Usulan Anda: 300-400 samples per section
+- Perhitungan saya: ~2,344 total untuk semua section (07-11)
+- Jika dibagi per section: ~469 samples per section (5 sections)
 
-**Hasil Pemrosesan:**
-
-| File | Total Samples | Type Updated | Knowledge % | Code % | Status |
-|------|---|---|---|---|---|
-| materi1.jsonl | 220 | 110 | 100.0% | 0.0% | ✅ Valid |
-| materi2.jsonl | 220 | 120 | 100.0% | 0.0% | ✅ Valid |
-| materi3.jsonl | 220 | 120 | 100.0% | 0.0% | ✅ Valid |
-
-**Kesimpulan:**
-- ✅ Semua 3 file sudah memiliki metadata `type`
-- ✅ Semua file memiliki distribusi type yang valid (knowledge ≥60%, code ≤40%)
-- ✅ Tidak ada file yang perlu penyesuaian
-- ℹ️ 350 samples ditambahkan metadata `type` (110 + 120 + 120)
-- ℹ️ Folder ini fokus pada knowledge type (100% knowledge)
-
-Folder `11-unit-testing` sudah lengkap dan valid! 
-
-**Ringkasan Keseluruhan:**
-Semua 11 folder task telah diproses dengan script `04_add_type_metadata.py`:
-- ✅ 01-perkenalan-python: 7 file
-- ✅ 02-berinteraksi-dengan-data: 6 file
-- ✅ 03-ekspresi: 4 file
-- ✅ 04-aksi-sekuensial: 4 file
-- ✅ 05-control-flow: 4 file
-- ✅ 06-array: 5 file
-- ✅ 07-matriks: 4 file
-- ✅ 08-subprogram: 4 file
-- ✅ 09-oop: 4 file
-- ✅ 10-style-guide: 5 file
-- ✅ 11-unit-testing: 3 file
-
-Apakah ada yang ingin Anda lakukan selanjutnya?
+**Apakah saya sudah memahami dengan benar? Dan apakah Anda ingin saya mulai membuat code samples untuk section mana dulu?**

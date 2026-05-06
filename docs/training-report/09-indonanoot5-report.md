@@ -79,6 +79,44 @@ Tokenizer:
   Pad token:  <pad> (ID: 0)
   EOS token:  </s> (ID: 1)
 
+✓ Loaded 567 entries from /content/dataset_aqg/dataset-task-spesifc/test.jsonl
+
+Dataset loaded:
+  Train: 2812 samples
+  Val:   566 samples
+  Test:  567 samples
+✓ Using output field: 'output'
+
+=== Dataset Validation Summary ===
+Total Entries: 4529
+Duplicate Count: 0
+Avg Input Length: 195.65 chars
+Avg Target Length: 239.35 chars
+Has Metadata: True
+✓ No duplicates found
+
+=== Sample Entry ===
+Input: buat_soal_pilihan_ganda: Perhatikan kode berikut:
+```python
+var_mat = [[10, 20],
+           [30, 40],
+           [50, 60]]
+print(var_mat[0][1] + var_mat[2][1])
+```
+Kode ini menjumlahkan elemen kolom kedua dari baris pertama dan baris terakhir....
+Output: question: Perhatikan kode berikut:
+```python
+var_mat = [[10, 20],
+           [30, 40],
+           [50, 60]]
+print(var_mat[0][1] + var_mat[2][1])
+```
+Apa output dari kode tersebut?
+answer: 80
+distractors: 70 | 90 | 60...
+
+✓ Dataset ready (supports both v2 and v3 formats)
+
 ## 4 baseline Evaluation
 
 ```
@@ -302,9 +340,9 @@ BLEU Scores:
   BLEU-4:   0.0939
 
 ROUGE Scores:
-  ROUGE-1:  0.5097
-  ROUGE-2:  0.2778
-  ROUGE-L:  0.4431
+  ROUGE-1:  0.5099
+  ROUGE-2:  0.2773
+  ROUGE-L:  0.4425
 
 BERTScore:
   Precision: 0.7933
@@ -325,12 +363,12 @@ bleu_3: 0.1608
 bleu_4: 0.0939
 brevity_penalty: 0.8662
 length_ratio: 0.8744
-rouge_1: 0.5097
-rouge_2: 0.2778
-rouge_l: 0.4431
-rouge_1_fmeasure: 0.5097
-rouge_2_fmeasure: 0.2778
-rouge_l_fmeasure: 0.4431
+rouge_1: 0.5099
+rouge_2: 0.2773
+rouge_l: 0.4425
+rouge_1_fmeasure: 0.5099
+rouge_2_fmeasure: 0.2773
+rouge_l_fmeasure: 0.4425
 bertscore_precision: 0.7933
 bertscore_recall: 0.7760
 bertscore_f1: 0.7842
@@ -341,87 +379,189 @@ distinct_2: 0.5305
 
 Generating 20 sample outputs...
 
---- Sample 1 ---
-Input: buat_soal_pilihan_ganda: Duck typing tidak berkaitan langsung dengan dynamic typing atau loosely typed. Konsep duck typing lebih erat dengan pemrogram...
-Reference: question: Dengan konsep apa duck typing lebih erat kaitannya?
+================================================================================
+Sample 1/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Duck typing tidak berkaitan langsung dengan dynamic typing atau loosely typed. Konsep duck typing lebih erat dengan pemrograman berorientasi objek (OOP) dan fokus pada kemampuan object melakukan operasi tertentu.
+
+✅ REFERENCE:
+question: Dengan konsep apa duck typing lebih erat kaitannya?
 answer: Pemrograman berorientasi objek (OOP)
-distractors: Dynamic typing | Loosely typed...
-Prediction: question: apa yang dimaksud dengan duck typing? answer: dynamic typing lebih erat dengan python dan fokus pada kemampuan object melakukan operasi tert...
-BLEU: 0.0000
+distractors: Dynamic typing | Loosely typed | Static typing
 
---- Sample 2 ---
-Input: buat_soal_pilihan_ganda: Notebook seperti Jupyter atau Colab menyediakan lingkungan pengembangan interaktif dengan sel-sel yang dapat dijalankan satu ...
-Reference: question: Apa keunggulan sistem sel pada Notebook?
+🤖 PREDICTION:
+question: apa yang dimaksud dengan duck typing? answer: dynamic typing lebih erat dengan python dan fokus pada kemampuan object melakukan operasi tertentu distractors: python lebih lambat | python lebih cepat | tidak ada perbedaan
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 2/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Notebook seperti Jupyter atau Colab menyediakan lingkungan pengembangan interaktif dengan sel-sel yang dapat dijalankan satu per satu.
+
+✅ REFERENCE:
+question: Apa keunggulan sistem sel pada Notebook?
 answer: Dapat menjalankan kode satu per satu
-distractors: Lebih cepat dari script | Tidak perlu Pyt...
-Prediction: question: apa yang dimaksud dengan notebook seperti jupyter atau colab? answer: lingkungan pengembangan interaktif dengan sel-sel yang dapat dijalanka...
-BLEU: 0.1329
+distractors: Lebih cepat dari script | Tidak perlu Python | Otomatis menyimpan
 
---- Sample 3 ---
-Input: buat_soal_pilihan_ganda: Dalam NumPy, kita dapat membuat matriks dengan nilai default menggunakan fungsi numpy.zeros() untuk matriks berisi 0, atau nu...
-Reference: question: Fungsi NumPy apa yang digunakan untuk membuat matriks berisi nilai 0?
+🤖 PREDICTION:
+question: apa yang dimaksud dengan notebook seperti jupyter atau colab? answer: lingkungan pengembangan interaktif dengan sel-sel yang dapat dijalankan satu per satu distractors: fungsi yang hanya bisa dijalankan sekali | fungsi yang tidak bisa dijalankan
+
+📊 BLEU Score: 0.1329
+================================================================================
+
+================================================================================
+Sample 3/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dalam NumPy, kita dapat membuat matriks dengan nilai default menggunakan fungsi numpy.zeros() untuk matriks berisi 0, atau numpy.ones() untuk matriks berisi 1.
+
+✅ REFERENCE:
+question: Fungsi NumPy apa yang digunakan untuk membuat matriks berisi nilai 0?
 answer: numpy.zeros()
-distractors: numpy.empty() | numpy.zero() | nump...
-Prediction: question: apa fungsi numpy.zeros() untuk matriks berisi 0 distractors: membuat matriks dengan nilai default | menghapus matriks | membuat matriks baru...
-BLEU: 0.1267
+distractors: numpy.empty() | numpy.zero() | numpy.fill(0)
 
---- Sample 4 ---
-Input: buat_soal_pilihan_ganda: Method overriding adalah kemampuan child class untuk memberikan implementasi berbeda dari method yang diwarisi dari parent cl...
-Reference: question: Apa yang dimaksud dengan method overriding?
+🤖 PREDICTION:
+question: apa fungsi numpy.zeros() untuk matriks berisi 0 distractors: membuat matriks dengan nilai default | menghapus matriks | membuat matriks baru
+
+📊 BLEU Score: 0.1267
+================================================================================
+
+================================================================================
+Sample 4/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Method overriding adalah kemampuan child class untuk memberikan implementasi berbeda dari method yang diwarisi dari parent class. Method di child class harus memiliki nama dan signature yang sama dengan method di parent class.
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan method overriding?
 answer: Child class memberikan implementasi berbeda dari method yang diwarisi dari parent class
-...
-Prediction: question: apa yang dimaksud dengan method overriding? answer: kemampuan child class untuk memberikan implementasi berbeda dari method di parent class ...
-BLEU: 0.3510
+distractors: Menghapus method dari parent class | Membuat method baru di parent class | Mengubah nama method
 
---- Sample 5 ---
-Input: buat_soal_pilihan_ganda: Unpacking memungkinkan assignment nilai dari list atau tuple ke beberapa variabel sekaligus....
-Reference: question: Apa yang dimaksud dengan unpacking?
+🤖 PREDICTION:
+question: apa yang dimaksud dengan method overriding? answer: kemampuan child class untuk memberikan implementasi berbeda dari method di parent class distractors: kemampuan membuat class berjalan lebih cepat | kemampuan membuat method berjalan lebih lambat
+
+📊 BLEU Score: 0.3510
+================================================================================
+
+================================================================================
+Sample 5/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Unpacking memungkinkan assignment nilai dari list atau tuple ke beberapa variabel sekaligus.
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan unpacking?
 answer: Assignment nilai dari list/tuple ke beberapa variabel
-distractors: Menghapus variabel | Menggabu...
-Prediction: question: apa yang dimaksud dengan unpacking? answer: assignment nilai dari list atau tuple ke beberapa variabel sekaligus distractors: hanya satu var...
-BLEU: 0.3744
+distractors: Menghapus variabel | Menggabungkan variabel | Membuat list
 
---- Sample 6 ---
-Input: buat_soal_pilihan_ganda: Prosedur dapat digunakan untuk denormalization, yaitu menggabungkan data untuk meningkatkan performa query. Denormalization p...
-Reference: question: Apa trade-off dari denormalization prosedur?
+🤖 PREDICTION:
+question: apa yang dimaksud dengan unpacking? answer: assignment nilai dari list atau tuple ke beberapa variabel sekaligus distractors: hanya satu variabel | tidak ada perbedaan
+
+📊 BLEU Score: 0.3744
+================================================================================
+
+================================================================================
+Sample 6/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Prosedur dapat digunakan untuk denormalization, yaitu menggabungkan data untuk meningkatkan performa query. Denormalization prosedur trade-off antara storage dan speed.
+
+✅ REFERENCE:
+question: Apa trade-off dari denormalization prosedur?
 answer: Antara storage dan speed
-distractors: Antara security dan usability | Tidak ada trade-o...
-Prediction: question: apa fungsi denormalization prosedur? answer: menggabungkan data untuk meningkatkan performa query distractors: membuat query lebih lambat | ...
-BLEU: 0.1566
+distractors: Antara security dan usability | Tidak ada trade-off | Antara size dan color
 
---- Sample 7 ---
-Input: buat_soal_pilihan_ganda: Function body adalah blok kode yang diindentasi dan menentukan apa yang dilakukan fungsi. Body berisi instruksi-instruksi yan...
-Reference: question: Apa yang dimaksud dengan function body?
+🤖 PREDICTION:
+question: apa fungsi denormalization prosedur? answer: menggabungkan data untuk meningkatkan performa query distractors: membuat query lebih lambat | menghapus query | membuat query menjadi lebih lambat
+
+📊 BLEU Score: 0.1566
+================================================================================
+
+================================================================================
+Sample 7/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Function body adalah blok kode yang diindentasi dan menentukan apa yang dilakukan fungsi. Body berisi instruksi-instruksi yang akan dieksekusi ketika fungsi dipanggil.
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan function body?
 answer: Blok kode yang diindentasi berisi instruksi yang dieksekusi
-distractors: Nama fungsi yang di...
-Prediction: question: apa yang dimaksud dengan function body? answer: blok kode yang diindentasi dan menentukan apa yang dilakukan fungsi distractors: kode yang t...
-BLEU: 0.2800
+distractors: Nama fungsi yang digunakan | Nilai yang dikembalikan fungsi | Parameter yang diterima fungsi
 
---- Sample 8 ---
-Input: buat_soal_pilihan_ganda: Dalam implementasi perkalian matriks dengan konstanta menggunakan list Python, kita memerlukan nested loop untuk mengiterasi ...
-Reference: question: Mengapa kita memerlukan nested loop (dua perulangan) untuk mengalikan matriks dengan konstanta menggunakan list Python?
-answer: Karena matri...
-Prediction: question: apa yang diperlukan untuk mengiterasi setiap elemen dalam perkalian matriks dengan konstanta? answer: nested loop distractors: semua elemen ...
-BLEU: 0.0000
+🤖 PREDICTION:
+question: apa yang dimaksud dengan function body? answer: blok kode yang diindentasi dan menentukan apa yang dilakukan fungsi distractors: kode yang tidak bisa dipanggil | kode yang hanya bisa dipanggil
 
---- Sample 9 ---
-Input: buat_soal_pilihan_ganda: Case-sensitive juga berlaku untuk nama modul dan package dalam Python. Import statement harus menggunakan kapitalisasi yang t...
-Reference: question: Apakah case-sensitive berlaku untuk nama modul?
+📊 BLEU Score: 0.2800
+================================================================================
+
+================================================================================
+Sample 8/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dalam implementasi perkalian matriks dengan konstanta menggunakan list Python, kita memerlukan nested loop untuk mengiterasi setiap elemen. Loop pertama untuk baris dan loop kedua untuk kolom.
+
+✅ REFERENCE:
+question: Mengapa kita memerlukan nested loop (dua perulangan) untuk mengalikan matriks dengan konstanta menggunakan list Python?
+answer: Karena matriks adalah struktur 2 dimensi, sehingga perlu loop untuk baris dan loop untuk kolom
+distractors: Karena Python tidak mendukung operasi langsung pada list 2D | Karena satu loop hanya bisa memproses maksimal 10 elemen | Karena nested loop membuat kode lebih cepat dieksekusi
+
+🤖 PREDICTION:
+question: apa yang diperlukan untuk mengiterasi setiap elemen dalam perkalian matriks dengan konstanta? answer: nested loop distractors: semua elemen | semua elemen harus sama
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 9/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Case-sensitive juga berlaku untuk nama modul dan package dalam Python. Import statement harus menggunakan kapitalisasi yang tepat sesuai dengan nama file atau package.
+
+✅ REFERENCE:
+question: Apakah case-sensitive berlaku untuk nama modul?
 answer: Ya, harus sesuai dengan nama file
-distractors: Tidak, bisa menggunakan kapitalisasi ...
-Prediction: question: apa yang dimaksud dengan case-sensitive dalam python? answer: nama modul dan package dalam python distractors: nama file dan package | nama ...
-BLEU: 0.0000
+distractors: Tidak, bisa menggunakan kapitalisasi apa saja | Hanya untuk variabel | Hanya untuk fungsi
 
---- Sample 10 ---
-Input: buat_soal_pilihan_ganda: Ketika menggunakan black, formatter akan memformat kode secara konsisten bahkan untuk kode yang sangat kompleks. Black menggu...
-Reference: question: Apakah black dapat memformat kode Python yang sangat kompleks dengan benar?
-answer: Ya, black menggunakan algoritma yang dapat menangani ber...
-Prediction: question: bagaimana black memformat kode secara konsisten bahkan untuk kode yang sangat kompleks? answer: algoritma yang dapat menangani berbagai pola...
-BLEU: 0.1622
+🤖 PREDICTION:
+question: apa yang dimaksud dengan case-sensitive dalam python? answer: nama modul dan package dalam python distractors: nama file dan package | nama file atau package yang harus diimpor
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 10/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Ketika menggunakan black, formatter akan memformat kode secara konsisten bahkan untuk kode yang sangat kompleks. Black menggunakan algoritma yang dapat menangani berbagai pola kode Python dan menghasilkan format yang optimal.
+
+✅ REFERENCE:
+question: Apakah black dapat memformat kode Python yang sangat kompleks dengan benar?
+answer: Ya, black menggunakan algoritma yang dapat menangani berbagai pola kode Python yang kompleks
+distractors: Tidak, black hanya efektif untuk kode Python yang sederhana | Ya, tetapi hanya jika kode tidak menggunakan fitur Python lanjutan | Tidak, kode yang kompleks perlu diformat secara manual
+
+🤖 PREDICTION:
+question: bagaimana black memformat kode secara konsisten bahkan untuk kode yang sangat kompleks? answer: algoritma yang dapat menangani berbagai pola kode python dan menghasilkan format yang optimal distractors: algoritma tidak dapat menangani semua kode python | algoritma yang tidak bisa menangani kode python
+
+📊 BLEU Score: 0.1622
+================================================================================
 
 
-✓ Samples saved to /content/drive/MyDrive/dataset_aqg/evaluation_results/09-indonanoot5-report/sample_outputs.json
-✓ 20 samples generated
+✓ 20 samples generated and saved
+✓ Full output displayed above with BLEU scores
 
 ## 10 final summary 
 
@@ -431,18 +571,55 @@ COMPARING WITH BASELINE
 
 Metric                        Baseline   Fine-tuned  Improvement
 -----------------------------------------------------------------
-bleu                            0.0262       0.1951      645.19%
-bleu_1                          0.1068       0.5504      415.24%
-bleu_2                          0.0374       0.3094      726.50%
-bleu_3                          0.0127       0.1608     1165.47%
-bleu_4                          0.0092       0.0939      916.48%
+bleu                            0.0275       0.1951      609.84%
+bleu_1                          0.1145       0.5504      380.87%
+bleu_2                          0.0404       0.3094      666.04%
+bleu_3                          0.0148       0.1608      987.86%
+bleu_4                          0.0083       0.0939     1025.46%
 brevity_penalty                 1.0000       0.8662      -13.38%
-length_ratio                    1.6361       0.8744      -46.56%
-rouge_1                         0.1981       0.5097      157.33%
-rouge_2                         0.0739       0.2778      275.71%
-rouge_l                         0.1673       0.4431      164.83%
-rouge_1_fmeasure                0.1981       0.5097      157.33%
-rouge_2_fmeasure                0.0739       0.2778      275.71%
-rouge_l_fmeasure                0.1673       0.4431      164.83%
-distinct_1                      0.4169       0.1507      -63.86%
-distinct_2                      0.6959       0.5305      -23.77%
+length_ratio                    1.8023       0.8744      -51.48%
+rouge_1                         0.2157       0.5099      136.36%
+rouge_2                         0.0788       0.2773      252.04%
+rouge_l                         0.1832       0.4425      141.59%
+rouge_1_fmeasure                0.2157       0.5099      136.36%
+rouge_2_fmeasure                0.0788       0.2773      252.04%
+rouge_l_fmeasure                0.1832       0.4425      141.59%
+distinct_1                      0.3493       0.1507      -56.86%
+distinct_2                      0.6407       0.5305      -17.20%
+
+============================================================
+ADAPTER-BASED AQG TRAINING SUMMARY
+============================================================
+Method: Adapter Layers (d=64)
+Training Time: 0.01 hours
+Trainable: 1.88%
+
+Metrics Comparison:
+  BLEU-4:  0.0083 → 0.0939
+  ROUGE-L: 0.1832 → 0.4425
+
+BLEU-4 Improvement: +1025.5%
+
+⚠ BLEU-4 = 0.0939 (target: >= 0.20)
+  Consider: more epochs or adjust hyperparameters
+
+✓ Fine-tuning pipeline complete!
+  Adapter: /content/drive/MyDrive/dataset_aqg/checkpoints/09-indonanoot5-report/adapter_mcq_generation
+  Report: /content/drive/MyDrive/dataset_aqg/evaluation_results/09-indonanoot5-report/evaluation_report.json
+  Samples: /content/drive/MyDrive/dataset_aqg/evaluation_results/09-indonanoot5-report/sample_outputs.json
+
+============================================================
+HOW TO LOAD TRAINED ADAPTER
+============================================================
+from adapters import AutoAdapterModel
+from transformers import AutoTokenizer
+
+model = AutoAdapterModel.from_pretrained("LazarusNLP/IndoNanoT5-base")
+tokenizer = AutoTokenizer.from_pretrained("LazarusNLP/IndoNanoT5-base")
+model.load_adapter("/content/drive/MyDrive/dataset_aqg/checkpoints/09-indonanoot5-report/adapter_mcq_generation")
+model.set_active_adapters("mcq_generation")
+
+# Generate
+inputs = tokenizer("generate_mcq: [CONTEXT]", return_tensors="pt")
+outputs = model.generate(**inputs, max_length=512, num_beams=4)
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))
