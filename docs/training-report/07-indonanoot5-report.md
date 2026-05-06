@@ -1,4 +1,4 @@
-# IndonanoT5 fine-tuned D=64 With Dataset V3  no-code 
+# IndonanoT5 fine-tuned D=64 With Dataset V3  no-code  04
 Note = letaknya di akun gmail diansyahardi139@gmail.com
 
 

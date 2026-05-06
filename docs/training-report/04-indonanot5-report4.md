@@ -1,4 +1,4 @@
-# IndoNanoT5 Fine-tued + LoRA with Dataset V3 
+# IndoNanoT5 Fine-tued + LoRA with Dataset V3  03
 
 ## 1 Setup Environtment 
 

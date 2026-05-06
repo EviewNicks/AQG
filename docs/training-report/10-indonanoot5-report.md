@@ -1,4 +1,4 @@
-# IndonanoT5 fine-tuned D=64 With Dataset V4 
+# IndonanoT5 fine-tuned D=64 With Dataset V4  06
 
 Note = letaknya di akun gmail aiimagine@gmail.com
 
