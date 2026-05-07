@@ -65,7 +65,6 @@ trainable, total = print_adapter_info(model, tokenizer)
 ✓ Model moved to GPU
   GPU allocated: 1.01 GB
 
-============================================================
 MODEL INFORMATION
 ============================================================
 
@@ -148,7 +147,6 @@ print(f"  ROUGE-L: {baseline_metrics.get('rouge_l', 0):.4f}")
 Computing Diversity...
 ✓ All metrics computed
 
-============================================================
 Test Set Evaluation Results
 ============================================================
 
@@ -208,7 +206,7 @@ print(f'  Checkpoints will be saved to: {CHECKPOINT_DIR}')
 
 ```
 
-============================================================
+
 TRAINING CONFIGURATION
 ============================================================
 Epochs: 10
@@ -240,7 +238,7 @@ results = trainer.train(
 
 ```
 
-============================================================
+
 PREPROCESSING DATASETS
 ============================================================
 
@@ -250,20 +248,20 @@ PREPROCESSING DATASETS
 📂 Found 2 checkpoint(s): ['checkpoint-352', 'checkpoint-1056']
 🔄 Resuming from: checkpoint-1056
 
-============================================================
+
 STARTING TRAINING
 ============================================================
 Training with Adapter Layers (d=64, ~3.6% trainable params)
 Expected time: 6-8 hours on T4 GPU
 Total epochs: 10
-============================================================
+
 
 There were missing keys in the checkpoint model loaded: ['encoder.embed_tokens.weight', 'decoder.embed_tokens.weight'].
 WARNING:adapters.models.t5.modeling_t5:`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`...
 
 ![alt text](image/09-image.png)
 
-===========================================================================================
+
 
 ## 7 Save adapter & Visualize 
 
@@ -487,7 +485,6 @@ question: apa fungsi denormalization prosedur? answer: menggabungkan data untuk 
 📊 BLEU Score: 0.1566
 ================================================================================
 
-================================================================================
 Sample 7/20
 ================================================================================
 
@@ -587,7 +584,7 @@ rouge_l_fmeasure                0.1832       0.4425      141.59%
 distinct_1                      0.3493       0.1507      -56.86%
 distinct_2                      0.6407       0.5305      -17.20%
 
-============================================================
+
 ADAPTER-BASED AQG TRAINING SUMMARY
 ============================================================
 Method: Adapter Layers (d=64)
@@ -608,7 +605,7 @@ BLEU-4 Improvement: +1025.5%
   Report: /content/drive/MyDrive/dataset_aqg/evaluation_results/09-indonanoot5-report/evaluation_report.json
   Samples: /content/drive/MyDrive/dataset_aqg/evaluation_results/09-indonanoot5-report/sample_outputs.json
 
-============================================================
+
 HOW TO LOAD TRAINED ADAPTER
 ============================================================
 from adapters import AutoAdapterModel

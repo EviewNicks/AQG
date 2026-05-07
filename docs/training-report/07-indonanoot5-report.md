@@ -1,15 +1,16 @@
 # IndonanoT5 fine-tuned D=64 With Dataset V3  no-code  04
-Note = letaknya di akun gmail diansyahardi139@gmail.com
+
+Note = letaknya di akun gmail dianysahardi@gmail.com
 
 
 Model:           IndoNanoT5-base (248M params)
 Adapter:         Pfeiffer, d=64 (reduction_factor=12)
 Trainable:       2.38M params (0.95%)
 Dataset:         dataset-task-spesifc/ (4,529 train)
-Epochs:          8
+Epochs:          10
 Batch Size:      4 (effective: 8 with grad_accum=2)
 Learning Rate:   1e-4
-Warmup:          50 steps
+Warmup:          100 steps
 
 
 
@@ -81,6 +82,32 @@ Tokenizer:
   Vocab size: 32000
   Pad token:  <pad> (ID: 0)
   EOS token:  </s> (ID: 1)
+
+✓ Loaded 2812 entries from /content/dataset_aqg/dataset-task-spesifc/train.jsonl
+✓ Loaded 351 entries from /content/dataset_aqg/dataset-task-spesifc/validation.jsonl
+✓ Loaded 352 entries from /content/dataset_aqg/dataset-task-spesifc/test.jsonl
+
+Dataset loaded:
+  Train: 2812 samples
+  Val:   351 samples
+  Test:  352 samples
+✓ Using output field: 'output'
+
+=== Dataset Validation Summary ===
+Total Entries: 2812
+Duplicate Count: 0
+Avg Input Length: 190.77 chars
+Avg Target Length: 234.73 chars
+Has Metadata: True
+✓ No duplicates found
+
+=== Sample Entry ===
+Input: buat_soal_pilihan_ganda: Deklarasi matriks dengan nilai default menggunakan nested list comprehension. Format umumnya adalah [[default_val for j in range(m)] for i in range(n)] di mana n adalah jumlah baris dan m adalah jumlah kolom....
+Output: question: Apa format umum deklarasi matriks dengan nilai default?
+answer: [[default_val for j in range(m)] for i in range(n)]
+distractors: [[default_val for i in range(n)] for j in range(m)] | [default_val for i in range(n*m)] | [[default_val] * m] * n...
+
+✓ Dataset ready (supports both v2 and v3 formats)
 
 ## 4 baseline Evaluation
 
@@ -219,17 +246,19 @@ print(f'  Final training loss: {results["training_loss"]:.4f}')
 ✓ Datasets tokenized
 ✓ Data collator configured
 ✓ Trainer initialized (with transformers 4.46+ compatibility fix)
+🆕 No checkpoints found - starting fresh training
 
 ============================================================
 STARTING TRAINING
 ============================================================
 Training with Adapter Layers (d=64, ~3.6% trainable params)
 Expected time: 6-8 hours on T4 GPU
+Total epochs: 10
 ============================================================
 
 WARNING:adapters.models.t5.modeling_t5:`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`...
 
-![alt text](image/07-image.png)
+![alt text](iamge/7-image.png)
 
 ## 7 Save adapter & Visualize 
 
@@ -260,12 +289,12 @@ trainer.plot_training_curves(
 ============================================================
 SAVING ADAPTER WEIGHTS
 ============================================================
-✓ Adapter weights saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/adapter_v3/adapter_mcq_generation
+✓ Adapter weights saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/07-indonanoot5-report/adapter_mcq_generation
 ✓ Tokenizer saved
 ✓ Config saved
-✓ Plot saved to /content/drive/MyDrive/dataset_aqg/checkpoints/adapter_v3/training_curves.png
+✓ Plot saved to /content/drive/MyDrive/dataset_aqg/checkpoints/07-indonanoot5-report/training_curves.png
 
-![alt text](image/071-image.png)
+![alt text](image/71-image.png)
 
 ##  8 final Evaluation
 
@@ -291,85 +320,219 @@ for key, value in final_metrics.items():
 
 ```
 
-Computing Diversity...
-✓ All metrics computed
 
 ============================================================
 Test Set Evaluation Results
 ============================================================
 
 BLEU Scores:
-  BLEU:     0.1878
-  BLEU-1:   0.5569
-  BLEU-2:   0.3127
-  BLEU-3:   0.1607
-  BLEU-4:   0.0921
+  BLEU:     0.1902
+  BLEU-1:   0.5516
+  BLEU-2:   0.3061
+  BLEU-3:   0.1581
+  BLEU-4:   0.0899
 
 ROUGE Scores:
-  ROUGE-1:  0.5107
-  ROUGE-2:  0.2794
-  ROUGE-L:  0.4426
+  ROUGE-1:  0.5112
+  ROUGE-2:  0.2796
+  ROUGE-L:  0.4451
 
 BERTScore:
-  Precision: 0.7931
-  Recall:    0.7729
-  F1:        0.7825
+  Precision: 0.7947
+  Recall:    0.7761
+  F1:        0.7850
 
 Diversity:
-  Distinct-1: 0.1570
-  Distinct-2: 0.5454
+  Distinct-1: 0.1515
+  Distinct-2: 0.5340
 
-============================================================
 
-=== Evaluation Results ===
-bleu: 0.1878
-bleu_1: 0.5569
-bleu_2: 0.3127
-bleu_3: 0.1607
-bleu_4: 0.0921
-brevity_penalty: 0.8333
-length_ratio: 0.8457
-rouge_1: 0.5107
-rouge_2: 0.2794
-rouge_l: 0.4426
-rouge_1_fmeasure: 0.5107
-rouge_2_fmeasure: 0.2794
-rouge_l_fmeasure: 0.4426
-bertscore_precision: 0.7931
-bertscore_recall: 0.7729
-bertscore_f1: 0.7825
-distinct_1: 0.1570
-distinct_2: 0.5454
 
 ## 9 generate sample outputs
 
---- Sample 1 ---
-Input: buat_soal_pilihan_ganda: Duck typing tidak berkaitan langsung dengan dynamic typing atau loosely typed. Konsep duck typing lebih erat dengan pemrogram...
-Reference: question: Dengan konsep apa duck typing lebih erat kaitannya?
+Generating 20 sample outputs...
+
+================================================================================
+Sample 1/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Duck typing tidak berkaitan langsung dengan dynamic typing atau loosely typed. Konsep duck typing lebih erat dengan pemrograman berorientasi objek (OOP) dan fokus pada kemampuan object melakukan operasi tertentu.
+
+✅ REFERENCE:
+question: Dengan konsep apa duck typing lebih erat kaitannya?
 answer: Pemrograman berorientasi objek (OOP)
-distractors: Dynamic typing | Loosely typed...
-Prediction: question: apa yang dimaksud dengan duck typing? answer: dynamic typing lebih erat dengan pemrograman berorientasi objek (oop) dan fokus pada kemampuan...
-BLEU: 0.0000
+distractors: Dynamic typing | Loosely typed | Static typing
 
---- Sample 2 ---
-Input: buat_soal_pilihan_ganda: Notebook seperti Jupyter atau Colab menyediakan lingkungan pengembangan interaktif dengan sel-sel yang dapat dijalankan satu ...
-Reference: question: Apa keunggulan sistem sel pada Notebook?
+🤖 PREDICTION:
+question: apa yang dimaksud dengan duck typing? answer: dynamic typing lebih erat dengan pemrograman berorientasi objek (oop) distractors: python lebih lambat | python lebih cepat | oop lebih lambat
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 2/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Notebook seperti Jupyter atau Colab menyediakan lingkungan pengembangan interaktif dengan sel-sel yang dapat dijalankan satu per satu.
+
+✅ REFERENCE:
+question: Apa keunggulan sistem sel pada Notebook?
 answer: Dapat menjalankan kode satu per satu
-distractors: Lebih cepat dari script | Tidak perlu Pyt...
-Prediction: question: apa yang dimaksud dengan jupyter atau colab? answer: lingkungan pengembangan interaktif dengan sel-sel yang dapat dijalankan satu per satu d...
-BLEU: 0.1404
+distractors: Lebih cepat dari script | Tidak perlu Python | Otomatis menyimpan
 
---- Sample 3 ---
-Input: buat_soal_pilihan_ganda: Dalam NumPy, kita dapat membuat matriks dengan nilai default menggunakan fungsi numpy.zeros() untuk matriks berisi 0, atau nu...
-Reference: question: Fungsi NumPy apa yang digunakan untuk membuat matriks berisi nilai 0?
+🤖 PREDICTION:
+question: apa yang dimaksud dengan notebook jupyter atau colab? answer: lingkungan pengembangan interaktif dengan sel-sel yang dapat dijalankan satu per satu distractors: hanya satu sel | tidak ada lingkungan pengembangan
+
+📊 BLEU Score: 0.1568
+================================================================================
+
+================================================================================
+Sample 3/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dalam NumPy, kita dapat membuat matriks dengan nilai default menggunakan fungsi numpy.zeros() untuk matriks berisi 0, atau numpy.ones() untuk matriks berisi 1.
+
+✅ REFERENCE:
+question: Fungsi NumPy apa yang digunakan untuk membuat matriks berisi nilai 0?
 answer: numpy.zeros()
-distractors: numpy.empty() | numpy.zero() | nump...
-Prediction: question: bagaimana cara membuat matriks dengan nilai default? answer: menggunakan fungsi numpy.zeros() untuk matriks berisi 0 distractors: menggunaka...
-...
-answer: Error karena seharusnya import math
-distractors: Berhasil diimpor | Otomatis dikoreksi | ...
-Prediction: question: apa yang terjadi jika import math error? answer: modul yang diimpor tidak error distractors: modul tidak bisa diimpor | modul yang tidak bis...
-BLEU: 0.0000
+distractors: numpy.empty() | numpy.zero() | numpy.fill(0)
+
+🤖 PREDICTION:
+question: apa fungsi dari numpy.zeros() untuk matriks berisi 0? answer: 1 distractors: 2 | 2
+
+📊 BLEU Score: 0.1535
+================================================================================
+
+================================================================================
+Sample 4/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Method overriding adalah kemampuan child class untuk memberikan implementasi berbeda dari method yang diwarisi dari parent class. Method di child class harus memiliki nama dan signature yang sama dengan method di parent class.
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan method overriding?
+answer: Child class memberikan implementasi berbeda dari method yang diwarisi dari parent class
+distractors: Menghapus method dari parent class | Membuat method baru di parent class | Mengubah nama method
+
+🤖 PREDICTION:
+question: apa yang dimaksud dengan overriding? answer: kemampuan child class untuk memberikan implementasi berbeda dari method di parent class distractors: kemampuan membuat class berjalan lebih cepat | kemampuan membuat method berjalan lebih lambat
+
+📊 BLEU Score: 0.2625
+================================================================================
+
+================================================================================
+Sample 5/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Unpacking memungkinkan assignment nilai dari list atau tuple ke beberapa variabel sekaligus.
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan unpacking?
+answer: Assignment nilai dari list/tuple ke beberapa variabel
+distractors: Menghapus variabel | Menggabungkan variabel | Membuat list
+
+🤖 PREDICTION:
+question: apa keuntungan unpacking? answer: assignment nilai dari list atau tuple ke beberapa variabel sekaligus distractors: tidak ada keuntungan | tidak ada manfaat
+
+📊 BLEU Score: 0.2305
+================================================================================
+
+================================================================================
+Sample 6/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Prosedur dapat digunakan untuk denormalization, yaitu menggabungkan data untuk meningkatkan performa query. Denormalization prosedur trade-off antara storage dan speed.
+
+✅ REFERENCE:
+question: Apa trade-off dari denormalization prosedur?
+answer: Antara storage dan speed
+distractors: Antara security dan usability | Tidak ada trade-off | Antara size dan color
+
+🤖 PREDICTION:
+question: apa fungsi denormalization prosedur? answer: menggabungkan data untuk meningkatkan performa query distractors: membuat query lebih lambat | menghapus query | membuat query menjadi lebih lambat
+
+📊 BLEU Score: 0.1566
+================================================================================
+
+================================================================================
+Sample 7/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Function body adalah blok kode yang diindentasi dan menentukan apa yang dilakukan fungsi. Body berisi instruksi-instruksi yang akan dieksekusi ketika fungsi dipanggil.
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan function body?
+answer: Blok kode yang diindentasi berisi instruksi yang dieksekusi
+distractors: Nama fungsi yang digunakan | Nilai yang dikembalikan fungsi | Parameter yang diterima fungsi
+
+🤖 PREDICTION:
+question: apa yang dimaksud dengan function body? answer: blok kode yang diindentasi dan menentukan apa yang dilakukan fungsi distractors: fungsi yang tidak bisa dipanggil | fungsi yang hanya bisa dipanggil
+
+📊 BLEU Score: 0.2931
+================================================================================
+
+================================================================================
+Sample 8/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dalam implementasi perkalian matriks dengan konstanta menggunakan list Python, kita memerlukan nested loop untuk mengiterasi setiap elemen. Loop pertama untuk baris dan loop kedua untuk kolom.
+
+✅ REFERENCE:
+question: Mengapa kita memerlukan nested loop (dua perulangan) untuk mengalikan matriks dengan konstanta menggunakan list Python?
+answer: Karena matriks adalah struktur 2 dimensi, sehingga perlu loop untuk baris dan loop untuk kolom
+distractors: Karena Python tidak mendukung operasi langsung pada list 2D | Karena satu loop hanya bisa memproses maksimal 10 elemen | Karena nested loop membuat kode lebih cepat dieksekusi
+
+🤖 PREDICTION:
+question: bagaimana cara mengiterasi matriks dengan konstanta menggunakan list python? answer: menggunakan nested loop distractors: menghapus semua elemen | membuat matriks baru | menghapus elemen
+
+📊 BLEU Score: 0.0592
+================================================================================
+
+================================================================================
+Sample 9/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Case-sensitive juga berlaku untuk nama modul dan package dalam Python. Import statement harus menggunakan kapitalisasi yang tepat sesuai dengan nama file atau package.
+
+✅ REFERENCE:
+question: Apakah case-sensitive berlaku untuk nama modul?
+answer: Ya, harus sesuai dengan nama file
+distractors: Tidak, bisa menggunakan kapitalisasi apa saja | Hanya untuk variabel | Hanya untuk fungsi
+
+🤖 PREDICTION:
+question: apa yang dimaksud dengan case-sensitive dalam python? answer: nama modul dan package distractors: nama file dan package | nama file atau package dalam python
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 10/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Ketika menggunakan black, formatter akan memformat kode secara konsisten bahkan untuk kode yang sangat kompleks. Black menggunakan algoritma yang dapat menangani berbagai pola kode Python dan menghasilkan format yang optimal.
+
+✅ REFERENCE:
+question: Apakah black dapat memformat kode Python yang sangat kompleks dengan benar?
+answer: Ya, black menggunakan algoritma yang dapat menangani berbagai pola kode Python yang kompleks
+distractors: Tidak, black hanya efektif untuk kode Python yang sederhana | Ya, tetapi hanya jika kode tidak menggunakan fitur Python lanjutan | Tidak, kode yang kompleks perlu diformat secara manual
+
+🤖 PREDICTION:
+question: bagaimana black memformat kode secara konsisten bahkan untuk kode yang sangat kompleks? answer: algoritma yang dapat menangani berbagai pola kode python dan menghasilkan format yang optimal distractors: algoritma tidak bisa menangani semua kode python | algoritma yang tidak dapat menangani semua format kode python
+
+📊 BLEU Score: 0.1643
+================================================================================
+
+
 
 ## 10 final summary 
 
@@ -379,42 +542,42 @@ COMPARING WITH BASELINE
 
 Metric                        Baseline   Fine-tuned  Improvement
 -----------------------------------------------------------------
-bleu                            0.0233       0.1878      705.99%
-bleu_1                          0.0993       0.5569      460.76%
-bleu_2                          0.0331       0.3127      844.69%
-bleu_3                          0.0124       0.1607     1194.74%
-bleu_4                          0.0072       0.0921     1176.22%
-brevity_penalty                 1.0000       0.8333      -16.67%
-length_ratio                    1.6734       0.8457      -49.46%
-rouge_1                         0.1687       0.5107      202.80%
-rouge_2                         0.0462       0.2794      504.78%
-rouge_l                         0.1446       0.4426      206.08%
-rouge_1_fmeasure                0.1687       0.5107      202.80%
-rouge_2_fmeasure                0.0462       0.2794      504.78%
-rouge_l_fmeasure                0.1446       0.4426      206.08%
-distinct_1                      0.3670       0.1570      -57.22%
-distinct_2                      0.7037       0.5454      -22.50%
+bleu                            0.0259       0.1902      635.22%
+bleu_1                          0.1237       0.5516      345.70%
+bleu_2                          0.0329       0.3061      830.00%
+bleu_3                          0.0141       0.1581     1020.80%
+bleu_4                          0.0078       0.0899     1053.54%
+brevity_penalty                 1.0000       0.8593      -14.07%
+length_ratio                    2.2923       0.8683      -62.12%
+rouge_1                         0.1759       0.5112      190.66%
+rouge_2                         0.0563       0.2796      396.38%
+rouge_l                         0.1453       0.4451      206.33%
+rouge_1_fmeasure                0.1759       0.5112      190.66%
+rouge_2_fmeasure                0.0563       0.2796      396.38%
+rouge_l_fmeasure                0.1453       0.4451      206.33%
+distinct_1                      0.2644       0.1515      -42.69%
+distinct_2                      0.5888       0.5340       -9.30%
 
 ============================================================
 ADAPTER-BASED AQG TRAINING SUMMARY
 ============================================================
 Method: Adapter Layers (d=64)
-Training Time: 1.78 hours
+Training Time: 2.13 hours
 Trainable: 0.95%
 
 Metrics Comparison:
-  BLEU-4:  0.0072 → 0.0921
-  ROUGE-L: 0.1446 → 0.4426
+  BLEU-4:  0.0078 → 0.0899
+  ROUGE-L: 0.1453 → 0.4451
 
-BLEU-4 Improvement: +1176.2%
+BLEU-4 Improvement: +1053.5%
 
-⚠ BLEU-4 = 0.0921 (target: >= 0.20)
+⚠ BLEU-4 = 0.0899 (target: >= 0.20)
   Consider: more epochs or adjust hyperparameters
 
 ✓ Fine-tuning pipeline complete!
-  Adapter: /content/drive/MyDrive/dataset_aqg/checkpoints/adapter_v3/adapter_mcq_generation
-  Report: /content/drive/MyDrive/dataset_aqg/evaluation_results_v3/evaluation_report.json
-  Samples: /content/drive/MyDrive/dataset_aqg/evaluation_results_v3/sample_outputs.json
+  Adapter: /content/drive/MyDrive/dataset_aqg/checkpoints/07-indonanoot5-report/adapter_mcq_generation
+  Report: /content/drive/MyDrive/dataset_aqg/evaluation_results/07-indonanoot5-report/evaluation_report.json
+  Samples: /content/drive/MyDrive/dataset_aqg/evaluation_results/07-indonanoot5-report/sample_outputs.json
 
 ============================================================
 HOW TO LOAD TRAINED ADAPTER
@@ -424,7 +587,7 @@ from transformers import AutoTokenizer
 
 model = AutoAdapterModel.from_pretrained("LazarusNLP/IndoNanoT5-base")
 tokenizer = AutoTokenizer.from_pretrained("LazarusNLP/IndoNanoT5-base")
-model.load_adapter("/content/drive/MyDrive/dataset_aqg/checkpoints/adapter_v3/adapter_mcq_generation")
+model.load_adapter("/content/drive/MyDrive/dataset_aqg/checkpoints/07-indonanoot5-report/adapter_mcq_generation")
 model.set_active_adapters("mcq_generation")
 
 # Generate

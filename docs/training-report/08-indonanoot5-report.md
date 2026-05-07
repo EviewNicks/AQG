@@ -272,12 +272,11 @@ print(f'  Final training loss: {results["training_loss"]:.4f}')
 ✓ Data collator configured
 ✓ Trainer initialized (with transformers 4.46+ compatibility fix)
 
-============================================================
 STARTING TRAINING
 ============================================================
 Training with Adapter Layers (d=64, ~3.6% trainable params)
 Expected time: 6-8 hours on T4 GPU
-============================================================
+
 
 WARNING:adapters.models.t5.modeling_t5:`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`...
 
@@ -311,7 +310,7 @@ trainer.plot_training_curves(
 
 ```
 
-============================================================
+
 SAVING ADAPTER WEIGHTS
 ============================================================
 ✓ Adapter weights saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/08-indonanoot5-report/adapter_mcq_generation
@@ -632,7 +631,6 @@ question: perhatikan kode berikut: ```python data = [1, 2, 3, 4, 5, 6] result = 
 
 ## 10 final summary 
 
-============================================================
 COMPARING WITH BASELINE
 ============================================================
 
@@ -654,7 +652,6 @@ rouge_l_fmeasure                0.1682       0.4826      186.94%
 distinct_1                      0.3979       0.1470      -63.05%
 distinct_2                      0.6996       0.4510      -35.53%
 
-============================================================
 ADAPTER-BASED AQG TRAINING SUMMARY
 ============================================================
 Method: Adapter Layers (d=64)
@@ -674,7 +671,7 @@ BLEU-4 Improvement: +2880.8%
   Report: /content/drive/MyDrive/dataset_aqg/evaluation_results/08-indonanoot5-report/evaluation_report.json
   Samples: /content/drive/MyDrive/dataset_aqg/evaluation_results/08-indonanoot5-report/sample_outputs.json
 
-============================================================
+
 HOW TO LOAD TRAINED ADAPTER
 ============================================================
 from adapters import AutoAdapterModel

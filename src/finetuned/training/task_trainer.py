@@ -175,7 +175,7 @@ class TaskSpecificTrainer:
     
     def get_training_args(
         self,
-        num_train_epochs: int = 3,
+        num_train_epochs: int = 10,
         per_device_train_batch_size: int = 8,
         gradient_accumulation_steps: int = 4,
         learning_rate: float = 1e-4,

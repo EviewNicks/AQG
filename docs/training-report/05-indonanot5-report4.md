@@ -1,5 +1,7 @@
 # IndoNanoT5 Fine-tued + LoRA with Dataset V3 No Code Blocks   03
 
+Note = letaknya di akun gmail maguru255@gmail.com
+
 ## 1 Setup Environtment 
 
 Python:  3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]

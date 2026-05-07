@@ -248,6 +248,7 @@ WARNING:adapters.models.t5.modeling_t5:`use_cache=True` is incompatible with gra
 
 ![alt text](image/11-image.png)
 ![alt text](image/11-2image.png)
+![alt text](image/11-3image.png)
 
 ## 7 Save adapter & Visualize 
 
@@ -278,12 +279,12 @@ trainer.plot_training_curves(
 ============================================================
 SAVING ADAPTER WEIGHTS
 ============================================================
-✓ Adapter weights saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/09-indonanoot5-report/adapter_mcq_generation
+✓ Adapter weights saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/11-indonanoot5-report/adapter_mcq_generation
 ✓ Tokenizer saved
 ✓ Config saved
-✓ Plot saved to /content/drive/MyDrive/dataset_aqg/checkpoints/09-indonanoot5-report/training_curves.png
+✓ Plot saved to /content/drive/MyDrive/dataset_aqg/checkpoints/11-indonanoot5-report/training_curves.png
 
-![alt text](image/11-3image.png)
+![alt text](image/11-4image.png)
 
 ##  8 final Evaluation
 
@@ -310,10 +311,290 @@ for key, value in final_metrics.items():
 ```
 
 
+Computing Diversity...
+✓ All metrics computed
 
+============================================================
+Test Set Evaluation Results
+============================================================
+
+BLEU Scores:
+  BLEU:     0.2282
+  BLEU-1:   0.5365
+  BLEU-2:   0.3083
+  BLEU-3:   0.1764
+  BLEU-4:   0.1117
+
+ROUGE Scores:
+  ROUGE-1:  0.5204
+  ROUGE-2:  0.3155
+  ROUGE-L:  0.4746
+
+BERTScore:
+  Precision: 0.7999
+  Recall:    0.7893
+  F1:        0.7942
+
+Diversity:
+  Distinct-1: 0.0991
+  Distinct-2: 0.3742
+
+============================================================
+
+=== Evaluation Results ===
+bleu: 0.2282
+bleu_1: 0.5365
+bleu_2: 0.3083
+bleu_3: 0.1764
+bleu_4: 0.1117
+brevity_penalty: 0.9550
+length_ratio: 0.9560
+rouge_1: 0.5204
+rouge_2: 0.3155
+rouge_l: 0.4746
+rouge_1_fmeasure: 0.5204
+rouge_2_fmeasure: 0.3155
+rouge_l_fmeasure: 0.4746
+bertscore_precision: 0.7999
+bertscore_recall: 0.7893
+bertscore_f1: 0.7942
+distinct_1: 0.0991
+distinct_2: 0.3742
 
 ## 9 generate sample outputs
 
+Generating 20 sample outputs...
+
+================================================================================
+Sample 1/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dalam PEP8, jika Anda ragu tentang atribut method atau variabel, jadikan atributnya non-publik. Sebab, lebih mudah menjadikan sebuah variabel/method bersifat non-publik menjadi publik, dibandingkan sebaliknya. Ini adalah best practice dalam OOP.
+
+✅ REFERENCE:
+question: Mengapa lebih baik membuat atribut non-publik jika ragu?
+answer: Lebih mudah mengubah non-publik menjadi publik daripada sebaliknya
+distractors: Lebih aman | Lebih cepat | Lebih mudah dipahami
+
+🤖 PREDICTION:
+question: bagaimana cara menjadikan atribut method/method non-publik menjadi publik? answer: jadikan atribut method atau variabel menjadi publik, dibandingkan sebaliknya distractors: gunakan nested loop | gunakan sorting
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 2/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dalam inheritance, dynamic type system adalah type system yang memeriksa tipe pada saat runtime. Python menggunakan dynamic type system secara default.
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan dynamic type system?
+answer: Type system yang memeriksa tipe pada saat runtime
+distractors: Type system yang memeriksa tipe saat compile time | Type system yang tidak memeriksa tipe | Dynamic type system tidak ada
+
+🤖 PREDICTION:
+question: apa yang dimaksud dengan dynamic type system dalam inheritance? answer: type system yang memeriksa tipe pada saat runtime distractors: tipe data | type system | tipe data
+
+📊 BLEU Score: 0.3439
+================================================================================
+
+================================================================================
+Sample 3/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dalam operasi perkalian matriks dengan konstanta, setiap elemen matriks dikalikan dengan nilai konstanta yang sama. Ukuran matriks hasil tetap sama dengan matriks asli.
+
+✅ REFERENCE:
+question: Apakah ukuran matriks berubah setelah dikalikan dengan konstanta?
+answer: Tidak, ukuran tetap sama
+distractors: Ya, menjadi lebih besar | Ya, menjadi lebih kecil | Tergantung nilai konstanta
+
+🤖 PREDICTION:
+question: apa hasil dari operasi perkalian matriks dengan konstanta? answer: matriks hasil tetap sama dengan matriks asli distractors: matriks baru | matriks yang tidak bisa diubah | semua matriks harus dideklarasikan
+
+📊 BLEU Score: 0.1471
+================================================================================
+
+================================================================================
+Sample 4/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Ketika menggunakan formatter kode, programmer perlu memahami bahwa formatter tidak memeriksa dokumentasi kode. Untuk memastikan dokumentasi yang baik, programmer perlu menggunakan alat seperti pydocstyle atau pylint yang dapat memeriksa kelengkapan docstring.
+
+✅ REFERENCE:
+question: Alat apa yang digunakan untuk memeriksa kelengkapan dokumentasi kode Python?
+answer: pydocstyle atau pylint yang dapat memeriksa kelengkapan docstring
+distractors: black atau autopep8 yang memformat kode | flake8 atau pycodestyle yang memeriksa gaya | mypy atau pyright yang memeriksa tipe data
+
+🤖 PREDICTION:
+question: apa fungsi dari formatter kode yang tidak memeriksa dokumentasi? answer: memeriksa dokumentasi kode untuk memastikan dokumentasi yang baik distractors: membuat kode berjalan lebih cepat | membuat kode lebih aman | mengurangi ukuran file program
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 5/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dalam inheritance, union type adalah tipe yang dapat bernilai salah satu dari beberapa tipe. Union type memungkinkan variable untuk memiliki berbagai tipe.
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan union type dalam inheritance?
+answer: Tipe yang dapat bernilai salah satu dari beberapa tipe
+distractors: Tipe yang hanya bernilai satu tipe | Tipe yang tidak bisa bernilai | Union type tidak ada
+
+🤖 PREDICTION:
+question: apa yang dimaksud dengan union type dalam inheritance? answer: tipe yang dapat bernilai salah satu dari beberapa tipe distractors: type yang hanya bisa bernilai satu tipe | type yang tidak bisa bernilai | union type tidak ada
+
+📊 BLEU Score: 0.6175
+================================================================================
+
+================================================================================
+Sample 6/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dalam penerapan unit test, test case dapat menggunakan assertion untuk memverifikasi bahwa object memiliki atribut dengan nilai yang benar. Ini berguna untuk memastikan bahwa object diinisialisasi dengan benar.
+
+✅ REFERENCE:
+question: Apa yang dapat diverifikasi dengan assertion untuk atribut object?
+answer: Memastikan bahwa object memiliki atribut dengan nilai yang benar
+distractors: Memastikan bahwa object memiliki method yang benar | Memastikan bahwa object dapat digunakan dengan benar | Memastikan bahwa object tidak memiliki bug
+
+🤖 PREDICTION:
+question: apa fungsi dari assertion dalam test case? answer: memverifikasi bahwa object memiliki atribut dengan nilai yang benar distractors: memverifikasi atribut yang benar | memverifikasi bahwa atribut yang diinisialisasi tidak bisa diubah | memastikan bahwa atribut tersebut memiliki nilai yang sama
+
+📊 BLEU Score: 0.2779
+================================================================================
+
+================================================================================
+Sample 7/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Shortcut Ctrl + / di IDE digunakan untuk memberi atau menghapus komentar pada baris kode.
+
+✅ REFERENCE:
+question: Apa fungsi shortcut Ctrl + / di IDE?
+answer: Memberi atau menghapus komentar
+distractors: Menjalankan kode | Menyimpan file | Membuka terminal
+
+🤖 PREDICTION:
+question: apa fungsi shortcut ctrl + / di ide? answer: memberi atau menghapus komentar pada baris kode distractors: menghapus komentar | membuat kode lebih cepat | menghapus komentar
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 8/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dynamic typing dapat menyebabkan bug jika programmer tidak hati-hati dengan perubahan tipe data variabel.
+
+✅ REFERENCE:
+question: Apa risiko utama dari penggunaan dynamic typing yang tidak hati-hati?
+answer: Munculnya bug akibat perubahan tipe data yang tidak terduga
+distractors: Komputer akan meledak | Program akan menjadi sangat besar | Kecepatan mengetik akan berkurang
+
+🤖 PREDICTION:
+question: apa dampak dynamic typing terhadap bug? answer: bug jika programmer tidak hati-hati dengan perubahan tipe data variabel distractors: lebih cepat | lebih lambat | tidak ada efek
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 9/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Abstraksi data membantu dalam pengujian program, memastikan data yang dimasukkan valid secara konteks.
+
+✅ REFERENCE:
+question: Bagaimana abstraksi data mendukung proses pengujian (testing)?
+answer: Memastikan validitas data berdasarkan konteksnya
+distractors: Menghapus semua bug secara otomatis | Membuat program tidak perlu diuji | Mengubah hasil pengujian menjadi lulus semua
+
+🤖 PREDICTION:
+question: apa manfaat abstraksi data dalam pengujian program? answer: memastikan data yang dimasukkan valid secara konteks distractors: membuat program berjalan lebih cepat | menghemat memori | mengurangi ukuran file
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 10/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Inisialisasi variabel adalah proses memberikan nilai awal kepada variabel. Dalam Python, inisialisasi dilakukan dengan menggunakan operator assignment (=).
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan inisialisasi variabel?
+answer: Memberikan nilai awal kepada variabel
+distractors: Mengubah nama variabel | Menghapus variabel | Menyalin nilai variabel
+
+🤖 PREDICTION:
+question: apa yang dimaksud dengan inisialisasi variabel dalam python? answer: proses memberikan nilai awal kepada variabel distractors: proses membuat variabel baru | proses menghapus variabel | prosedur menghapus variabel
+
+📊 BLEU Score: 0.3247
+================================================================================
+
+
+
+✓ Samples saved to /content/drive/MyDrive/dataset_aqg/evaluation_results/11-indonanoot5-report/sample_outputs.json
+
+✓ 20 samples generated and saved
+✓ Full output displayed above with BLEU scores
 
 
 ## 10 final summary 
+
+============================================================
+COMPARING WITH BASELINE
+============================================================
+
+Metric                        Baseline   Fine-tuned  Improvement
+-----------------------------------------------------------------
+bleu                            0.0651       0.2282      250.52%
+bleu_1                          0.1640       0.5365      227.06%
+bleu_2                          0.0805       0.3083      283.11%
+bleu_3                          0.0471       0.1764      274.83%
+bleu_4                          0.0289       0.1117      286.33%
+brevity_penalty                 1.0000       0.9550       -4.50%
+length_ratio                    1.1835       0.9560      -19.22%
+rouge_1                         0.2319       0.5204      124.44%
+rouge_2                         0.1159       0.3155      172.22%
+rouge_l                         0.1964       0.4746      141.69%
+rouge_1_fmeasure                0.2319       0.5204      124.44%
+rouge_2_fmeasure                0.1159       0.3155      172.22%
+rouge_l_fmeasure                0.1964       0.4746      141.69%
+distinct_1                      0.5018       0.0991      -80.25%
+distinct_2                      0.7857       0.3742      -52.37%
+
+============================================================
+ADAPTER-BASED AQG TRAINING SUMMARY
+============================================================
+Method: Adapter Layers (d=64)
+Training Time: 0.35 hours
+Trainable: 1.88%
+
+Metrics Comparison:
+  BLEU-4:  0.0289 → 0.1117
+  ROUGE-L: 0.1964 → 0.4746
+
+BLEU-4 Improvement: +286.3%
+
+⚠ BLEU-4 = 0.1117 (target: >= 0.20)
+  Consider: more epochs or adjust hyperparameters
+
+✓ Fine-tuning pipeline complete!
+  Adapter: /content/drive/MyDrive/dataset_aqg/checkpoints/11-indonanoot5-report/adapter_mcq_generation
+  Report: /content/drive/MyDrive/dataset_aqg/evaluation_results/11-indonanoot5-report/evaluation_report.json
+  Samples: /content/drive/MyDrive/dataset_aqg/evaluation_results/11-indonanoot5-report/sample_outputs.json
+

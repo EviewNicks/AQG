@@ -1,15 +1,15 @@
 # IndonanoT5 fine-tuned D=64 With Dataset V3  04
 
-
+Note = letaknya di akun gmail dianysahardi139@gmail.com
 
 Model:           IndoNanoT5-base (248M params)
 Adapter:         Pfeiffer, d=64 (reduction_factor=12)
 Trainable:       2.38M params (0.95%)
 Dataset:         dataset-task-spesifc/ (4,529 train)
-Epochs:          8
+Epochs:          10
 Batch Size:      4 (effective: 8 with grad_accum=2)
 Learning Rate:   1e-4
-Warmup:          50 steps
+Warmup:          100 steps
 
 Results:
   BLEU-4:        0.2598
@@ -88,8 +88,6 @@ Tokenizer:
 ## 3 Load Dataset 
 
 ```
-
-
 from src.finetuned.data.dataset_loader import DatasetLoader
 
 loader = DatasetLoader()
@@ -256,16 +254,17 @@ print(f'  Checkpoints will be saved to: {CHECKPOINT_DIR}')
 ============================================================
 TRAINING CONFIGURATION
 ============================================================
-Epochs: 8
+Epochs: 10
 Batch size: 4
 Effective batch size: 8
 Learning rate: 0.0001
-Warmup steps: 50
+Warmup steps: 100
 FP16: True
 Gradient checkpointing: True
 
 ✓ Trainer configured
-  Checkpoints will be saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/adapter_v3
+  Checkpoints will be saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/06-indonanoot5-report
+
 
 ## 6 STart Training
 
@@ -292,17 +291,21 @@ print(f'  Final training loss: {results["training_loss"]:.4f}')
 ✓ Datasets tokenized
 ✓ Data collator configured
 ✓ Trainer initialized (with transformers 4.46+ compatibility fix)
+🆕 No checkpoints found - starting fresh training
 
 ============================================================
 STARTING TRAINING
 ============================================================
 Training with Adapter Layers (d=64, ~3.6% trainable params)
 Expected time: 6-8 hours on T4 GPU
+Total epochs: 10
 ============================================================
 
 WARNING:adapters.models.t5.modeling_t5:`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`...
 
 ![alt text](image/06-image.png)
+
+![alt text](iimage/06-image.png)
 
 ## 7 save Adapter & Visualize 
 
