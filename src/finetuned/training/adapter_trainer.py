@@ -124,9 +124,9 @@ class AdapterTrainer:
     def setup_training(
         self,
         num_train_epochs: int = 8,
-        per_device_train_batch_size: int = 4,
-        per_device_eval_batch_size: int = 8,
-        gradient_accumulation_steps: int = 2,
+        per_device_train_batch_size: int = 8,   # ✅ Increased from 4 to 8
+        per_device_eval_batch_size: int = 16,  # ✅ Increased from 8 to 16
+        gradient_accumulation_steps: int = 1,   # ✅ Reduced from 2 to 1
         learning_rate: float = 1e-4,
         warmup_steps: int = 50,
         weight_decay: float = 0.01,
@@ -138,9 +138,9 @@ class AdapterTrainer:
         
         Args:
             num_train_epochs: Number of training epochs
-            per_device_train_batch_size: Batch size per device
-            per_device_eval_batch_size: Eval batch size per device
-            gradient_accumulation_steps: Gradient accumulation steps
+            per_device_train_batch_size: Batch size per device (default: 8, optimized for T4)
+            per_device_eval_batch_size: Eval batch size per device (default: 16)
+            gradient_accumulation_steps: Gradient accumulation steps (default: 1)
             learning_rate: Learning rate
             warmup_steps: Warmup steps
             weight_decay: Weight decay for regularization
@@ -186,8 +186,9 @@ class AdapterTrainer:
             generation_max_length=self.max_length,
             
             # DataLoader
-            dataloader_num_workers=2,
+            dataloader_num_workers=4,      # ✅ Increased from 2 to 4
             dataloader_pin_memory=True,
+            dataloader_prefetch_factor=2,  # ✅ Added prefetching
             
             **kwargs
         )

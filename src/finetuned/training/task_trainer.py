@@ -8,7 +8,7 @@ from transformers import (
     EarlyStoppingCallback
 )
 from datasets import Dataset
-from typing import Dict, Any, Optional, List, Callable
+from typing import Dict, Any, Optional, List, Callable, Union
 import numpy as np
 from pathlib import Path
 import json
@@ -117,9 +117,18 @@ class TaskSpecificTrainer:
         """
         predictions, labels = eval_preds
         
+        # ✅ FIX: Handle logits from predict_with_generate
+        # Predictions might be logits (3D) or token IDs (2D)
+        if isinstance(predictions, tuple):
+            predictions = predictions[0]
+        
+        # If predictions are 3D (batch, seq_len, vocab_size), get argmax
+        if len(predictions.shape) == 3:
+            predictions = np.argmax(predictions, axis=-1)
+        
         # Handle predictions yang mungkin mengandung nilai negatif dari padding
         if hasattr(predictions, '__iter__'):
-            predictions = np.where(predictions < 0, 0, predictions)
+            predictions = np.where(predictions < 0, self.tokenizer.pad_token_id, predictions)
         
         # Decode predictions
         decoded_preds = self.tokenizer.batch_decode(
@@ -137,6 +146,13 @@ class TaskSpecificTrainer:
         # Clean up
         decoded_preds = [pred.strip() for pred in decoded_preds]
         decoded_labels = [label.strip() for label in decoded_labels]
+        
+        # ✅ DEBUG: Print sample predictions (first 2 samples)
+        if len(decoded_preds) > 0:
+            print(f"\n[DEBUG] Sample predictions:")
+            for i in range(min(2, len(decoded_preds))):
+                print(f"  Pred {i+1}: {decoded_preds[i][:100]}...")
+                print(f"  Label {i+1}: {decoded_labels[i][:100]}...")
         
         metrics = {}
         
@@ -156,8 +172,12 @@ class TaskSpecificTrainer:
                 )
                 metrics["rouge_l"] = rouge_results.get("rougeL", 0.0)
                 
+                print(f"[DEBUG] Computed metrics: BLEU-4={metrics['bleu_4']:.4f}, ROUGE-L={metrics['rouge_l']:.4f}")
+                
             except Exception as e:
-                print(f"Warning: Could not compute metrics: {e}")
+                print(f"⚠️ Warning: Could not compute metrics: {e}")
+                import traceback
+                traceback.print_exc()
                 metrics["bleu_4"] = 0.0
                 metrics["rouge_l"] = 0.0
         else:
@@ -167,7 +187,9 @@ class TaskSpecificTrainer:
                 references = [[label.split()] for label in decoded_labels]
                 hypotheses = [pred.split() for pred in decoded_preds]
                 metrics["bleu_4"] = corpus_bleu(references, hypotheses)
-            except:
+                print(f"[DEBUG] NLTK BLEU-4: {metrics['bleu_4']:.4f}")
+            except Exception as e:
+                print(f"⚠️ Warning: NLTK BLEU failed: {e}")
                 metrics["bleu_4"] = 0.0
             metrics["rouge_l"] = 0.0
         
@@ -176,8 +198,8 @@ class TaskSpecificTrainer:
     def get_training_args(
         self,
         num_train_epochs: int = 10,
-        per_device_train_batch_size: int = 8,
-        gradient_accumulation_steps: int = 4,
+        per_device_train_batch_size: int = 16,  # ✅ Increased from 8 to 16
+        gradient_accumulation_steps: int = 2,   # ✅ Reduced from 4 to 2 (same effective batch size)
         learning_rate: float = 1e-4,
         warmup_steps: int = 50,
         logging_steps: int = 50,
@@ -186,15 +208,15 @@ class TaskSpecificTrainer:
         fp16: bool = True,
         weight_decay=0.01,
         optim="adamw_torch_fused",
-        early_stopping_patience: int = 2
+        early_stopping_patience: int = 5  # ✅ Increased from 2 to 5 (more patience for improvement)
     ) -> Seq2SeqTrainingArguments:
         """
         Get default training arguments untuk task-specific training.
         
         Args:
             num_train_epochs: Number of training epochs
-            per_device_train_batch_size: Batch size per device
-            gradient_accumulation_steps: Gradient accumulation steps
+            per_device_train_batch_size: Batch size per device (default: 16, optimized for T4 GPU)
+            gradient_accumulation_steps: Gradient accumulation steps (default: 2)
             learning_rate: Learning rate
             warmup_steps: Warmup steps
             logging_steps: Steps between logging
@@ -219,8 +241,7 @@ class TaskSpecificTrainer:
             save_steps=save_steps,
             logging_steps=logging_steps,
             fp16=fp16,
-            gradient_checkpointing=True,
-            gradient_checkpointing_kwargs={"use_reentrant": False},
+            gradient_checkpointing=False,  # ✅ Disabled - not needed with LoRA (only 0.36% trainable params)
             predict_with_generate=True,
             generation_max_length=self.max_length,
             load_best_model_at_end=True,
@@ -230,8 +251,9 @@ class TaskSpecificTrainer:
             report_to=["none"],
             weight_decay=0.01,           # sesuai referensi resmi LazarusNLP
             optim="adamw_torch_fused",   # sesuai referensi resmi LazarusNLP
-            dataloader_num_workers=2,
+            dataloader_num_workers=4,    # ✅ Increased from 2 to 4 for faster data loading
             dataloader_pin_memory=True,
+            dataloader_prefetch_factor=2,  # ✅ Added prefetching for better GPU utilization
         )
     
     def train(
@@ -239,8 +261,9 @@ class TaskSpecificTrainer:
         train_dataset: Dataset,
         eval_dataset: Optional[Dataset] = None,
         training_args: Optional[Seq2SeqTrainingArguments] = None,
-        early_stopping: bool = True,
-        early_stopping_patience: int = 2
+        early_stopping: bool = False,  # ✅ DISABLED: Let training run to completion
+        early_stopping_patience: int = 5,
+        resume_from_checkpoint: Union[bool, str] = False
     ) -> Dict[str, Any]:
         """
         Train model untuk task-specific AQG.
@@ -251,6 +274,10 @@ class TaskSpecificTrainer:
             training_args: Custom training arguments (optional)
             early_stopping: Enable early stopping
             early_stopping_patience: Patience for early stopping
+            resume_from_checkpoint: Resume training from checkpoint
+                - True: Auto-detect last checkpoint in output_dir
+                - False: Start fresh training
+                - str: Path to specific checkpoint directory
             
         Returns:
             Dict dengan training results
@@ -316,9 +343,26 @@ class TaskSpecificTrainer:
         print(f"Metrics: BLEU-4, ROUGE-L")
         print()
         
+        # Handle checkpoint resumption
+        checkpoint_path = None
+        if resume_from_checkpoint:
+            if isinstance(resume_from_checkpoint, str):
+                # Specific checkpoint path provided
+                checkpoint_path = resume_from_checkpoint
+                print(f"🔄 Resuming from checkpoint: {checkpoint_path}")
+            elif resume_from_checkpoint is True:
+                # Auto-detect last checkpoint
+                checkpoint_path = self._get_last_checkpoint()
+                if checkpoint_path:
+                    print(f"🔄 Auto-detected checkpoint: {checkpoint_path}")
+                else:
+                    print("⚠️ No checkpoint found - starting fresh training")
+        else:
+            print("🆕 Starting fresh training (no resume)")
+        
         # Train
         print("Starting training...")
-        train_result = self.trainer.train()
+        train_result = self.trainer.train(resume_from_checkpoint=checkpoint_path)
         
         # Save training history
         self.training_history = self.trainer.state.log_history
@@ -459,3 +503,35 @@ class TaskSpecificTrainer:
             
         except ImportError:
             print("matplotlib not installed. Skipping plot generation.")
+    
+    def _get_last_checkpoint(self) -> Optional[str]:
+        """
+        Get path to last checkpoint in output_dir.
+        
+        Returns:
+            Path to last checkpoint, or None if no checkpoints found
+        """
+        import os
+        import re
+        
+        if not self.output_dir.exists():
+            return None
+        
+        # List all checkpoint directories
+        checkpoints = []
+        for item in os.listdir(self.output_dir):
+            if item.startswith('checkpoint-'):
+                # Extract step number
+                match = re.search(r'checkpoint-(\d+)', item)
+                if match:
+                    step = int(match.group(1))
+                    checkpoints.append((step, item))
+        
+        if not checkpoints:
+            return None
+        
+        # Sort by step number and get the last one
+        checkpoints.sort(key=lambda x: x[0])
+        last_checkpoint = checkpoints[-1][1]
+        
+        return str(self.output_dir / last_checkpoint)

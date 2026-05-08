@@ -1,5 +1,7 @@
 # IndoNanoT5 Fine-tued + LoRA with Dataset V3  03
 
+Note = letaknya di akun gmail ardiansyahar@gmail.com
+
 ## 1 Setup Environtment 
 
 Python:  3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]
@@ -94,32 +96,42 @@ print(f'  Test:  {len(test_dataset)} samples')
 ```
 
 
-✓ Loaded 319 entries from /content/dataset_aqg/dataset-task-spesifc/test.jsonl
+✓ Loaded 567 entries from /content/dataset_aqg/dataset-task-spesifc/test.jsonl
 
 Dataset loaded:
-  Train: 2544 samples
-  Val:   318 samples
-  Test:  319 samples
+  Train: 4529 samples
+  Val:   566 samples
+  Test:  567 samples
 
 ✓ Using output field: 'output'
 
 === Dataset Validation Summary ===
-Total Entries: 2544
+Total Entries: 4529
 Duplicate Count: 0
-Avg Input Length: 167.59 chars
-Avg Target Length: 215.58 chars
+Avg Input Length: 195.65 chars
+Avg Target Length: 239.35 chars
 Has Metadata: True
 ✓ No duplicates found
 
 === Sample Entry ===
-Input: buat_soal_pilihan_ganda: One-liner menggunakan simultaneous assignment yang memungkinkan Python mengevaluasi semua nilai di sisi kanan sebelum melakukan assignment. Ini membuat pertukaran nilai menjadi sangat efisien....
-Output: question: Apa yang dimaksud dengan simultaneous assignment?
-answer: Mengevaluasi semua nilai di sisi kanan sebelum assignment
-distractors: Assignment satu per satu | Assignment acak | Assignment berurutan...
-
-✓ Metadata dropped
-  Columns: ['input', 'output', 'metadata']
-  Train: 2544 | Val: 318 | Test: 319
+Input: buat_soal_pilihan_ganda: Perhatikan kode berikut:
+```python
+var_mat = [[10, 20],
+           [30, 40],
+           [50, 60]]
+print(var_mat[0][1] + var_mat[2][1])
+```
+Kode ini menjumlahkan elemen kolom kedua dari baris pertama dan baris terakhir....
+Output: question: Perhatikan kode berikut:
+```python
+var_mat = [[10, 20],
+           [30, 40],
+           [50, 60]]
+print(var_mat[0][1] + var_mat[2][1])
+```
+Apa output dari kode tersebut?
+answer: 80
+distractors: 70 | 90 | 60...
 
 ## 4 baseline Evaluation ( Pre-Training )
 
@@ -200,70 +212,71 @@ Starting task-specific AQG training...
 ============================================================
 STARTING TASK-SPECIFIC AQG TRAINING
 ============================================================
-
-Preprocessing datasets...
-Preprocessing 2544 samples...
-
-✓ Preprocessed 318 samples
+✓ Preprocessed 566 samples
   Note: Padding and label masking will be handled by DataCollatorForSeq2Seq
 
 === Training Configuration ===
-Epochs: 3
-Batch size: 8
-Gradient accumulation: 4
+Epochs: 10
+Batch size: 16
+Gradient accumulation: 2
 Effective batch size: 32
 Learning rate: 0.0001
 Warmup steps: 50
 FP16: True
-Train samples: 2544
-Eval samples: 318
+Train samples: 4529
+Eval samples: 566
 Metrics: BLEU-4, ROUGE-L
 
-Starting training...
+🆕 Starting fresh training (no resume)
 
-![alt text](image/image.png)
-
-=== Training Complete ===
-Final training loss: 37.1673
-Training time: 2187.78 seconds
-Training samples per second: 3.49
+![alt text](image/04-image.png)
 
 === Final Evaluation Metrics ===
-eval_loss: 9.3815
-eval_bleu_1: 0.0077
-eval_bleu_4: 0.0077
+eval_loss: 8.1970
+eval_bleu_1: 0.0022
+eval_bleu_4: 0.0022
 eval_rouge_l: 0.0000
-eval_runtime: 583.3445
-eval_samples_per_second: 0.5450
-eval_steps_per_second: 0.0690
-✓ Training results saved to /content/drive/MyDrive/dataset_aqg/checkpoints/aqg/training_results.json
+eval_runtime: 994.3919
+eval_samples_per_second: 0.5690
+eval_steps_per_second: 0.0710
+✓ Training results saved to /content/drive/MyDrive/dataset_aqg/checkpoints/04-indonanoot5-report/training_results.json
 
-✓ Training completed in 0.77 hours
-  Final training loss: 37.1673
+✓ Training completed in 2.51 hours
+  Final training loss: 17.3540
 
 ##  Save Model 
 
-✓ Final model saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/aqg/indot5-python-aqg
-✓ Model saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/aqg/indot5-python-aqg
-✓ Training curves saved to /content/drive/MyDrive/dataset_aqg/checkpoints/aqg/training_curves.png
+✓ Final model saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/04-indonanoot5-report/indot5-python-aqg
+✓ Model saved to: /content/drive/MyDrive/dataset_aqg/checkpoints/04-indonanoot5-report/indot5-python-aqg
+✓ Training curves saved to /content/drive/MyDrive/dataset_aqg/checkpoints/04-indonanoot5-report/training_curves.png
 
 ## 8 Final Evaluation
 
-BertModel LOAD REPORT from: bert-base-multilingual-cased
-Key                                        | Status     |  | 
--------------------------------------------+------------+--+-
-cls.predictions.bias                       | UNEXPECTED |  | 
-cls.seq_relationship.bias                  | UNEXPECTED |  | 
-cls.predictions.transform.LayerNorm.bias   | UNEXPECTED |  | 
-cls.predictions.transform.dense.bias       | UNEXPECTED |  | 
-cls.predictions.transform.LayerNorm.weight | UNEXPECTED |  | 
-cls.predictions.transform.dense.weight     | UNEXPECTED |  | 
-cls.seq_relationship.weight                | UNEXPECTED |  | 
+```
+# Re-initialize evaluator with trained model
+evaluator_final = ModelEvaluator(
+    model=peft_model,
+    tokenizer=tokenizer,
+    metrics_calculator=metrics_calc
+)
 
-Notes:
-- UNEXPECTED	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-  Computing Diversity...
-✓ All metrics computed
+print('Running comprehensive evaluation on test set...')
+final_metrics = evaluator_final.evaluate_on_test_set(
+    test_dataset=test_dataset,
+    num_beams=4,
+    include_bertscore=True,
+    max_samples=None
+)
+
+print('\n=== Evaluation Results ===')
+for key, value in final_metrics.items():
+    print(f'{key}: {value:.4f}')
+
+```
+
+Running comprehensive evaluation on test set...
+
+
 
 ============================================================
 Test Set Evaluation Results
@@ -314,95 +327,7 @@ distinct_2: 0.4171
 
 ## 9 Generate Smaple Outputs 
 
-Generating 5 sample outputs...
 
---- Sample 1 ---
-Input: buat_soal_pilihan_ganda: Perhatikan kode berikut:
-```python
-list1 = [1, 2, 3]
-list2 = [4, 5, 6]
-list3 = [7, 8, 9]
-for a, b, c in zip(list1, list2, lis...
-Reference: question: Perhatikan kode berikut:
-```python
-list1 = [1, 2, 3]
-list2 = [4, 5, 6]
-list3 = [7, 8, 9]
-for a, b, c in zip(list1, list2, list3):
-    print(...
-Prediction: `'`` ` ` ` `, 2, 3, 4, 5, 6, 7, 9, 10, 8, 0 1, (2,), - 9, # 3 = [3, b, b + b, " 2. 4. 5 1] 1 1. 3. 2, c =, '...
-BLEU: 0.1550
-
---- Sample 2 ---
-Input: buat_soal_pilihan_ganda: Dalam pemrograman, abstraksi data adalah jembatan menuju pemahaman yang lebih tinggi tentang arsitektur perangkat lunak....
-Reference: question: Abstraksi data dianggap sebagai jembatan menuju pemahaman...
-answer: Arsitektur perangkat lunak
-distractors: Arsitektur bangunan fisik | Ars...
-Prediction: ) :   -  =    ,   :)   =>   ::  =: 1 == 2  1: 3 - 3: 4 - 5  : 1,   : 3,  5, : 5:  :   ...
-BLEU: 0.0000
-
-
---- Sample 4 ---
-Input: buat_soal_pilihan_ganda: Perhatikan kode berikut:
-```python
-for i in range(3):
-    try:
-        if i == 1:
-            raise ValueError("Skip")
-      ...
-Reference: question: Perhatikan kode berikut:
-```python
-for i in range(3):
-    try:
-        if i == 1:
-            raise ValueError("Skip")
-        print(i)
-    ...
-Prediction: `''' ` `` ` ` ` ` ` `' " `" "): '` (") ` `'` ` ') '' = '' - '' –''''''''  ...
-BLEU: 0.0000
-'''
 
 ## 10 Final Summary 
 
-
-============================================================
-COMPARING WITH BASELINE
-============================================================
-
-Metric                        Baseline   Fine-tuned  Improvement
------------------------------------------------------------------
-bleu                            0.0459       0.0405      -11.87%
-bleu_1                          0.1410       0.2147       52.21%
-bleu_2                          0.0515       0.0641       24.45%
-bleu_3                          0.0319       0.0265      -17.16%
-bleu_4                          0.0191       0.0074      -61.57%
-brevity_penalty                 1.0000       1.0000        0.00%
-length_ratio                    1.3635       1.0326      -24.27%
-rouge_1                         0.1504       0.0760      -49.45%
-rouge_2                         0.0636       0.0211      -66.84%
-rouge_l                         0.1293       0.0647      -49.99%
-rouge_1_fmeasure                0.1504       0.0760      -49.45%
-rouge_2_fmeasure                0.0636       0.0211      -66.84%
-rouge_l_fmeasure                0.1293       0.0647      -49.99%
-distinct_1                      0.3591       0.0735      -79.53%
-distinct_2                      0.6799       0.4171      -38.66%
-
-============================================================
-TASK-SPECIFIC AQG TRAINING SUMMARY
-============================================================
-Training Time: 0.77 hours
-Model saved: /content/drive/MyDrive/dataset_aqg/checkpoints/aqg/indot5-python-aqg
-
-Metrics Comparison:
-  BLEU-4:       0.0191 → 0.0074
-  ROUGE-L:      0.1293 → 0.0647
-  BERTScore F1: 0.0000 → 0.5897
-
-BLEU-4 Improvement: -61.6%
-
-⚠ BLEU-4 = 0.0074 (target: >= 0.35)
-  Consider: more epochs, lower lr, or larger dataset
-
-✓ Fine-tuning pipeline complete!
-  Evaluation report: /content/drive/MyDrive/dataset_aqg/evaluation_results/evaluation_report.json
-  Sample outputs: /content/drive/MyDrive/dataset_aqg/evaluation_results/sample_outputs.json

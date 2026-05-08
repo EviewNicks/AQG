@@ -1,6 +1,6 @@
 # IndoNanoT5 Fine-tued + LoRA with Dataset V3 No Code Blocks   03
 
-Note = letaknya di akun gmail maguru255@gmail.com
+Note = letaknya di akun gmail @gmail.com
 
 ## 1 Setup Environtment 
 
@@ -165,31 +165,34 @@ Computing metrics for 10 samples...
 Computing Diversity...
 ✓ All metrics computed
 
+Computing Diversity...
+✓ All metrics computed
+
 ============================================================
 Test Set Evaluation Results
 ============================================================
 
 BLEU Scores:
-  BLEU:     0.0205
-  BLEU-1:   0.1042
-  BLEU-2:   0.0269
-  BLEU-3:   0.0128
-  BLEU-4:   0.0049
+  BLEU:     0.0476
+  BLEU-1:   0.1483
+  BLEU-2:   0.0609
+  BLEU-3:   0.0342
+  BLEU-4:   0.0166
 
 ROUGE Scores:
-  ROUGE-1:  0.1382
-  ROUGE-2:  0.0356
-  ROUGE-L:  0.1175
+  ROUGE-1:  0.2214
+  ROUGE-2:  0.1031
+  ROUGE-L:  0.1784
 
 Diversity:
-  Distinct-1: 0.3836
-  Distinct-2: 0.7416
+  Distinct-1: 0.4227
+  Distinct-2: 0.7613
 
 ============================================================
 
 Baseline Metrics:
-  BLEU-4:  0.0049
-  ROUGE-L: 0.1175
+  BLEU-4:  0.0166
+  ROUGE-L: 0.1784
 
 
 
@@ -239,38 +242,25 @@ print(f'  Final training loss: {results["training_loss"]:.4f}')
 
 ```
 
-Parameter 'function'=<function TaskSpecificTrainer.preprocess_dataset.<locals>.tokenize_function at 0x7c059c1d2e80> of the transform datasets.arrow_dataset.Dataset._map_single couldn't be hashed properly, a random hash was used instead. Make sure your transforms and parameters are serializable with pickle or dill for the dataset fingerprinting and caching to work. If you reuse this transform, the caching mechanism will consider it to be different from the previous calls and recompute everything. This warning is only showed once. Subsequent hashing failures won't be showed.
-WARNING:datasets.fingerprint:Parameter 'function'=<function TaskSpecificTrainer.preprocess_dataset.<locals>.tokenize_function at 0x7c059c1d2e80> of the transform datasets.arrow_dataset.Dataset._map_single couldn't be hashed properly, a random hash was used instead. Make sure your transforms and parameters are serializable with pickle or dill for the dataset fingerprinting and caching to work. If you reuse this transform, the caching mechanism will consider it to be different from the previous calls and recompute everything. This warning is only showed once. Subsequent hashing failures won't be showed.
-
-
-Starting task-specific AQG training...
-============================================================
-
-============================================================
-STARTING TASK-SPECIFIC AQG TRAINING
-============================================================
-
-Preprocessing datasets...
-Preprocessing 1332 samples...
-
-✓ Preprocessed 166 samples
+✓ Preprocessed 794 samples
   Note: Padding and label masking will be handled by DataCollatorForSeq2Seq
 
 === Training Configuration ===
-Epochs: 3
+Epochs: 10
 Batch size: 8
 Gradient accumulation: 4
 Effective batch size: 32
 Learning rate: 0.0001
 Warmup steps: 50
 FP16: True
-Train samples: 1332
-Eval samples: 166
+Train samples: 6356
+Eval samples: 794
 Metrics: BLEU-4, ROUGE-L
 
 Starting training...
 
 ![alt text](image/05-image.png)
+![alt text](image.png)
 
 
 === Training Complete ===
@@ -316,20 +306,7 @@ for key, value in final_metrics.items():
 
 ```
 
-BertModel LOAD REPORT from: bert-base-multilingual-cased
-Key                                        | Status     |  | 
--------------------------------------------+------------+--+-
-cls.predictions.transform.dense.bias       | UNEXPECTED |  | 
-cls.predictions.transform.dense.weight     | UNEXPECTED |  | 
-cls.predictions.bias                       | UNEXPECTED |  | 
-cls.seq_relationship.weight                | UNEXPECTED |  | 
-cls.seq_relationship.bias                  | UNEXPECTED |  | 
-cls.predictions.transform.LayerNorm.bias   | UNEXPECTED |  | 
-cls.predictions.transform.LayerNorm.weight | UNEXPECTED |  | 
-
-Notes:
-- UNEXPECTED	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-  Computing Diversity...
+Computing Diversity...
 ✓ All metrics computed
 
 ============================================================
@@ -337,102 +314,241 @@ Test Set Evaluation Results
 ============================================================
 
 BLEU Scores:
-  BLEU:     0.0336
-  BLEU-1:   0.1261
-  BLEU-2:   0.0449
-  BLEU-3:   0.0217
-  BLEU-4:   0.0104
+  BLEU:     0.0035
+  BLEU-1:   0.0987
+  BLEU-2:   0.0032
+  BLEU-3:   0.0010
+  BLEU-4:   0.0005
 
 ROUGE Scores:
-  ROUGE-1:  0.1800
-  ROUGE-2:  0.0699
-  ROUGE-L:  0.1469
+  ROUGE-1:  0.0158
+  ROUGE-2:  0.0013
+  ROUGE-L:  0.0155
 
 BERTScore:
-  Precision: 0.6349
-  Recall:    0.6429
-  F1:        0.6386
+  Precision: 0.5392
+  Recall:    0.5178
+  F1:        0.5280
 
 Diversity:
-  Distinct-1: 0.2068
-  Distinct-2: 0.5988
+  Distinct-1: 0.0201
+  Distinct-2: 0.0892
 
 ============================================================
 
 === Evaluation Results ===
-bleu: 0.0336
-bleu_1: 0.1261
-bleu_2: 0.0449
-bleu_3: 0.0217
-bleu_4: 0.0104
+bleu: 0.0035
+bleu_1: 0.0987
+bleu_2: 0.0032
+bleu_3: 0.0010
+bleu_4: 0.0005
 brevity_penalty: 1.0000
-length_ratio: 1.9803
-rouge_1: 0.1800
-rouge_2: 0.0699
-rouge_l: 0.1469
-rouge_1_fmeasure: 0.1800
-rouge_2_fmeasure: 0.0699
-rouge_l_fmeasure: 0.1469
-bertscore_precision: 0.6349
-bertscore_recall: 0.6429
-bertscore_f1: 0.6386
-distinct_1: 0.2068
-distinct_2: 0.5988
+length_ratio: 1.1360
+rouge_1: 0.0158
+rouge_2: 0.0013
+rouge_l: 0.0155
+rouge_1_fmeasure: 0.0158
+rouge_2_fmeasure: 0.0013
+rouge_l_fmeasure: 0.0155
+bertscore_precision: 0.5392
+bertscore_recall: 0.5178
+bertscore_f1: 0.5280
+distinct_1: 0.0201
+distinct_2: 0.0892
 
 
 ## 9 Generate Smaple Outputs 
 
-Generating 5 sample outputs...
+Generating 20 sample outputs...
 
---- Sample 1 ---
-Input: buat_soal_pilihan_ganda: Abstraksi data memastikan bahwa setiap variabel memiliki tujuan yang jelas dalam program....
-Reference: question: Apa dampak dari memiliki tujuan variabel yang jelas melalui abstraksi?
-answer: Meminimalkan kesalahan penggunaan variabel dalam kode
-distrac...
-Prediction: tujuan dari setiap variabel adalah untuk mencapai tujuan yang jelas dalam program. tujuan dari sebuah program adalah untuk menghasilkan output yang di...
-BLEU: 0.0000
+================================================================================
+Sample 1/20
+================================================================================
 
---- Sample 2 ---
-Input: buat_soal_pilihan_ganda: String dapat menggunakan escape character seperti \n untuk newline, \t untuk tab, dan \\ untuk backslash....
-Reference: question: Apa fungsi \n dalam string?
-answer: Membuat baris baru (newline)
-distractors: Membuat tab | Membuat backslash | Membuat spasi...
-Prediction: untuk backslash dapat menggunakan escape character seperti \n untuk newline, \\ untuk tab, dan \ \ untuk atau bisa juga menggunakan embassy atau bisa ...
-BLEU: 0.0000
+📥 INPUT:
+buat_soal_pilihan_ganda: Duck typing tidak berkaitan langsung dengan dynamic typing atau loosely typed. Konsep duck typing lebih erat dengan pemrograman berorientasi objek (OOP) dan fokus pada kemampuan object melakukan operasi tertentu.
 
---- Sample 3 ---
-Input: buat_soal_pilihan_ganda: Pengguna Mac OS atau Ubuntu umumnya sudah memiliki Python yang terinstal secara otomatis....
-Reference: question: Sistem operasi mana yang umumnya sudah memiliki Python terinstal secara otomatis?
-answer: Mac OS dan Ubuntu
-distractors: Windows dan DOS | A...
-Prediction: selain itu juga sudah memiliki  dengan kata lain sudah memiliki aplikasi   dengan demikian, akan lebih mudah bagi pengguna untuk melakukan pengaturan ...
-BLEU: 0.0000
+✅ REFERENCE:
+question: Dengan konsep apa duck typing lebih erat kaitannya?
+answer: Pemrograman berorientasi objek (OOP)
+distractors: Dynamic typing | Loosely typed | Static typing
 
---- Sample 4 ---
-Input: buat_soal_pilihan_ganda: Pemrosesan sekuensial dapat digunakan untuk menghitung mode (nilai yang paling sering muncul). Ini memerlukan frequency count...
-Reference: question: Bagaimana cara menghitung mode dengan pemrosesan sekuensial?
-answer: Hitung frekuensi setiap nilai kemudian cari nilai dengan frekuensi maks...
-Prediction: untuk menghitung mode (nilai yang paling sering muncul), kita dapat menggunakan frequency counting (request counter) dan frequency.  untuk menghitung ...
-BLEU: 0.0000
+🤖 PREDICTION:
+) - - - - - - - : - - - - - -- | -> -1 - - - - - - - - - - - - - -editing () :) – - - - -
 
---- Sample 5 ---
-Input: buat_soal_pilihan_ganda: Aksi sekuensial adalah fondasi dari semua paradigma pemrograman. Bahkan dalam pemrograman paralel, setiap thread menjalankan ...
-Reference: question: Apakah aksi sekuensial relevan dalam pemrograman paralel?
-answer: Ya, setiap thread menjalankan instruksi secara sekuensial
-distractors: Tid...
-Prediction: setiap thread menjalankan instruksi secara sekuensial. setiap th setiap thtread menjalankan perintah secara sekual. thread dijalankan secara paralel, ...
-BLEU: 0.0742
+📊 BLEU Score: 0.0000
+================================================================================
 
-✓ Samples saved to /content/drive/MyDrive/dataset_aqg/evaluation_results/sample_outputs.json
-✓ 5 sample outputs generated and saved
+================================================================================
+Sample 2/20
+================================================================================
 
-=== Sample Output ===
-Input: buat_soal_pilihan_ganda: Abstraksi data memastikan bahwa setiap variabel memiliki tujuan yang jelas dalam program....
+📥 INPUT:
+buat_soal_pilihan_ganda: Notebook seperti Jupyter atau Colab menyediakan lingkungan pengembangan interaktif dengan sel-sel yang dapat dijalankan satu per satu.
+
+✅ REFERENCE:
+question: Apa keunggulan sistem sel pada Notebook?
+answer: Dapat menjalankan kode satu per satu
+distractors: Lebih cepat dari script | Tidak perlu Python | Otomatis menyimpan
+
+🤖 PREDICTION:
+- - - - – - - -- : -) - - - - - -> - -: + - :: – | = - - - - - - - - - -. - - - - - 
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 3/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dalam NumPy, kita dapat membuat matriks dengan nilai default menggunakan fungsi numpy.zeros() untuk matriks berisi 0, atau numpy.ones() untuk matriks berisi 1.
+
+✅ REFERENCE:
+question: Fungsi NumPy apa yang digunakan untuk membuat matriks berisi nilai 0?
+answer: numpy.zeros()
+distractors: numpy.empty() | numpy.zero() | numpy.fill(0)
+
+🤖 PREDICTION:
+1 - 1 – 1, - atau 1.1 | 10 -: 1 atau 2 -, | atau : -) -. - - - - - - - - - - - - - - - - - - - - - - -
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 4/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Method overriding adalah kemampuan child class untuk memberikan implementasi berbeda dari method yang diwarisi dari parent class. Method di child class harus memiliki nama dan signature yang sama dengan method di parent class.
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan method overriding?
+answer: Child class memberikan implementasi berbeda dari method yang diwarisi dari parent class
+distractors: Menghapus method dari parent class | Membuat method baru di parent class | Mengubah nama method
+
+🤖 PREDICTION:
+- - - - - - - – - - - - : -) -> -- | - -: + -= -1 - - yang - - - - - - - - - - - - - - -
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 5/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Unpacking memungkinkan assignment nilai dari list atau tuple ke beberapa variabel sekaligus.
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan unpacking?
+answer: Assignment nilai dari list/tuple ke beberapa variabel
+distractors: Menghapus variabel | Menggabungkan variabel | Membuat list
+
+🤖 PREDICTION:
+- - - - - - | - - - - - : -) -> -- – - -= -: –- || | - -. - - - - - - - - - - - - - 
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 6/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Prosedur dapat digunakan untuk denormalization, yaitu menggabungkan data untuk meningkatkan performa query. Denormalization prosedur trade-off antara storage dan speed.
+
+✅ REFERENCE:
+question: Apa trade-off dari denormalization prosedur?
+answer: Antara storage dan speed
+distractors: Antara security dan usability | Tidak ada trade-off | Antara size dan color
+
+🤖 PREDICTION:
+. | - : - - - - - -) - - - - - -- – -> -1 -2 - yang - :) 1. 2. - - - - - - - - - - - -  | 
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 7/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Function body adalah blok kode yang diindentasi dan menentukan apa yang dilakukan fungsi. Body berisi instruksi-instruksi yang akan dieksekusi ketika fungsi dipanggil.
+
+✅ REFERENCE:
+question: Apa yang dimaksud dengan function body?
+answer: Blok kode yang diindentasi berisi instruksi yang dieksekusi
+distractors: Nama fungsi yang digunakan | Nilai yang dikembalikan fungsi | Parameter yang diterima fungsi
+
+🤖 PREDICTION:
+- : - - - - - -editing - - - - - -- – -> -) - | -| –- :- | - - - - - - - - - - - - - - -
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 8/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Dalam implementasi perkalian matriks dengan konstanta menggunakan list Python, kita memerlukan nested loop untuk mengiterasi setiap elemen. Loop pertama untuk baris dan loop kedua untuk kolom.
+
+✅ REFERENCE:
+question: Mengapa kita memerlukan nested loop (dua perulangan) untuk mengalikan matriks dengan konstanta menggunakan list Python?
+answer: Karena matriks adalah struktur 2 dimensi, sehingga perlu loop untuk baris dan loop untuk kolom
+distractors: Karena Python tidak mendukung operasi langsung pada list 2D | Karena satu loop hanya bisa memproses maksimal 10 elemen | Karena nested loop membuat kode lebih cepat dieksekusi
+
+🤖 PREDICTION:
+- – - - - - - - - - - : -) -> - -- + -1 - -= -2 - atau -3 - - -_ - - - - - - - - - - |   -
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 9/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Case-sensitive juga berlaku untuk nama modul dan package dalam Python. Import statement harus menggunakan kapitalisasi yang tepat sesuai dengan nama file atau package.
+
+✅ REFERENCE:
+question: Apakah case-sensitive berlaku untuk nama modul?
+answer: Ya, harus sesuai dengan nama file
+distractors: Tidak, bisa menggunakan kapitalisasi apa saja | Hanya untuk variabel | Hanya untuk fungsi
+
+🤖 PREDICTION:
+- - - - - - – | -editing -) -. - - - - - : -d -- –- | -: – - -> - - - - - - - - - - - |  
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+================================================================================
+Sample 10/20
+================================================================================
+
+📥 INPUT:
+buat_soal_pilihan_ganda: Ketika menggunakan black, formatter akan memformat kode secara konsisten bahkan untuk kode yang sangat kompleks. Black menggunakan algoritma yang dapat menangani berbagai pola kode Python dan menghasilkan format yang optimal.
+
+✅ REFERENCE:
+question: Apakah black dapat memformat kode Python yang sangat kompleks dengan benar?
+answer: Ya, black menggunakan algoritma yang dapat menangani berbagai pola kode Python yang kompleks
+distractors: Tidak, black hanya efektif untuk kode Python yang sederhana | Ya, tetapi hanya jika kode tidak menggunakan fitur Python lanjutan | Tidak, kode yang kompleks perlu diformat secara manual
+
+🤖 PREDICTION:
+| - - - - - - - - : -) - - - --> ->> – -_- > —- –> |- :: –- || |) | - - - - - - - - -   
+
+📊 BLEU Score: 0.0000
+================================================================================
+
+
+✓ Samples saved to /content/drive/MyDrive/dataset_aqg/evaluation_results/05-indonanoot5-report/sample_outputs.json
+✓ 20 sample outputs generated and saved
+✓ Full output displayed above with BLEU scores
 
 
 
 ## 10 Final Summary 
-
 
 ============================================================
 COMPARING WITH BASELINE
@@ -440,38 +556,38 @@ COMPARING WITH BASELINE
 
 Metric                        Baseline   Fine-tuned  Improvement
 -----------------------------------------------------------------
-bleu                            0.0205       0.0336       64.10%
-bleu_1                          0.1042       0.1261       21.01%
-bleu_2                          0.0269       0.0449       67.10%
-bleu_3                          0.0128       0.0217       68.67%
-bleu_4                          0.0049       0.0104      112.64%
+bleu                            0.0474       0.0035      -92.51%
+bleu_1                          0.1769       0.0987      -44.21%
+bleu_2                          0.0654       0.0032      -95.11%
+bleu_3                          0.0309       0.0010      -96.68%
+bleu_4                          0.0141       0.0005      -96.53%
 brevity_penalty                 1.0000       1.0000        0.00%
-length_ratio                    2.0348       1.9803       -2.68%
-rouge_1                         0.1382       0.1800       30.26%
-rouge_2                         0.0356       0.0699       96.22%
-rouge_l                         0.1175       0.1469       25.00%
-rouge_1_fmeasure                0.1382       0.1800       30.26%
-rouge_2_fmeasure                0.0356       0.0699       96.22%
-rouge_l_fmeasure                0.1175       0.1469       25.00%
-distinct_1                      0.3836       0.2068      -46.10%
-distinct_2                      0.7416       0.5988      -19.25%
+length_ratio                    1.9112       1.1360      -40.56%
+rouge_1                         0.2555       0.0158      -93.80%
+rouge_2                         0.0978       0.0013      -98.71%
+rouge_l                         0.1976       0.0155      -92.15%
+rouge_1_fmeasure                0.2555       0.0158      -93.80%
+rouge_2_fmeasure                0.0978       0.0013      -98.71%
+rouge_l_fmeasure                0.1976       0.0155      -92.15%
+distinct_1                      0.3672       0.0201      -94.54%
+distinct_2                      0.7241       0.0892      -87.68%
 
 ============================================================
 TASK-SPECIFIC AQG TRAINING SUMMARY
 ============================================================
-Training Time: 0.21 hours
-Model saved: /content/drive/MyDrive/dataset_aqg/checkpoints/aqg/indot5-python-aqg
+Training Time: 0.33 hours
+Model saved: /content/drive/MyDrive/dataset_aqg/checkpoints/05-indonanoot5-report/indot5-python-aqg
 
 Metrics Comparison:
-  BLEU-4:       0.0049 → 0.0104
-  ROUGE-L:      0.1175 → 0.1469
-  BERTScore F1: 0.0000 → 0.6386
+  BLEU-4:       0.0141 → 0.0005
+  ROUGE-L:      0.1976 → 0.0155
+  BERTScore F1: 0.0000 → 0.5280
 
-BLEU-4 Improvement: +112.6%
+BLEU-4 Improvement: -96.5%
 
-⚠ BLEU-4 = 0.0104 (target: >= 0.35)
+⚠ BLEU-4 = 0.0005 (target: >= 0.35)
   Consider: more epochs, lower lr, or larger dataset
 
 ✓ Fine-tuning pipeline complete!
-  Evaluation report: /content/drive/MyDrive/dataset_aqg/evaluation_results/evaluation_report.json
-  Sample outputs: /content/drive/MyDrive/dataset_aqg/evaluation_results/sample_outputs.json
+  Evaluation report: /content/drive/MyDrive/dataset_aqg/evaluation_results/05-indonanoot5-report/evaluation_report.json
+  Sample outputs: /content/drive/MyDrive/dataset_aqg/evaluation_results/05-indonanoot5-report/sample_outputs.json

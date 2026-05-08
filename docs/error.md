@@ -17,12 +17,12 @@ Mari saya hitung berapa code samples yang perlu ditambahkan di setiap section:
 
 ### **Section 07: Matriks (4 files)**
 
-| File | Current | Knowledge | Code | Target Ratio | Code Needed |
-|------|---------|-----------|------|--------------|-------------|
-| materi1 | 220 | 106 (48%) | 114 (52%) | 60/40 | **+48 code** → 268 total |
-| materi2 | 220 | 121 (55%) | 99 (45%) | 60/40 | **+66 code** → 286 total |
-| materi3 | 220 | 109 (50%) | 111 (50%) | 60/40 | **+73 code** → 293 total |
-| materi4 | 220 | 170 (77%) | 50 (23%) | 60/40 | **+63 code** → 283 total |
+| File    | Current | Knowledge | Code      | Target Ratio | Code Needed              |
+| ---------| ---------| -----------| -----------| --------------| --------------------------|
+| materi1 | 220     | 106 (48%) | 114 (52%) | 60/40        | **+48 code** → 268 total |
+| materi2 | 220     | 121 (55%) | 99 (45%)  | 60/40        | **+66 code** → 286 total |
+| materi3 | 220     | 109 (50%) | 111 (50%) | 60/40        | **+73 code** → 293 total |
+| materi4 | 220     | 170 (77%) | 50 (23%)  | 60/40        | **+63 code** → 283 total |
 
 **Subtotal Section 07: ~250 code samples**
 

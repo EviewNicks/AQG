@@ -24,15 +24,15 @@ Penelitian ini mengeksplorasi dua metode PEFT yang berbeda secara fundamental da
 
 **Tabel 1. Komparasi Karakteristik LoRA vs Adapter**
 
-| Aspek | LoRA | Adapter Layers |
-|-------|------|----------------|
-| **Mekanisme** | Dekomposisi matriks *low-rank* | Modul *bottleneck* tambahan |
-| **Lokasi Modifikasi** | Dalam lapisan *attention* (q, v) | Setelah *feed-forward* layer |
-| **Trainable Parameters** | 0.36% (~884K) | 0.95%-3.8% (~2.4M-9.5M) |
-| **Inference Overhead** | +5-10ms (merge required) | Tidak ada (native integration) |
-| **Memory Footprint** | Sangat rendah (~1GB) | Rendah-sedang (~2-4GB) |
-| **Training Stability** | Baik | Sangat baik |
-| **Deployment** | Perlu *merge* atau *load* adapter | Langsung terintegrasi |
+| Aspek                    | LoRA                              | Adapter Layers                 |
+| --------------------------| -----------------------------------| --------------------------------|
+| **Mekanisme**            | Dekomposisi matriks *low-rank*    | Modul *bottleneck* tambahan    |
+| **Lokasi Modifikasi**    | Dalam lapisan *attention* (q, v)  | Setelah *feed-forward* layer   |
+| **Trainable Parameters** | 0.36% (~884K)                     | 0.95%-3.8% (~2.4M-9.5M)        |
+| **Inference Overhead**   | +5-10ms (merge required)          | Tidak ada (native integration) |
+| **Memory Footprint**     | Sangat rendah (~1GB)              | Rendah-sedang (~2-4GB)         |
+| **Training Stability**   | Baik                              | Sangat baik                    |
+| **Deployment**           | Perlu *merge* atau *load* adapter | Langsung terintegrasi          |
 
 **Kelebihan LoRA:**
 - **isiensi parameter ekstrem:** Hanya 0.36% parameter yang dilatih, menghasilkan model adapter berukuran sangat kecil (~3-5MB)
