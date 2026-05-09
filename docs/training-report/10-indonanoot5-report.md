@@ -1,6 +1,8 @@
-# IndonanoT5 fine-tuned D=64 With Dataset V4  06
+# IndonanoT5 fine-tuned D=128 With Dataset V4  06
 
 Note = letaknya di akun gmail aiimagine@gmail.com
+
+STATUS : DISABLED 
 
 06_task_specific_training.ipynb
 

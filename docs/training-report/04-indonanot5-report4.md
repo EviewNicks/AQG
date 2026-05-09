@@ -1,6 +1,6 @@
 # IndoNanoT5 Fine-tued + LoRA with Dataset V3  03
 
-Note = letaknya di akun gmail ardiansyahar@gmail.com
+Note = letaknya di akun gmail ardmuhammadm@gmail.com
 
 ## 1 Setup Environtment 
 

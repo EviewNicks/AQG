@@ -1,8 +1,8 @@
-# IndonanoT5 fine-tuned D=512 With Dataset V4  No Code 06
+# IndonanoT5 fine-tuned D=512 With Dataset V3  No Code 06
 
 06_task_specific_training.ipynb
 
-Note = letaknya di akun gmail lastnamediansyah@gmail.com
+Note = letaknya di akun gmail iansyah@gmail.com
 
 Model:           IndoNanoT5-base (248M params)
 Adapter:         Pfeiffer, d=512 (reduction_factor=6) ⬆️
@@ -227,11 +227,6 @@ Expected time: 6-8 hours on T4 GPU
 Total epochs: 10
 ============================================================
 
-/usr/local/lib/python3.12/dist-packages/torch/utils/data/dataloader.py:424: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 2, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
-  self.check_worker_number_rationality()
-/usr/local/lib/python3.12/dist-packages/torch/utils/data/dataloader.py:432: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 2, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
-  self.check_worker_number_rationality()
-WARNING:adapters.models.t5.modeling_t5:`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`...
 
 ![alt text](image-1.png)
 
