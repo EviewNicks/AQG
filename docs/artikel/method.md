@@ -1,284 +1,412 @@
-## 3.3. Fine-tuning Model dengan Parameter-Efficient Methods
-
-Penelitian ini mengimplementasikan dua pendekatan *Parameter-Efficient Fine-Tuning* (PEFT) untuk mengadaptasi model IndoNanoT5 pada tugas AQG: **LoRA** (*Low-Rank Adaptation*) dan **Adapter Layers**. Kedua metode ini dipilih karena kemampuannya mengurangi biaya komputasi dan memori secara signifikan dibandingkan *full fine-tuning*, sambil tetap mempertahankan performa yang kompetitif [18, 19]. Pendekatan PEFT sangat relevan dalam konteks penelitian ini mengingat keterbatasan sumber daya komputasi (GPU T4 dengan 15GB VRAM) dan ukuran dataset yang relatif kecil (1,332-8,680 sampel).
-
-### 3.3.1. Pemilihan Model Dasar
-
-Model dasar yang digunakan adalah **IndoNanoT5-base** (`LazarusNLP/IndoNanoT5-base`) dengan 248 juta parameter. Model ini merupakan varian T5 yang di-*pre-train* dari nol pada korpus bahasa Indonesia (CulturaX, 23M dokumen), menjadikannya lebih optimal untuk tugas generatif berbahasa Indonesia dibandingkan model multilingual [20]. Arsitektur *encoder-decoder* T5 memungkinkan model untuk melakukan *joint generation* antara pertanyaan dan pengecoh dalam satu proses inferensi, yang terbukti lebih konsisten secara semantik [6].
-
-**Karakteristik Model:**
-- **Arsitektur:** T5 (Text-to-Text Transfer Transformer)
-- **Parameter:** 248,462,592 (248M)
-- **Tokenizer:** SentencePiece dengan vocabulary 32,000 token
-- **Hidden dimension:** 768
-- **Attention heads:** 12
-- **Encoder/Decoder layers:** 12 layers each
-
-### 3.3.2. Strategi Parameter-Efficient Fine-Tuning (PEFT)
-
-Penelitian ini mengeksplorasi dua metode PEFT yang berbeda secara fundamental dalam pendekatan adaptasi model: **LoRA** yang memodifikasi matriks bobot melalui dekomposisi *low-rank*, dan **Adapter Layers** yang menambahkan modul *bottleneck* baru ke dalam arsitektur model.
-
-#### Perbandingan Pendekatan LoRA vs Adapter
-
-**LoRA (Low-Rank Adaptation)** [18] bekerja dengan menambahkan matriks *low-rank* yang dapat dilatih ke dalam lapisan *attention* model, tanpa mengubah bobot asli. Pendekatan ini mempertahankan arsitektur model original dan hanya melatih matriks tambahan berukuran kecil. Sebaliknya, **Adapter Layers** [19] menyisipkan modul *bottleneck* baru di antara lapisan-lapisan transformer, menciptakan jalur pembelajaran tambahan yang independen dari bobot pre-trained.
-
-**Tabel 1. Komparasi Karakteristik LoRA vs Adapter**
-
-| Aspek                    | LoRA                              | Adapter Layers                 |
-| --------------------------| -----------------------------------| --------------------------------|
-| **Mekanisme**            | Dekomposisi matriks *low-rank*    | Modul *bottleneck* tambahan    |
-| **Lokasi Modifikasi**    | Dalam lapisan *attention* (q, v)  | Setelah *feed-forward* layer   |
-| **Trainable Parameters** | 0.36% (~884K)                     | 0.95%-3.8% (~2.4M-9.5M)        |
-| **Inference Overhead**   | +5-10ms (merge required)          | Tidak ada (native integration) |
-| **Memory Footprint**     | Sangat rendah (~1GB)              | Rendah-sedang (~2-4GB)         |
-| **Training Stability**   | Baik                              | Sangat baik                    |
-| **Deployment**           | Perlu *merge* atau *load* adapter | Langsung terintegrasi          |
-
-**Kelebihan LoRA:**
-- **isiensi parameter ekstrem:** Hanya 0.36% parameter yang dilatih, menghasilkan model adapter berukuran sangat kecil (~3-5MB)
-- **Fleksibilitas deployment:** Adapter dapat di-*merge* ke model base untuk inference tanpa overhead, atau di-*load* secara dinamis untuk multi-task serving
-- **Memory efficiency:** Footprint memori sangat rendah selama training (~8-10GB pada T4 GPU)
-
-**Kekurangan LoRA:**
-- **Kapasitas terbatas:** Dengan hanya 0.36% parameter trainable, model mungkin kesulitan mempelajari pola kompleks pada dataset besar
-- **Inference latency:** Jika tidak di-*merge*, ada overhead +5-10ms per inference untuk matrix multiplication
-- **Hyperparameter sensitivity:** Performa sangat bergantung pada pemilihan rank (`r`) dan scaling factor (`α`)
-
-**Kelebihan Adapter Layers:**
-- **Kapasitas pembelajaran lebih besar:** Dengan 0.95%-3.8% parameter trainable, model memiliki ruang lebih untuk mempelajari representasi task-specific
-- **Training stability:** Arsitektur *bottleneck* dengan *residual connection* memberikan gradient flow yang lebih stabil
-- **No inference overhead:** Adapter terintegrasi langsung dalam forward pass, tidak ada latency tambahan
-- **Proven track record:** Terbukti mencapai 99.6% performa full fine-tuning pada berbagai benchmark NLP [19]
-
-**Kekurangan Adapter Layers:**
-- **Memory overhead lebih tinggi:** Membutuhkan 2-4GB lebih banyak memori dibandingkan LoRA
-- **Model size lebih besar:** Adapter weights berukuran 10-40MB tergantung dimensi bottleneck
-- **Kurang fleksibel:** Tidak bisa di-*merge* ke base model, harus selalu di-*load* sebagai modul terpisah
-
-#### Arsitektur LoRA dan Adapter
-
-Untuk memberikan pemahaman visual tentang perbedaan kedua pendekatan, berikut adalah diagram arsitektur masing-masing metode:
-
-```mermaid
-graph TB
-    subgraph LoRA["LoRA Architecture"]
-        A1[Input Hidden State<br/>h ∈ ℝ^768] --> B1[Pre-trained Weight W₀<br/>FROZEN]
-        A1 --> C1[LoRA Path]
-        C1 --> D1[Down-projection B<br/>768 → 8]
-        D1 --> E1[Up-projection A<br/>8 → 768]
-        E1 --> F1[Scale by α/r = 2.0]
-        B1 --> G1[Add: W₀x + BAx]
-        F1 --> G1
-        G1 --> H1[Output<br/>h' ∈ ℝ^768]
-        
-        style B1 fill:#e8e8e8
-        style D1 fill:#a8d5ff
-        style E1 fill:#a8d5ff
-        style F1 fill:#a8d5ff
-    end
-    
-    subgraph Adapter["Adapter Architecture Pfeiffer"]
-        A2[Input Hidden State<br/>h ∈ ℝ^768] --> B2[Feed-Forward Layer<br/>PRE-TRAINED]
-        B2 --> C2[Layer Norm]
-        C2 --> D2[Adapter Module]
-        D2 --> E2[Down-projection<br/>768 → d]
-        E2 --> F2[ReLU Activation]
-        F2 --> G2[Up-projection<br/>d → 768]
-        G2 --> H2[Residual: h + f h]
-        C2 --> H2
-        H2 --> I2[Output<br/>h' ∈ ℝ^768]
-        
-        style B2 fill:#e8e8e8
-        style E2 fill:#ffcba8
-        style F2 fill:#ffcba8
-        style G2 fill:#ffcba8
-    end
-```
-
-**Gambar 1.** Perbandingan arsitektur LoRA (kiri) dan Adapter Layers (kanan). LoRA menambahkan jalur *low-rank* paralel pada lapisan attention, sementara Adapter menyisipkan modul *bottleneck* setelah feed-forward layer dengan *residual connection*.
-
-**Penjelasan Arsitektur:**
-
-- **LoRA:** Matriks bobot original $W_0$ tetap *frozen*, dan model hanya melatih matriks $B \in \mathbb{R}^{768 \times 8}$ dan $A \in \mathbb{R}^{8 \times 768}$. Output akhir adalah $h' = W_0 x + \frac{\alpha}{r} BAx$, di mana $\alpha=16$ dan $r=8$ adalah hyperparameter.
-
-- **Adapter:** Modul *bottleneck* menerima input $h$, memproyeksikannya ke dimensi rendah $d$ (64 atau 128), menerapkan aktivasi non-linear, lalu memproyeksikan kembali ke dimensi original. Output akhir adalah $h' = h + f(hW_{down})W_{up}$, di mana $f$ adalah fungsi aktivasi ReLU.
-
-
-### 3.3.3. Desain Eksperimen Komparatif
-
-Penelitian ini melakukan empat eksperimen fine-tuning dengan konfigurasi yang berbeda untuk mengeksplorasi trade-off antara efisiensi parameter dan kapasitas pembelajaran model.
-
-```mermaid
-graph TD
-    A[IndoNanoT5-base<br/>248M parameters] --> B{Parameter-Efficient<br/>Fine-Tuning Method}
-    
-    B -->|Eksperimen 1| C[LoRA<br/>r=8, α=16]
-    B -->|Eksperimen 2| D[Adapter<br/>d=64]
-    B -->|Eksperimen 3| E[Adapter<br/>d=128]
-    B -->|Eksperimen 4| F[Adapter<br/>d=128]
-    
-    C --> C1[Dataset v2<br/>1,332 train samples]
-    D --> D1[Dataset v3<br/>4,529 train samples]
-    E --> E1[Dataset v3<br/>5,560 train samples]
-    F --> F1[Dataset v4<br/>8,680 train samples]
-    
-    C1 --> C2[Training<br/>3 epochs<br/>lr=2e-4<br/>batch=8]
-    D1 --> D2[Training<br/>8 epochs<br/>lr=1e-4<br/>batch=4×2]
-    E1 --> E2[Training<br/>10 epochs<br/>lr=5e-5<br/>batch=4×2]
-    F1 --> F2[Training<br/>10 epochs<br/>lr=5e-5<br/>batch=4×2]
-    
-    C2 --> G[Evaluation &<br/>Comparison]
-    D2 --> G
-    E2 --> G
-    F2 --> G
-    
-    style C fill:#a8d5ff
-    style D fill:#ffcba8
-    style E fill:#ffcba8
-    style F fill:#ffcba8
-```
-
-**Gambar 2.** Pipeline eksperimen fine-tuning dengan empat konfigurasi berbeda. Eksperimen 1 menggunakan LoRA sebagai baseline, sementara Eksperimen 2-4 mengeksplorasi Adapter Layers dengan variasi dimensi bottleneck dan ukuran dataset.
-
-**Tabel 2. Konfigurasi Eksperimen Fine-tuning**
-
-| Eksperimen | Method          | Trainable Params | Dataset Size | Epochs | Learning Rate | Batch Size | Warmup |
-| :----------:| :---------------:| :----------------:| :------------:| :------:| :-------------:| :----------:| :------:|
-| **1**      | LoRA (r=8)      | 884K (0.36%)     | 1,332       | 3      | 2×10⁻⁴        | 8          | -      |
-| **2**      | Adapter (d=64)  | 2.38M (0.95%)    | 4,529       | 8      | 1×10⁻⁴        | 4 (eff: 8) | 50     |
-| **3**      | Adapter (d=128) | 9.5M (3.8%)      | 5,560       | 10     | 5×10⁻⁵        | 4 (eff: 8) | 100    |
-| **4**      | Adapter (d=128) | 9.5M (3.8%)      | 8,680       | 10     | 5×10⁻⁵        | 4 (eff: 8) | 100    |
-
-**Rasional Desain Eksperimen:**
-
-1. **Eksperimen 1 (LoRA Baseline):** Menggunakan konfigurasi LoRA standar dengan rank rendah (r=8) untuk memvalidasi efektivitas pendekatan *low-rank adaptation* pada dataset kecil. Learning rate yang lebih tinggi (2e-4) dipilih karena LoRA memiliki parameter trainable yang sangat sedikit.
-
-2. **Eksperimen 2 (Adapter d=64):** Mengeksplorasi Adapter Layers dengan dimensi bottleneck kecil (d=64, reduction factor=12) untuk komparasi langsung dengan LoRA dalam hal efisiensi parameter. Dataset diperbesar menjadi 4,529 sampel untuk memberikan ruang pembelajaran yang lebih luas.
-
-3. **Eksperimen 3 (Adapter d=128):** Meningkatkan kapasitas model dengan memperbesar dimensi bottleneck menjadi d=128 (reduction factor=6), menghasilkan 9.5M parameter trainable (3.8%). Learning rate diturunkan menjadi 5e-5 untuk stabilitas training dengan model yang lebih besar.
-
-4. **Eksperimen 4 (Adapter d=128, Dataset v4):** Menggunakan konfigurasi yang sama dengan Eksperimen 3, tetapi dengan dataset terbesar (8,680 sampel) untuk mengevaluasi skalabilitas pendekatan Adapter pada data yang lebih banyak.
-
-**Strategi Gradient Accumulation:** Eksperimen 2-4 menggunakan batch size per-device 4 dengan gradient accumulation steps 2, menghasilkan effective batch size 8. Strategi ini memungkinkan training dengan batch size yang lebih besar tanpa melebihi batas memori GPU T4 (15GB VRAM).
-
-### 3.3.4. Implementasi LoRA
-
-**Konfigurasi LoRA:**
-- **Target modules:** Lapisan *query* (`q`) dan *value* (`v`) dalam mekanisme *multi-head attention*
-- **Rank (r):** 8 (dimensi matriks low-rank)
-- **Alpha (α):** 16 (scaling factor, menghasilkan α/r = 2.0)
-- **Dropout:** 0.1 (regularisasi untuk mencegah overfitting)
-- **Trainable parameters:** 884,736 (0.36% dari 248M)
-
-LoRA diterapkan pada 24 lapisan attention (12 encoder + 12 decoder), dengan setiap lapisan memiliki proyeksi query dan value yang dimodifikasi. Total parameter trainable dihitung sebagai: $2 \times 24 \times (768 \times 8 + 8 \times 768) = 884,736$ parameter.
-
-**Training Setup:**
-- **Dataset:** 1,332 training samples, 166 validation, 168 test
-- **Epochs:** 3 (early stopping jika validation loss tidak turun selama 2 epochs)
-- **Batch size:** 8 per device
-- **Learning rate:** 2×10⁻⁴ dengan linear decay
-- **Optimizer:** AdamW (β₁=0.9, β₂=0.999, ε=1×10⁻⁸)
-- **Weight decay:** 0.01
-- **Max sequence length:** 512 tokens (input dan output)
-
-### 3.3.5. Implementasi Adapter Layers
-
-**Konfigurasi Adapter (Pfeiffer Architecture):**
-- **Placement:** Setelah feed-forward layer, sebelum layer normalization
-- **Activation function:** ReLU (non-linearity untuk bottleneck)
-- **Residual connection:** Output adapter ditambahkan ke input original
-- **Variasi dimensi bottleneck:**
-  - **d=64:** Reduction factor 12 (768/64), trainable params 2.38M (0.95%)
-  - **d=128:** Reduction factor 6 (768/128), trainable params 9.5M (3.8%)
-
-Adapter diterapkan pada 24 lapisan transformer (12 encoder + 12 decoder). Untuk d=64, setiap adapter memiliki parameter: $768 \times 64 + 64 \times 768 = 98,304$ parameter. Total untuk 24 lapisan: $24 \times 98,304 = 2,359,296 \approx 2.38M$ parameter.
-
-**Training Setup (Eksperimen 2-4):**
-
-| Parameter | Eksperimen 2 | Eksperimen 3 | Eksperimen 4 |
-|-----------|--------------|--------------|--------------|
-| **Adapter dimension** | d=64 | d=128 | d=128 |
-| **Dataset size** | 4,529 | 5,560 | 8,680 |
-| **Epochs** | 8 | 10 | 10 |
-| **Learning rate** | 1×10⁻⁴ | 5×10⁻⁵ | 5×10⁻⁵ |
-| **Warmup steps** | 50 | 100 | 100 |
-| **Batch size** | 4 (eff: 8) | 4 (eff: 8) | 4 (eff: 8) |
-
-**Pertimbangan Hyperparameter:**
-- **Learning rate lebih rendah untuk d=128:** Model dengan kapasitas lebih besar memerlukan learning rate yang lebih konservatif untuk menghindari instabilitas training dan overfitting.
-- **Warmup steps lebih panjang:** Dengan dataset yang lebih besar, warmup yang lebih panjang membantu model beradaptasi secara bertahap dengan distribusi data.
-- **Epochs lebih banyak:** Dataset yang lebih besar memerlukan lebih banyak iterasi untuk konvergensi optimal.
-
-### 3.3.6. Training Pipeline dan Optimisasi
-
-**Preprocessing:**
-1. **Tokenization:** Input dan target di-tokenize menggunakan T5Tokenizer dengan max_length=512
-2. **Dynamic Padding:** Padding diterapkan secara dinamis per batch untuk efisiensi memori (40-60% memory savings)
-3. **Label Masking:** Padding tokens pada label di-mask dengan nilai -100 agar tidak berkontribusi pada loss calculation
-
-**Training Arguments:**
-- **Mixed Precision (FP16):** Mengurangi memory footprint ~50% dan mempercepat training ~2x
-- **Gradient Checkpointing:** Trade computation untuk memory, memungkinkan batch size lebih besar
-- **Gradient Accumulation:** Mensimulasikan batch size besar tanpa melebihi memory limit
-- **Evaluation Strategy:** Evaluasi dilakukan setiap epoch pada validation set
-- **Save Strategy:** Checkpoint disimpan setiap epoch, hanya 2 checkpoint terbaik yang dipertahankan
-
-**Monitoring Metrics:**
-- **Training Loss:** Cross-entropy loss pada training set
-- **Validation Loss:** Cross-entropy loss pada validation set
-- **BLEU-4:** Mengukur n-gram overlap antara prediksi dan referensi
-- **ROUGE-L:** Mengukur longest common subsequence
-- **BERTScore:** Mengukur semantic similarity menggunakan contextual embeddings
-
-**Computational Resources:**
-- **GPU:** NVIDIA T4 (15GB VRAM)
-- **Training Time:** 
-  - LoRA: ~2-3 jam (3 epochs)
-  - Adapter d=64: ~6-8 jam (8 epochs)
-  - Adapter d=128: ~10-12 jam (10 epochs)
-- **Peak Memory Usage:**
-  - LoRA: ~10GB
-  - Adapter d=64: ~12GB
-  - Adapter d=128: ~14GB
-
-### 3.3.7. Baseline Evaluation
-
-Sebelum fine-tuning, model IndoNanoT5-base yang belum di-adaptasi dievaluasi pada 10 sampel dari validation set untuk menetapkan baseline performance. Evaluasi ini penting untuk mengukur seberapa besar improvement yang dicapai oleh masing-masing metode PEFT.
-
-**Expected Baseline Metrics:**
-- **BLEU-4:** ~0.005-0.01 (sangat rendah karena model belum dilatih untuk task AQG)
-- **ROUGE-L:** ~0.0-0.05 (model cenderung menghasilkan output yang tidak relevan)
-- **BERTScore F1:** ~0.40-0.50 (semantic similarity rendah)
-
-Baseline yang rendah ini mengonfirmasi bahwa model pre-trained memerlukan fine-tuning task-specific untuk dapat menghasilkan soal kuis yang berkualitas. Perbandingan dengan baseline akan dilaporkan pada bagian Hasil dan Pembahasan untuk menunjukkan efektivitas masing-masing metode PEFT.
-
----
-
-# References
-
-[1] C. Raffel et al., "Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer," *Journal of Machine Learning Research*, vol. 21, no. 140, pp. 1-67, 2020.
-
-[2] A. Karotia et al., "Domain Adaptation by Two-Stage Fine-Tuning of Large Language Models," in *Proc. 23rd Workshop on Biomedical Natural Language Processing (BioNLP)*, 2024. [Online]. Available: https://aclanthology.org/2024.bionlp-1.69/
-
-[4] F. Koto et al., "Cendol: Open instruction-tuned generative large language models for Indonesian languages," in *Proc. 62nd Annual Meeting of the Association for Computational Linguistics (ACL)*, 2024, pp. 796-810.
-
-[6] J. Smith and L. Doe, "Joint Generation of Distractors for Multiple-Choice Questions: A Text-to-Text Approach," *Computers & Education*, vol. 182, 2025.
-
-[7] B. Brenndoerfer, "T5 and Text-to-Text Framework: Unified NLP Through Text Transformations," *Medium*, 2025. [Online]. Available: https://mbrenndoerfer.com/writing/t5-text-to-text-framework-unified-nlp-through-text-transformations
-
-[10] K. Vutukuri, "Pre-training vs Fine-tuning: The Two-Phase Training Paradigm," *Medium*, 2024. [Online]. Available: https://medium.com/@kiranvutukuri/82-pre-training-vs-fine-tuning-the-two-phase-training-paradigm-f52f98bce17e
-
-[14] A. Moreno-Cediel et al., "Evaluating the performance of multilingual models in context-aware question generation," *Scientific Reports*, vol. 14, 2024. [Online]. Available: https://www.nature.com/articles/s41598-024-66472-5
-
-[15] S. Jajee et al., "Quantifying the Gaps: A Systematic Taxonomy of Bias and Imbalance in 96 Multilingual AI Benchmarks & Datasets," *ResearchGate*, 2026.
-
-[16] "How to Generate Synthetic Training Data for LLM Fine-Tuning (2026 Guide)," *Prem AI Blog*, 2026. [Online]. Available: https://blog.premai.io/how-to-generate-synthetic-training-data-for-llm-fine-tuning-2026-guide/
-
-[17] Y. Zhang et al., "Evaluating and Enhancing Markdown Awareness in Large Language Models," *arXiv preprint arXiv:2501.15000*, 2025. [Online]. Available: https://arxiv.org/html/2501.15000v1
-
-[18] E. J. Hu et al., "LoRA: Low-Rank Adaptation of Large Language Models," in *Proc. International Conference on Learning Representations (ICLR)*, 2022. [Online]. Available: https://arxiv.org/abs/2106.09685
-
-[19] N. Houlsby et al., "Parameter-Efficient Transfer Learning for NLP," in *Proc. 36th International Conference on Machine Learning (ICML)*, 2019, pp. 2790-2799. [Online]. Available: https://arxiv.org/abs/1902.00751
-
-[20] F. Koto et al., "IndoNLG: Benchmark and Resources for Evaluating Indonesian Natural Language Generation," in *Proc. 2021 Conference on Empirical Methods in Natural Language Processing (EMNLP)*, 2021, pp. 8875-8898.
-             |              |              |     |     |     |
+# IndoNanoT5 Fine-tued + LoRA with Dataset V3  03 
+
+Detail :
+✓ Base model loaded
+✓ LoRA applied: r=8, alpha=16, target=['q', 'v']
+  Trainable: 884,736 (0.36%)
+  Total:     248,462,592
+✓ Model device: cuda:0
+  GPU allocated: 1.00 GB
+
+
+============================================================
+EPOCH TRAINING Loass and Validation Loss 
+============================================================
+  1. 19.09   , 8.89
+  2. 17.62 , 8.55
+  3. 17.25 , 8.39
+  4. 16.98 , 8.27
+  5. 16.83 , 8.19
+  6. 16.70 , 8.15
+  7. 16.55 , 8.12
+  8. 16.34 , 8.10
+  9. 16.23 , 8.06
+  10. 15.88 , 8.02
+
+
+
+============================================================
+Test Set Evaluation Results
+============================================================
+
+BLEU Scores:
+  BLEU:     0.0405
+  BLEU-1:   0.2147
+  BLEU-2:   0.0641
+  BLEU-3:   0.0265
+  BLEU-4:   0.0074
+
+ROUGE Scores:
+  ROUGE-1:  0.0760
+  ROUGE-2:  0.0211
+  ROUGE-L:  0.0647
+
+BERTScore:
+  Precision: 0.6135
+  Recall:    0.5685
+  F1:        0.5897
+
+Diversity:
+  Distinct-1: 0.0735
+  Distinct-2: 0.4171
+
+============================================================
+
+# IndoNanoT5 Fine-tued + LoRA with Dataset V3 No Code Blocks   03
+
+✓ Base model loaded
+✓ LoRA applied: r=8, alpha=16, target=['q', 'v']
+  Trainable: 884,736 (0.36%)
+  Total:     248,462,592
+✓ Model device: cuda:0
+  GPU allocated: 1.00 GB
+
+============================================================
+EPOCH TRAINING Loass and Validation Loss 
+============================================================
+  1. 20.05 , 9.36
+  2. 18.44 , 8.83 
+  3. 17.77 , 8.64
+  4. 17.46 , 8.52 
+  5. 17.35 , 8.42
+  6. 17.18 , 8.26
+  7. 17.07 , 8.33
+  8. 17.03 , 8.30
+  9. 16.99 , 8.29
+  10. 15.67 , 8.27 
+
+============================================================
+Test Set Evaluation Results
+============================================================
+
+BLEU Scores:
+  BLEU:     0.0035
+  BLEU-1:   0.0987
+  BLEU-2:   0.0032
+  BLEU-3:   0.0010
+  BLEU-4:   0.0005
+
+ROUGE Scores:
+  ROUGE-1:  0.0158
+  ROUGE-2:  0.0013
+  ROUGE-L:  0.0155
+
+BERTScore:
+  Precision: 0.5392
+  Recall:    0.5178
+  F1:        0.5280
+
+Diversity:
+  Distinct-1: 0.0201
+  Distinct-2: 0.0892
+
+============================================================
+
+# IndonanoT5 fine-tuned D=64 With Dataset V3  04
+
+Model:           IndoNanoT5-base (248M params)
+Adapter:         Pfeiffer, d=64 (reduction_factor=12)
+Trainable:       2.38M params (0.95%)
+Dataset:         dataset-task-spesifc/ (4,529 train)
+Epochs:          10
+Batch Size:      4 (effective: 8 with grad_accum=2)
+Learning Rate:   1e-4
+Warmup:          100 steps
+
+============================================================
+EPOCH TRAINING Loass and Validation Loss 
+============================================================
+  1. 2.96 , 1.22
+  2. 2.81 , 1.09
+  3. 2.51 , 1.02
+  4. 2.34 , 0.99
+  5. 2.08 , 0.95
+  6. 1.82 , 0.93
+  7. 2.15 , 0.92
+  8. 1.88 , 0.91
+  9. 2.05 , 0.90
+  10. 1.93 , 0.89
+
+
+============================================================
+Test Set Evaluation Results
+============================================================
+
+BLEU Scores:
+  BLEU:     0.2909
+  BLEU-1:   0.6286
+  BLEU-2:   0.4333
+  BLEU-3:   0.3160
+  BLEU-4:   0.2598
+
+ROUGE Scores:
+  ROUGE-1:  0.5285
+  ROUGE-2:  0.3488
+  ROUGE-L:  0.4809
+
+BERTScore:
+  Precision: 0.8040
+  Recall:    0.7837
+  F1:        0.7933
+
+Diversity:
+  Distinct-1: 0.1498
+  Distinct-2: 0.4470
+
+# IndonanoT5 fine-tuned D=64 With Dataset V3  no-code  04
+
+Model:           IndoNanoT5-base (248M params)
+Adapter:         Pfeiffer, d=128 (reduction_factor=12)
+Trainable:       2.38M params (0.95%)
+Dataset:         dataset-task-spesifc/ (4,529 train)
+Epochs:          10
+Batch Size:      4 (effective: 8 with grad_accum=2)
+Learning Rate:   1e-4
+Warmup:          100 steps
+
+============================================================
+EPOCH TRAINING Loass and Validation Loss 
+============================================================
+  1. 3.86 , 1.71
+  2. 3.60 , 1.58
+  3. 3.24 , 1.52 
+  4. 3.18 , 1.47
+  5. 2.78 , 1.43
+  6. 3.11 , 1.41
+  7. 3.01 , 1.39
+  8. 2.88 , 1.38
+  9. 3.10 , 1.37
+  10. 2.65 , 1.37
+
+============================================================
+Test Set Evaluation Results
+============================================================
+
+BLEU Scores:
+  BLEU:     0.1902
+  BLEU-1:   0.5516
+  BLEU-2:   0.3061
+  BLEU-3:   0.1581
+  BLEU-4:   0.0899
+
+ROUGE Scores:
+  ROUGE-1:  0.5112
+  ROUGE-2:  0.2796
+  ROUGE-L:  0.4451
+
+BERTScore:
+  Precision: 0.7947
+  Recall:    0.7761
+  F1:        0.7850
+
+Diversity:
+  Distinct-1: 0.1515
+  Distinct-2: 0.5340
+
+# IndonanoT5 fine-tuned D=128 With Dataset V3  full  05
+
+Model:           IndoNanoT5-base (248M params)
+Adapter:         Pfeiffer, d=128 (reduction_factor=6) ⬆️
+Trainable:       ~9.5M params (3.8%) ⬆️
+Dataset:         dataset-task-v3/00-dataset/ (5,560 train) ⬆️
+Epochs:          10 ⬆️
+Batch Size:      4 (effective: 8 with grad_accum=2)
+Learning Rate:   5e-5 ⬇️ (lebih kecil untuk model lebih besar)
+Warmup:          100 steps ⬆️
+
+============================================================
+EPOCH TRAINING Loass and Validation Loss 
+============================================================
+  1. 3.08 , 1.26 
+  2. 2.93 , 1.13
+  3. 2.59 , 1.06
+  4. 2.44 , 1.01
+  5. 2.15 , 0.98
+  6. 1.89 , 0.95 
+  7. 2.24 , 0.94
+  8. 1.93 , 0.94
+  9. 2.12 , 0.93
+  10. 1.91 , 0.93
+
+
+============================================================
+Test Set Evaluation Results
+============================================================
+
+BLEU Scores:
+  BLEU:     0.2907
+  BLEU-1:   0.6357
+  BLEU-2:   0.4389
+  BLEU-3:   0.3196
+  BLEU-4:   0.2632
+
+ROUGE Scores:
+  ROUGE-1:  0.5325
+  ROUGE-2:  0.3472
+  ROUGE-L:  0.4826
+
+BERTScore:
+  Precision: 0.8048
+  Recall:    0.7841
+  F1:        0.7939
+
+Diversity:
+  Distinct-1: 0.1470
+  Distinct-2: 0.4510
+
+# IndonanoT5 fine-tuned D=128 With Dataset V3  No-Code  05
+
+Model:           IndoNanoT5-base (248M params)
+Adapter:         Pfeiffer, d=128 (reduction_factor=6) ⬆️
+Trainable:       ~9.5M params (3.8%) ⬆️
+Dataset:         dataset-task-v3/00-dataset/ (5,560 train) ⬆️
+Epochs:          10 ⬆️
+Batch Size:      4 (effective: 8 with grad_accum=2)
+Learning Rate:   5e-5 ⬇️ (lebih kecil untuk model lebih besar)
+Warmup:          100 steps ⬆️
+
+============================================================
+EPOCH TRAINING Loass and Validation Loss 
+============================================================
+  1. 3.51 , 1.62
+  2. 3.42 , 1.59
+  3. 3.34 , 1.56
+  4. 3.30 , 1.52
+  5. 2.87 , 1.47
+  6. 3.24 , 1.45
+  7. 3.11 , 1.43
+  8. 2.99 , 1.42
+  9. 3.22 , 1.41
+  10. 2.78 , 1.41
+
+============================================================
+Test Set Evaluation Results
+============================================================
+
+BLEU Scores:
+  BLEU:     0.1951
+  BLEU-1:   0.5504
+  BLEU-2:   0.3094
+  BLEU-3:   0.1608
+  BLEU-4:   0.0939
+
+ROUGE Scores:
+  ROUGE-1:  0.5099
+  ROUGE-2:  0.2773
+  ROUGE-L:  0.4425
+
+BERTScore:
+  Precision: 0.7933
+  Recall:    0.7760
+  F1:        0.7842
+
+Diversity:
+  Distinct-1: 0.1507
+  Distinct-2: 0.5305
+
+# IndonanoT5 fine-tuned D=512 With Dataset V3  full 07
+
+✓ Adapter added: pfeiffer config, d=512.0
+✓ Adapter activated for training
+✓ Model moved to GPU
+  GPU allocated: 1.08 GB
+
+============================================================
+MODEL INFORMATION
+============================================================
+
+Parameters:
+  Trainable: 18,905,088 (7.09%)
+  Total:     266,482,944
+  Frozen:    247,577,856
+
+============================================================
+EPOCH TRAINING Loass and Validation Loss 
+============================================================
+  1. 2.8 , 1.13
+  2. 2.55 , 0.99
+  3. 2.23 , 0.92
+  4. 1.99 , 0.88
+  5. 1.78 , 0.85
+  6. 1.50 , 0.82
+  7. 1.73 ,  0.81
+  8. 1.52 , 0.80 
+  9. 1.46 , 0.75
+  10. 1.52 , 0.73 
+
+============================================================
+Test Set Evaluation Results
+============================================================
+
+BLEU Scores:
+  BLEU:     0.3052
+  BLEU-1:   0.6159
+  BLEU-2:   0.4164
+  BLEU-3:   0.3026
+  BLEU-4:   0.2476
+
+ROUGE Scores:
+  ROUGE-1:  0.5405
+  ROUGE-2:  0.3547
+  ROUGE-L:  0.4909
+
+BERTScore:
+  Precision: 0.8060
+  Recall:    0.7920
+  F1:        0.7984
+
+Diversity:
+  Distinct-1: 0.1422
+  Distinct-2: 0.4342
+
+
+# IndonanoT5 fine-tuned D=512 With Dataset V3  No Code 07
+
+✓ Adapter added: pfeiffer config, d=512.0
+✓ Adapter activated for training
+✓ Model moved to GPU
+  GPU allocated: 1.08 GB
+
+============================================================
+MODEL INFORMATION
+============================================================
+
+Parameters:
+  Trainable: 18,905,088 (7.09%)
+  Total:     266,482,944
+  Frozen:    247,577,856
+
+============================================================
+EPOCH TRAINING Loass and Validation Loss 
+============================================================
+  1. 3.68 , 1.6
+  2. 3.36 , 1.50
+  3. 2.93 , 1.42
+  4. 2.82 , 1.38 
+  5. 2.42 , 1.33
+  6. 2.65 , 1.31
+  7. 2.54 , 1.30
+  8. 2.32 , 1.29 
+  9. 2.20 , 1.27
+  10. 2.17 , 1.23
+
+BLEU Scores:
+  BLEU:     0.2042
+  BLEU-1:   0.5312
+  BLEU-2:   0.2908
+  BLEU-3:   0.1550
+  BLEU-4:   0.0926
+
+ROUGE Scores:
+  ROUGE-1:  0.5066
+  ROUGE-2:  0.2810
+  ROUGE-L:  0.4433
+
+BERTScore:
+  Precision: 0.7924
+  Recall:    0.7818
+  F1:        0.7867
+
+Diversity:
+  Distinct-1: 0.1313
+  Distinct-2: 0.4677

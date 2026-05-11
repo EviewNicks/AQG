@@ -4,7 +4,7 @@ Note = letaknya di akun gmail dianysahardi@gmail.com
 
 
 Model:           IndoNanoT5-base (248M params)
-Adapter:         Pfeiffer, d=64 (reduction_factor=12)
+Adapter:         Pfeiffer, d=128 (reduction_factor=12)
 Trainable:       2.38M params (0.95%)
 Dataset:         dataset-task-spesifc/ (4,529 train)
 Epochs:          10
@@ -258,7 +258,7 @@ Total epochs: 10
 
 WARNING:adapters.models.t5.modeling_t5:`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`...
 
-![alt text](iamge/7-image.png)
+![alt text](image/7-image.png)
 
 ## 7 Save adapter & Visualize 
 

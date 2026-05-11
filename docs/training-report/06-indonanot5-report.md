@@ -11,11 +11,6 @@ Batch Size:      4 (effective: 8 with grad_accum=2)
 Learning Rate:   1e-4
 Warmup:          100 steps
 
-Results:
-  BLEU-4:        0.2598
-  ROUGE-L:       0.4809
-  Training Time: 3.92 hours
-
 
 
 ## 1 setup environtment 

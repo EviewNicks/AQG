@@ -1,4 +1,4 @@
-# IndonanoT5 fine-tuned D=512 With Dataset V4  No Code 06
+# IndonanoT5 fine-tuned D=128 With Dataset V4 No Code 06
 
 06_task_specific_training.ipynb
 
