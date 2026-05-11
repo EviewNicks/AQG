@@ -1,7 +1,4 @@
 
-7
-
-Automatic Zoom
 P2 -- Overview
 Automatic Generation of Python Programming Quiz Questions and Distractors Using IndoT5 with LoRA for
 Indonesian Educational Content

@@ -1,0 +1,366 @@
+{
+  "total": 7946,
+  "splits": {
+    "train": 6356,
+    "validation": 794,
+    "test": 796
+  },
+  "difficulty_distribution": {
+    "overall": {
+      "Mudah": 3022,
+      "Sedang": 3607,
+      "Sulit": 1317
+    },
+    "train": {
+      "Mudah": 2405,
+      "Sulit": 1053,
+      "Sedang": 2898
+    },
+    "validation": {
+      "Sulit": 127,
+      "Sedang": 345,
+      "Mudah": 322
+    },
+    "test": {
+      "Mudah": 295,
+      "Sulit": 137,
+      "Sedang": 364
+    }
+  },
+  "type_distribution": {
+    "overall": {
+      "knowledge": 7704,
+      "code": 242
+    },
+    "train": {
+      "knowledge": 6166,
+      "code": 190
+    },
+    "validation": {
+      "knowledge": 770,
+      "code": 24
+    },
+    "test": {
+      "knowledge": 768,
+      "code": 28
+    }
+  },
+  "section_distribution": {
+    "overall": {
+      "01-perkenalan-python": 1220,
+      "02-berinteraksi-dengan-data": 887,
+      "03-ekspresi": 446,
+      "04-aksi-sekuensial": 500,
+      "05-control-flow": 536,
+      "06-array": 767,
+      "07-matriks": 488,
+      "08-subprogram": 757,
+      "09-oop": 725,
+      "10-style-guide": 1093,
+      "11-unit-testing": 527
+    },
+    "train": {
+      "09-oop": 571,
+      "01-perkenalan-python": 987,
+      "11-unit-testing": 440,
+      "06-array": 619,
+      "03-ekspresi": 342,
+      "05-control-flow": 432,
+      "07-matriks": 378,
+      "10-style-guide": 873,
+      "02-berinteraksi-dengan-data": 701,
+      "08-subprogram": 604,
+      "04-aksi-sekuensial": 409
+    },
+    "validation": {
+      "02-berinteraksi-dengan-data": 88,
+      "04-aksi-sekuensial": 47,
+      "08-subprogram": 73,
+      "11-unit-testing": 44,
+      "10-style-guide": 111,
+      "03-ekspresi": 57,
+      "06-array": 87,
+      "09-oop": 81,
+      "01-perkenalan-python": 104,
+      "07-matriks": 53,
+      "05-control-flow": 49
+    },
+    "test": {
+      "07-matriks": 57,
+      "01-perkenalan-python": 129,
+      "06-array": 61,
+      "09-oop": 73,
+      "10-style-guide": 109,
+      "02-berinteraksi-dengan-data": 98,
+      "05-control-flow": 55,
+      "11-unit-testing": 43,
+      "08-subprogram": 80,
+      "03-ekspresi": 47,
+      "04-aksi-sekuensial": 44
+    }
+  },
+  "filter_info": {
+    "total_loaded": 11338,
+    "no_code_count": 8341,
+    "with_code_count": 2997,
+    "filter_rate_percent": 26.43
+  },
+  "deduplication": {
+    "original_count": 8341,
+    "unique_count": 7946,
+    "duplicates_removed": 395
+  },
+  "validation_errors": 0,
+  "file_stats": {
+    "01-perkenalan-python\\01-perkenalan-python.jsonl": {
+      "no_code": 132,
+      "with_code": 92,
+      "total": 224
+    },
+    "01-perkenalan-python\\02-menjalankan-kode-program-pertama.jsonl": {
+      "no_code": 137,
+      "with_code": 90,
+      "total": 227
+    },
+    "01-perkenalan-python\\03-bersiap-membuat-kode-program-pertama-di-lokal.jsonl": {
+      "no_code": 217,
+      "with_code": 3,
+      "total": 220
+    },
+    "01-perkenalan-python\\04-menjalankan-kode-di-program-lokal.jsonl": {
+      "no_code": 218,
+      "with_code": 2,
+      "total": 220
+    },
+    "01-perkenalan-python\\05-variable-and-assignment.jsonl": {
+      "no_code": 169,
+      "with_code": 53,
+      "total": 222
+    },
+    "01-perkenalan-python\\06-input-output-and-comment.jsonl": {
+      "no_code": 176,
+      "with_code": 44,
+      "total": 220
+    },
+    "01-perkenalan-python\\07-rangkuman.jsonl": {
+      "no_code": 196,
+      "with_code": 28,
+      "total": 224
+    },
+    "02-berinteraksi-dengan-data\\1_abstraksi_data.jsonl": {
+      "no_code": 217,
+      "with_code": 35,
+      "total": 252
+    },
+    "02-berinteraksi-dengan-data\\2_data_typing.jsonl": {
+      "no_code": 156,
+      "with_code": 64,
+      "total": 220
+    },
+    "02-berinteraksi-dengan-data\\3_type_data.jsonl": {
+      "no_code": 126,
+      "with_code": 94,
+      "total": 220
+    },
+    "02-berinteraksi-dengan-data\\4_transformasi_string.jsonl": {
+      "no_code": 132,
+      "with_code": 88,
+      "total": 220
+    },
+    "02-berinteraksi-dengan-data\\5_operasi_list_set_string.jsonl": {
+      "no_code": 132,
+      "with_code": 88,
+      "total": 220
+    },
+    "02-berinteraksi-dengan-data\\6_rangkuman.jsonl": {
+      "no_code": 132,
+      "with_code": 88,
+      "total": 220
+    },
+    "03-ekspresi\\materi1.jsonl": {
+      "no_code": 156,
+      "with_code": 104,
+      "total": 260
+    },
+    "03-ekspresi\\materi2.jsonl": {
+      "no_code": 159,
+      "with_code": 106,
+      "total": 265
+    },
+    "03-ekspresi\\materi3.jsonl": {
+      "no_code": 65,
+      "with_code": 192,
+      "total": 257
+    },
+    "03-ekspresi\\materi4.jsonl": {
+      "no_code": 70,
+      "with_code": 169,
+      "total": 239
+    },
+    "04-aksi-sekuensial\\materi1.jsonl": {
+      "no_code": 128,
+      "with_code": 94,
+      "total": 222
+    },
+    "04-aksi-sekuensial\\materi2.jsonl": {
+      "no_code": 129,
+      "with_code": 91,
+      "total": 220
+    },
+    "04-aksi-sekuensial\\materi3.jsonl": {
+      "no_code": 129,
+      "with_code": 108,
+      "total": 237
+    },
+    "04-aksi-sekuensial\\materi4.jsonl": {
+      "no_code": 153,
+      "with_code": 67,
+      "total": 220
+    },
+    "05-control-flow\\materi1.jsonl": {
+      "no_code": 138,
+      "with_code": 82,
+      "total": 220
+    },
+    "05-control-flow\\materi2.jsonl": {
+      "no_code": 137,
+      "with_code": 83,
+      "total": 220
+    },
+    "05-control-flow\\materi3.jsonl": {
+      "no_code": 143,
+      "with_code": 79,
+      "total": 222
+    },
+    "05-control-flow\\materi4.jsonl": {
+      "no_code": 142,
+      "with_code": 78,
+      "total": 220
+    },
+    "06-array\\materi1.jsonl": {
+      "no_code": 149,
+      "with_code": 71,
+      "total": 220
+    },
+    "06-array\\materi2.jsonl": {
+      "no_code": 146,
+      "with_code": 74,
+      "total": 220
+    },
+    "06-array\\materi3.jsonl": {
+      "no_code": 152,
+      "with_code": 68,
+      "total": 220
+    },
+    "06-array\\materi4.jsonl": {
+      "no_code": 188,
+      "with_code": 140,
+      "total": 328
+    },
+    "06-array\\materi5.jsonl": {
+      "no_code": 132,
+      "with_code": 88,
+      "total": 220
+    },
+    "07-matriks\\materi1.jsonl": {
+      "no_code": 106,
+      "with_code": 114,
+      "total": 220
+    },
+    "07-matriks\\materi2.jsonl": {
+      "no_code": 121,
+      "with_code": 99,
+      "total": 220
+    },
+    "07-matriks\\materi3.jsonl": {
+      "no_code": 109,
+      "with_code": 111,
+      "total": 220
+    },
+    "07-matriks\\materi4.jsonl": {
+      "no_code": 170,
+      "with_code": 50,
+      "total": 220
+    },
+    "08-subprogram\\materi1.jsonl": {
+      "no_code": 215,
+      "with_code": 5,
+      "total": 220
+    },
+    "08-subprogram\\materi2.jsonl": {
+      "no_code": 242,
+      "with_code": 2,
+      "total": 244
+    },
+    "08-subprogram\\materi3.jsonl": {
+      "no_code": 218,
+      "with_code": 2,
+      "total": 220
+    },
+    "08-subprogram\\materi4.jsonl": {
+      "no_code": 218,
+      "with_code": 2,
+      "total": 220
+    },
+    "09-oop\\materi1.jsonl": {
+      "no_code": 171,
+      "with_code": 49,
+      "total": 220
+    },
+    "09-oop\\materi2.jsonl": {
+      "no_code": 169,
+      "with_code": 51,
+      "total": 220
+    },
+    "09-oop\\materi3.jsonl": {
+      "no_code": 171,
+      "with_code": 49,
+      "total": 220
+    },
+    "09-oop\\materi4.jsonl": {
+      "no_code": 220,
+      "with_code": 0,
+      "total": 220
+    },
+    "10-style-guide\\materi1.jsonl": {
+      "no_code": 220,
+      "with_code": 0,
+      "total": 220
+    },
+    "10-style-guide\\materi2.jsonl": {
+      "no_code": 220,
+      "with_code": 0,
+      "total": 220
+    },
+    "10-style-guide\\materi3.jsonl": {
+      "no_code": 220,
+      "with_code": 0,
+      "total": 220
+    },
+    "10-style-guide\\materi4.jsonl": {
+      "no_code": 214,
+      "with_code": 0,
+      "total": 214
+    },
+    "10-style-guide\\materi5.jsonl": {
+      "no_code": 221,
+      "with_code": 0,
+      "total": 221
+    },
+    "11-unit-testing\\materi1.jsonl": {
+      "no_code": 220,
+      "with_code": 0,
+      "total": 220
+    },
+    "11-unit-testing\\materi2.jsonl": {
+      "no_code": 220,
+      "with_code": 0,
+      "total": 220
+    },
+    "11-unit-testing\\materi3.jsonl": {
+      "no_code": 220,
+      "with_code": 0,
+      "total": 220
+    }
+  }
+}

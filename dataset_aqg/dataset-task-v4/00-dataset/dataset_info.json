@@ -1,0 +1,160 @@
+{
+  "total": 10851,
+  "splits": {
+    "train": 8680,
+    "validation": 1085,
+    "test": 1086
+  },
+  "difficulty_distribution": {
+    "overall": {
+      "Mudah": 4252,
+      "Sedang": 4748,
+      "Sulit": 1851
+    },
+    "train": {
+      "Sedang": 3801,
+      "Sulit": 1465,
+      "Mudah": 3414
+    },
+    "validation": {
+      "Sedang": 465,
+      "Mudah": 436,
+      "Sulit": 184
+    },
+    "test": {
+      "Sulit": 202,
+      "Sedang": 482,
+      "Mudah": 402
+    }
+  },
+  "type_distribution": {
+    "overall": {
+      "knowledge": 8003,
+      "code": 2848
+    },
+    "train": {
+      "knowledge": 6374,
+      "code": 2306
+    },
+    "validation": {
+      "knowledge": 819,
+      "code": 266
+    },
+    "test": {
+      "knowledge": 810,
+      "code": 276
+    }
+  },
+  "section_distribution": {
+    "overall": {
+      "01-perkenalan-python": 1509,
+      "02-berinteraksi-dengan-data": 1323,
+      "03-ekspresi": 991,
+      "04-aksi-sekuensial": 848,
+      "05-control-flow": 851,
+      "06-array": 1207,
+      "07-matriks": 862,
+      "08-subprogram": 766,
+      "09-oop": 874,
+      "10-style-guide": 1093,
+      "11-unit-testing": 527
+    },
+    "train": {
+      "05-control-flow": 668,
+      "11-unit-testing": 433,
+      "09-oop": 707,
+      "03-ekspresi": 821,
+      "02-berinteraksi-dengan-data": 1055,
+      "10-style-guide": 865,
+      "07-matriks": 673,
+      "06-array": 974,
+      "01-perkenalan-python": 1218,
+      "08-subprogram": 602,
+      "04-aksi-sekuensial": 664
+    },
+    "validation": {
+      "05-control-flow": 94,
+      "02-berinteraksi-dengan-data": 139,
+      "01-perkenalan-python": 143,
+      "10-style-guide": 122,
+      "03-ekspresi": 77,
+      "08-subprogram": 85,
+      "06-array": 133,
+      "07-matriks": 92,
+      "09-oop": 78,
+      "11-unit-testing": 45,
+      "04-aksi-sekuensial": 77
+    },
+    "test": {
+      "05-control-flow": 89,
+      "01-perkenalan-python": 148,
+      "02-berinteraksi-dengan-data": 129,
+      "07-matriks": 97,
+      "11-unit-testing": 49,
+      "10-style-guide": 106,
+      "04-aksi-sekuensial": 107,
+      "09-oop": 89,
+      "08-subprogram": 79,
+      "06-array": 100,
+      "03-ekspresi": 93
+    }
+  },
+  "deduplication": {
+    "original_count": 11338,
+    "unique_count": 10851,
+    "duplicates_removed": 487
+  },
+  "validation_errors": 0,
+  "file_stats": {
+    "01-perkenalan-python\\01-perkenalan-python.jsonl": 224,
+    "01-perkenalan-python\\02-menjalankan-kode-program-pertama.jsonl": 227,
+    "01-perkenalan-python\\03-bersiap-membuat-kode-program-pertama-di-lokal.jsonl": 220,
+    "01-perkenalan-python\\04-menjalankan-kode-di-program-lokal.jsonl": 220,
+    "01-perkenalan-python\\05-variable-and-assignment.jsonl": 222,
+    "01-perkenalan-python\\06-input-output-and-comment.jsonl": 220,
+    "01-perkenalan-python\\07-rangkuman.jsonl": 224,
+    "02-berinteraksi-dengan-data\\1_abstraksi_data.jsonl": 252,
+    "02-berinteraksi-dengan-data\\2_data_typing.jsonl": 220,
+    "02-berinteraksi-dengan-data\\3_type_data.jsonl": 220,
+    "02-berinteraksi-dengan-data\\4_transformasi_string.jsonl": 220,
+    "02-berinteraksi-dengan-data\\5_operasi_list_set_string.jsonl": 220,
+    "02-berinteraksi-dengan-data\\6_rangkuman.jsonl": 220,
+    "03-ekspresi\\materi1.jsonl": 260,
+    "03-ekspresi\\materi2.jsonl": 265,
+    "03-ekspresi\\materi3.jsonl": 257,
+    "03-ekspresi\\materi4.jsonl": 239,
+    "04-aksi-sekuensial\\materi1.jsonl": 222,
+    "04-aksi-sekuensial\\materi2.jsonl": 220,
+    "04-aksi-sekuensial\\materi3.jsonl": 237,
+    "04-aksi-sekuensial\\materi4.jsonl": 220,
+    "05-control-flow\\materi1.jsonl": 220,
+    "05-control-flow\\materi2.jsonl": 220,
+    "05-control-flow\\materi3.jsonl": 222,
+    "05-control-flow\\materi4.jsonl": 220,
+    "06-array\\materi1.jsonl": 220,
+    "06-array\\materi2.jsonl": 220,
+    "06-array\\materi3.jsonl": 220,
+    "06-array\\materi4.jsonl": 328,
+    "06-array\\materi5.jsonl": 220,
+    "07-matriks\\materi1.jsonl": 220,
+    "07-matriks\\materi2.jsonl": 220,
+    "07-matriks\\materi3.jsonl": 220,
+    "07-matriks\\materi4.jsonl": 220,
+    "08-subprogram\\materi1.jsonl": 220,
+    "08-subprogram\\materi2.jsonl": 244,
+    "08-subprogram\\materi3.jsonl": 220,
+    "08-subprogram\\materi4.jsonl": 220,
+    "09-oop\\materi1.jsonl": 220,
+    "09-oop\\materi2.jsonl": 220,
+    "09-oop\\materi3.jsonl": 220,
+    "09-oop\\materi4.jsonl": 220,
+    "10-style-guide\\materi1.jsonl": 220,
+    "10-style-guide\\materi2.jsonl": 220,
+    "10-style-guide\\materi3.jsonl": 220,
+    "10-style-guide\\materi4.jsonl": 214,
+    "10-style-guide\\materi5.jsonl": 221,
+    "11-unit-testing\\materi1.jsonl": 220,
+    "11-unit-testing\\materi2.jsonl": 220,
+    "11-unit-testing\\materi3.jsonl": 220
+  }
+}

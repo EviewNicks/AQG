@@ -7,7 +7,7 @@ from typing import Tuple, Dict, Optional
 
 
 def load_model_with_lora(
-    model_name: str = 'Wikidepia/IndoT5-base',
+    model_name: str = 'LazarusNLP/IndoNanoT5-base',
     lora_r: int = 8,
     lora_alpha: int = 16,
     lora_dropout: float = 0.1,

@@ -1,1 +1,256 @@
-\
+# Plan: Dataset Generation & Integration - dataset-task-v4
+
+**Date:** 1 May 2026  
+**Goal:** Generate 220 MCQ samples per materi file compliant with 03-Dataset-Design-Guide-v3.md  
+**Target:** Each materi file has minimum 220 valid samples
+
+---
+
+## Current State
+
+**File:** `dataset_aqg/dataset-task-v4/01-perkenalan-python/01-perkenalan-python.jsonl`
+- Total samples: 110
+- Valid samples: 15
+- Invalid samples: 95 (duplicates to remove)
+- Gap: 205 samples needed to reach 220 target
+
+---
+
+## Pipeline Overview
+
+```
+Phase 1: Cleanup (Remove Invalid Samples)
+  └── Remove 95 duplicate/invalid samples
+      └── Result: 15 valid samples remain
+
+Phase 2: Generate New Samples
+  └── Create 205 new MCQ samples
+      ├── Follow 03-Dataset-Design-Guide-v3.md rules
+      ├── Maintain 60/40 knowledge/code ratio
+      ├── Distribute difficulty: Mudah/Sedang/Sulit
+      └── Save to temporary file: `01-perkenalan-python_generated.jsonl`
+
+Phase 3: Merge & Validate
+  └── Append generated samples to main file
+      ├── Result: 220 total samples
+      ├── Validate no duplicates
+      └── Confirm all rules compliance
+```
+
+---
+
+## Phase 1: Cleanup
+
+**Action:** Remove 95 invalid samples (lines 16-110)
+- Reason: Duplicate input text
+- Keep: 15 valid samples (lines 1-15)
+- Result: Clean base file with 15 samples
+
+---
+
+## Phase 2: Generate New Samples (205 samples)
+
+**Format Reference:** `docs/dataset/03-Dataset-Design-Guide-v3.md`
+
+### Sample Structure (JSONL format)
+```json
+{
+  "input": "buat_soal_pilihan_ganda: [CONTEXT 1-2 SENTENCES]",
+  "output": "question: [CLEAR QUESTION]\nanswer: [CONCISE ANSWER]\ndistractors: [OPT1] | [OPT2] | [OPT3]",
+  "metadata": {
+    "difficulty": "Mudah|Sedang|Sulit",
+    "type": "knowledge|code"
+  }
+}
+```
+
+### Generation Rules (from 03-Dataset-Design-Guide-v3.md)
+
+**Input Requirements:**
+- ✅ Start with `buat_soal_pilihan_ganda:`
+- ✅ Plain text only (no markdown except code blocks)
+- ✅ 1-2 sentences minimum explanation
+- ✅ 50-200 words recommended (max ~400 words / 512 tokens)
+- ✅ For code: explain what code does
+
+**Output Requirements:**
+- ✅ Questions self-contained (complete without input)
+- ✅ Include code block in question if referenced
+- ✅ Answers concise (1-5 words preferred)
+- ✅ Distractors plausible & distinct (3 options separated by `|`)
+- ✅ Format: `question:`, `answer:`, `distractors:`
+
+**Metadata Requirements:**
+- ✅ `difficulty`: Mudah (direct recall) | Sedang (application) | Sulit (synthesis)
+- ✅ `type`: knowledge (conceptual) | code (with code blocks)
+
+**Type Distribution (CRITICAL):**
+- Knowledge: ≥ 60% (132 samples minimum)
+- Code: ≤ 40% (88 samples maximum)
+
+**Difficulty Distribution (Target):**
+- Mudah: ~40% (88 samples)
+- Sedang: ~45% (99 samples)
+- Sulit: ~15% (33 samples)
+
+**Language Quality:**
+- ✅ Follow EYD (Ejaan Yang Disempurnakan)
+- ✅ Formal/educational tone
+- ✅ Technical terms in English acceptable
+- ✅ Avoid colloquial language
+
+**Quality Checks:**
+- ✅ No duplicate inputs
+- ✅ No duplicate questions
+- ✅ No duplicate text within questions
+- ✅ All samples have required fields
+- ✅ All samples have valid metadata
+
+### Output File
+- **Temporary file:** `dataset_aqg/dataset-task-v4/01-perkenalan-python/01-perkenalan-python_generated.jsonl`
+- **Content:** 205 new samples (one JSON object per line)
+
+---
+
+## Phase 3: Merge & Validate
+
+**Action:** Merge generated samples directly into main file
+```
+1. Generate samples in batches to temporary _generated.jsonl file
+2. Append all generated samples directly to main file (01-perkenalan-python.jsonl)
+3. Result: 220 total samples in main file
+4. Delete temporary _generated.jsonl file after merge
+```
+
+**Merge Process:**
+- Read from: `01-perkenalan-python_generated.jsonl` (temporary)
+- Write to: `01-perkenalan-python.jsonl` (main file - DIRECT MERGE)
+- Keep only main file after merge complete
+
+**Validation:**
+- ✅ Total count: 220 samples in main file
+- ✅ Type ratio: knowledge ≥ 60%, code ≤ 40%
+- ✅ No duplicates (input, question, or text)
+- ✅ All samples have required fields
+- ✅ All samples follow format rules
+- ✅ All samples follow language rules
+
+---
+
+## Execution Order
+
+1. **Phase 1:** Remove 95 invalid samples → 15 valid remain in main file
+2. **Phase 2:** Generate 224 new samples → save to `_generated.jsonl` (temporary)
+3. **Phase 3:** Merge directly → append all from `_generated.jsonl` to main file (01-perkenalan-python.jsonl)
+4. **Cleanup:** Delete temporary `_generated.jsonl` file
+5. **Validate:** Confirm 220 total samples in main file with all rules compliance
+
+---
+
+## Scripts Pipeline (Main Workflow)
+
+**Core Pipeline Scripts** (located in `scripts/03-dataset-design/`):
+
+### 1. Analysis Script
+```bash
+python 01_analyze_dataset.py <dataset_file>
+```
+- **Purpose:** Analyze dataset status and generate report
+- **Output:** `report-dataset.md` with:
+  - Total/valid/invalid sample counts
+  - Type distribution (knowledge/code %)
+  - Difficulty distribution
+  - Issues list (duplicates, missing distractors, etc.)
+  - Gap calculation (samples needed to reach 220)
+- **Usage:** Run FIRST to check current status
+
+### 2. Cleanup Script
+```bash
+python 02_clean_dataset.py <dataset_file>
+```
+- **Purpose:** Remove invalid samples (duplicates, missing distractors, incomplete metadata)
+- **Process:**
+  - Identifies invalid samples based on rules
+  - Removes them from dataset
+  - Creates backup file (.bak)
+  - Saves cleaned dataset
+- **Usage:** Run AFTER analysis to remove invalid samples
+
+### 3. Merge Batches Script
+```bash
+python 03_merge_batches.py <main_file> <batch_file_1> <batch_file_2> ...
+```
+- **Purpose:** Merge batch files into main dataset file
+- **Process:**
+  - Reads main file
+  - Appends all batch files sequentially
+  - Writes merged result back to main file
+  - Cleans up batch files after merge
+- **Usage:** Run AFTER generating batch files to consolidate
+
+### 4. Add Type Metadata Script
+```bash
+python 04_add_type_metadata.py <dataset_file>
+```
+- **Purpose:** Add/detect type metadata (knowledge/code) based on code blocks
+- **Detection Logic:**
+  - If output contains ``` → type = 'code'
+  - Otherwise → type = 'knowledge'
+- **Process:**
+  - Analyzes each sample
+  - Adds type field to metadata
+  - Validates type distribution (≥60% knowledge, ≤40% code)
+  - Reports distribution status
+- **Usage:** Run AFTER merging to add type metadata
+
+### Recommended Workflow
+
+```
+Step 1: Analyze current status
+  └── python 01_analyze_dataset.py <dataset_file>
+      └── Check report-dataset.md for issues
+
+Step 2: Clean invalid samples (if any)
+  └── python 02_clean_dataset.py <dataset_file>
+      └── Removes duplicates and invalid samples
+
+Step 3: Generate new samples
+  └── Create batch files (batch_1.jsonl, batch_2.jsonl, etc.)
+      └── Follow 03-Dataset-Design-Guide-v3.md rules
+
+Step 4: Merge batches into main file
+  └── python 03_merge_batches.py <main_file> <batch_1> <batch_2> ...
+      └── Consolidates all batches
+
+Step 5: Add type metadata
+  └── python 04_add_type_metadata.py <dataset_file>
+      └── Detects and adds type field
+
+Step 6: Validate final result
+  └── python 01_analyze_dataset.py <dataset_file>
+      └── Confirm 220 samples, valid type distribution, no issues
+```
+
+---
+
+## Key References
+
+- **Design Guide:** `docs/dataset/03-Dataset-Design-Guide-v3.md`
+- **Main File (Final):** `dataset_aqg/dataset-task-v4/01-perkenalan-python/01-perkenalan-python.jsonl`
+- **Temporary File (Delete after merge):** `dataset_aqg/dataset-task-v4/01-perkenalan-python/01-perkenalan-python_generated.jsonl`
+- **Report:** `scripts/03-dataset-design/report-dataset.md`
+- **Scripts Location:** `scripts/03-dataset-design/`
+
+---
+
+## Notes
+
+- Generate samples to temporary `_generated.jsonl` file for batching
+- **MERGE DIRECTLY to main file** (01-perkenalan-python.jsonl) - not to _generated.jsonl
+- Delete temporary `_generated.jsonl` after successful merge
+- Follow all rules from 03-Dataset-Design-Guide-v3.md strictly
+- Validate each batch before appending to main file
+- Maintain data integrity throughout process
+- Final result: 220 samples in main file only
+- **Always use the 4-script pipeline** (analyze → clean → merge → add-type) for consistency
+- Run analysis script first to understand current state before taking action

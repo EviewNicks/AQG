@@ -52,6 +52,7 @@ class ModelEvaluator:
         input_text: str,
         num_beams: int = 4,
         max_length: Optional[int] = None,
+        do_sample: bool = False,
         temperature: float = 1.0,
         top_k: int = 50,
         top_p: float = 0.95
@@ -63,9 +64,10 @@ class ModelEvaluator:
             input_text: Input text
             num_beams: Number of beams for beam search
             max_length: Maximum generation length
-            temperature: Sampling temperature
-            top_k: Top-k sampling
-            top_p: Top-p sampling
+            do_sample: Whether to use sampling (if False, uses beam search)
+            temperature: Sampling temperature (only used if do_sample=True)
+            top_k: Top-k sampling (only used if do_sample=True)
+            top_p: Top-p sampling (only used if do_sample=True)
             
         Returns:
             Generated text
@@ -84,18 +86,31 @@ class ModelEvaluator:
         # Move to device
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         
+        # Build generation config based on do_sample
+        gen_kwargs = {
+            'max_length': max_length,
+            'early_stopping': True,
+            'no_repeat_ngram_size': 3,
+        }
+        
+        if do_sample:
+            # Sampling mode: use temperature, top_k, top_p
+            gen_kwargs.update({
+                'do_sample': True,
+                'temperature': temperature,
+                'top_k': top_k,
+                'top_p': top_p,
+            })
+        else:
+            # Beam search mode: don't use sampling parameters
+            gen_kwargs.update({
+                'num_beams': num_beams,
+                'do_sample': False,
+            })
+        
         # Generate
         with torch.no_grad():
-            outputs = self.model.generate(
-                **inputs,
-                max_length=max_length,
-                num_beams=num_beams,
-                early_stopping=True,
-                no_repeat_ngram_size=3,
-                temperature=temperature,
-                top_k=top_k,
-                top_p=top_p
-            )
+            outputs = self.model.generate(**inputs, **gen_kwargs)
         
         # Decode
         prediction = self.tokenizer.decode(
@@ -144,7 +159,10 @@ class ModelEvaluator:
                 print(f"  Processed {i + 1}/{len(test_dataset)} samples...")
             
             input_text = sample["input"]
-            reference = sample["target"]
+            # Support both 'target' (v2) and 'output' (v3) field names
+            reference = sample.get("target") or sample.get("output")
+            if reference is None:
+                raise ValueError(f"Sample {i} missing both 'target' and 'output' fields")
             
             # Generate prediction
             prediction = self.generate_prediction(
@@ -203,7 +221,10 @@ class ModelEvaluator:
         for i, idx in enumerate(indices):
             sample = test_dataset[idx]
             input_text = sample["input"]
-            reference = sample["target"]
+            # Support both 'target' (v2) and 'output' (v3) field names
+            reference = sample.get("target") or sample.get("output")
+            if reference is None:
+                raise ValueError(f"Sample {idx} missing both 'target' and 'output' fields")
             
             # Generate prediction
             prediction = self.generate_prediction(
@@ -228,15 +249,25 @@ class ModelEvaluator:
             
             samples.append(sample_result)
             
-            # Print sample
-            print(f"\n--- Sample {i + 1} ---")
-            print(f"Input: {input_text[:150]}...")
-            print(f"Reference: {reference[:150]}...")
-            print(f"Prediction: {prediction[:150]}...")
-            print(f"BLEU: {bleu_score:.4f}")
+            # Print sample (full output for manual inspection)
+            print(f"\n{'='*80}")
+            print(f"Sample {i + 1}/{len(indices)}")
+            print(f"{'='*80}")
+            print(f"\n📥 INPUT:")
+            print(f"{input_text}")
+            print(f"\n✅ REFERENCE:")
+            print(f"{reference}")
+            print(f"\n🤖 PREDICTION:")
+            print(f"{prediction}")
+            print(f"\n📊 BLEU Score: {bleu_score:.4f}")
+            print(f"{'='*80}")
         
         # Save to file if specified
         if save_path:
+            # Create directory if it doesn't exist
+            save_dir = Path(save_path).parent
+            save_dir.mkdir(parents=True, exist_ok=True)
+            
             with open(save_path, "w", encoding="utf-8") as f:
                 json.dump(samples, f, indent=2, ensure_ascii=False)
             print(f"\n✓ Samples saved to {save_path}")

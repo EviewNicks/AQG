@@ -1,189 +1,103 @@
-# 1 Load Model dan Tokenizer 
+Ah, saya paham sekarang! Jadi strategi Anda adalah:
 
-/usr/local/lib/python3.12/dist-packages/huggingface_hub/utils/_auth.py:103: UserWarning: 
-Error while fetching `HF_TOKEN` secret value from your vault: 'Requesting secret HF_TOKEN timed out. Secrets can only be fetched when running from the Colab UI.'.
-You are not authenticated with the Hugging Face Hub in this notebook.
-If the error persists, please let us know by opening an issue on GitHub (https://github.com/huggingface/huggingface_hub/issues/new).
-  warnings.warn(
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+## 🎯 STRATEGI YANG BENAR
 
-✓ Base model loaded
-✓ LoRA applied: r=8, alpha=16, target=['q', 'v']
-  Trainable: 884,736 (0.30%)
-  Total:     297,811,200
-✓ Model device: cuda:0
-  GPU allocated: 1.19 GB
-Tokenizer pad_token_id: 0
-Tokenizer eos_token_id: 1
-Model device: cuda:0
+**TIDAK menghapus knowledge samples**, tapi **MENAMBAH code samples** untuk menyeimbangkan ratio!
 
-# 2 Load Sample Data
+### **Logika:**
+- Section 07-11 terlalu banyak knowledge (97-100%)
+- Solusi: Tambah code samples (bukan hapus knowledge)
+- Target: Mencapai ratio yang lebih seimbang (mendekati 60/40 atau dalam tolerance 50/50)
 
-✓ Dataset already exists
-✓ Loaded 876 entries from /content/dataset_aqg/dataset-task-spesifc/train.jsonl
+---
 
-Loaded 876 samples
+## 📊 ANALISIS KEBUTUHAN CODE SAMPLES
 
-Sample input length: 973 chars
-Sample target length: 422 chars
+Mari saya hitung berapa code samples yang perlu ditambahkan di setiap section:
 
-Input preview : Konteks: ### Perbandingan Penggunaan Memori
+### **Section 07: Matriks (4 files)**
 
-```python
-import numpy
-import sys
+| File    | Current | Knowledge | Code      | Target Ratio | Code Needed              |
+| ---------| ---------| -----------| -----------| --------------| --------------------------|
+| materi1 | 220     | 106 (48%) | 114 (52%) | 60/40        | **+48 code** → 268 total |
+| materi2 | 220     | 121 (55%) | 99 (45%)  | 60/40        | **+66 code** → 286 total |
+| materi3 | 220     | 109 (50%) | 111 (50%) | 60/40        | **+73 code** → 293 total |
+| materi4 | 220     | 170 (77%) | 50 (23%)  | 60/40        | **+63 code** → 283 total |
 
-var_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-var_array = numpy.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+**Subtotal Section 07: ~250 code samples**
 
-print("Ukuran keseluruhan elemen list dalam bytes =", sys.getsizeof(var_list) * len(var_list))
-print("Ukuran keseluruhan elemen NumPy dalam bytes =", var_array.size * var_array.itemsize)
+### **Section 08: Subprogram (4 files)**
 
-"""
-Output:
-Ukuran keseluruhan elemen list dalam bytes = 240
-Ukuran keseluruhan elemen NumPy dalam bytes = 72
-"""
-```
-Dengan matriks yang sama, NumPy hanya menggunakan **72 bytes** dibanding list Python yang menggunakan **240 bytes** — inilah alasan banyak programmer memilih NumPy untuk memproses matriks. > **Catatan:** Seluruh materi pada modul ini akan menggunakan list Python untuk mengimplementasikan matriks, agar kita memahami fundamental matriks tanpa melibatkan library apa pun.
+| File | Current | Knowledge | Code | Target Ratio | Code Needed |
+|------|---------|-----------|------|--------------|-------------|
+| materi1 | 220 | 215 (98%) | 5 (2%) | 60/40 | **+138 code** → 358 total |
+| materi2 | 244 | 242 (99%) | 2 (1%) | 60/40 | **+159 code** → 403 total |
+| materi3 | 220 | 218 (99%) | 2 (1%) | 60/40 | **+143 code** → 363 total |
+| materi4 | 220 | 218 (99%) | 2 (1%) | 60/40 | **+143 code** → 363 total |
 
-Prompt: Buat satu soal Code Completion tentang Fundamental Matriks, tingkat kesulitan: hard, bahasa Indonesia....
+**Subtotal Section 08: ~583 code samples**
 
-Target preview : Pertanyaan: Sesuai catatan modul yang menggunakan list Python untuk matriks, lengkapi kode berikut untuk menghitung ukuran memori list: import sys; var_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]; ukuran_memori = ________________.? Jawaban benar: `sys.getsizeof(var_list) * len(var_list)`. Distraktor: 1) `var_array.size * var_array.itemsize` 2) `sys.getsizeof(var_list)` 3) `sys.getsizeof(var_list) + len(var_list)` 4) `240`...
+### **Section 09: OOP (4 files)**
 
-# 3 Test Tokenization
+| File | Current | Knowledge | Code | Target Ratio | Code Needed |
+|------|---------|-----------|------|--------------|-------------|
+| materi1 | 220 | 171 (78%) | 49 (22%) | 60/40 | **+65 code** → 285 total |
+| materi2 | 220 | 169 (77%) | 51 (23%) | 60/40 | **+62 code** → 282 total |
+| materi3 | 220 | 171 (78%) | 49 (22%) | 60/40 | **+65 code** → 285 total |
+| materi4 | 220 | 220 (100%) | 0 (0%) | 60/40 | **+147 code** → 367 total |
 
-=== HASIL TOKENIZATION ===
+**Subtotal Section 09: ~339 code samples**
 
-Input IDs length: 319
-Input IDs sample (20 pertama): [2777, 5561, 39, 2892, 18209, 18209, 926, 16135, 30, 12489, 24532, 11, 10347, 10347, 10347, 258, 22502, 7676, 120, 11]
+### **Section 10: Style Guide (5 files)**
 
-Label IDs length: 201
-Label IDs sample (20 pertama): [926, 369, 23, 30, 39, 15506, 1489, 10059, 10, 138, 19133, 211, 22502, 21, 12942, 8, 2046, 43, 1620, 614]
+| File | Current | Knowledge | Code | Target Ratio | Code Needed |
+|------|---------|-----------|------|--------------|-------------|
+| materi1 | 220 | 220 (100%) | 0 (0%) | 60/40 | **+147 code** → 367 total |
+| materi2 | 220 | 220 (100%) | 0 (0%) | 60/40 | **+147 code** → 367 total |
+| materi3 | 220 | 220 (100%) | 0 (0%) | 60/40 | **+147 code** → 367 total |
+| materi4 | 214 | 214 (100%) | 0 (0%) | 60/40 | **+143 code** → 357 total |
+| materi5 | 221 | 221 (100%) | 0 (0%) | 60/40 | **+147 code** → 368 total |
 
-Input padding tokens: 0 (seharusnya 0)
-Label padding tokens: 0 (seharusnya 0)
+**Subtotal Section 10: ~731 code samples**
 
-Non-zero label tokens: 201 / 201
+### **Section 11: Unit Testing (3 files)**
 
-✓ Labels mengandung token non-zero (BAGUS)
+| File    | Current | Knowledge  | Code   | Target Ratio | Code Needed               |
+| ---------| ---------| ------------| --------| --------------| ---------------------------|
+| materi1 | 220     | 220 (100%) | 0 (0%) | 60/40        | **+147 code** → 367 total |
+| materi2 | 220     | 220 (100%) | 0 (0%) | 60/40        | **+147 code** → 367 total |
+| materi3 | 220     | 220 (100%) | 0 (0%) | 60/40        | **+147 code** → 367 total |
 
-# 4 Test DataColator Behaviour 
+**Subtotal Section 11: ~441 code samples**
 
-=== SEBELUM DATACOLLATOR ===
-Sample 1 - Input length: 319
-Sample 1 - Label length: 201
-Sample 2 - Input length: 50
-Sample 2 - Label length: 30
+---
 
-=== SETELAH DATACOLLATOR ===
-Batch input_ids shape: torch.Size([2, 320])
-Batch labels shape: torch.Size([2, 208])
+## 📋 TOTAL KEBUTUHAN
 
-First sample labels (30 pertama): tensor([  926,   369,    23,    30,    39, 15506,  1489, 10059,    10,   138,
-        19133,   211, 22502,    21, 12942,     8,  2046,    43,  1620,   614,
-           21,  6983,  1547,  6273, 19133,    39,  7676,   120,  7809,    32])
+| Section | Files | Code Samples Needed | Avg per File |
+|---------|-------|---------------------|--------------|
+| 07-matriks | 4 | ~250 | ~63 |
+| 08-subprogram | 4 | ~583 | ~146 |
+| 09-oop | 4 | ~339 | ~85 |
+| 10-style-guide | 5 | ~731 | ~146 |
+| 11-unit-testing | 3 | ~441 | ~147 |
+| **TOTAL** | **20 files** | **~2,344 code samples** | **~117** |
 
-=== ANALISIS MASKING ===
-Masked tokens (-100): 7 (3.4%)
-Non-masked tokens: 201 (96.6%)
-Total tokens: 208
+---
 
-✓ DataCollator bekerja dengan benar!
-   201 valid labels untuk training.
+## ✅ KONFIRMASI PEMAHAMAN
 
-# 5  Test Forward Pass 
+**Apakah ini yang Anda maksud?**
 
-=== HASIL FORWARD PASS ===
+1. ✅ **TIDAK menghapus** knowledge samples yang sudah ada
+2. ✅ **MENAMBAH code samples** (dengan code blocks) di setiap file
+3. ✅ **Target:** Mencapai ratio 60/40 (knowledge/code) atau minimal dalam tolerance
+4. ✅ **Fokus:** Section 07-11 (20 files total)
+5. ✅ **Estimasi:** ~2,344 code samples total (~117 per file)
 
-Loss: 9.9250
-Logits shape: torch.Size([2, 208, 32128])
+**Catatan:**
+- Usulan Anda: 300-400 samples per section
+- Perhitungan saya: ~2,344 total untuk semua section (07-11)
+- Jika dibagi per section: ~469 samples per section (5 sections)
 
-✓ Loss valid: 9.9250
-   Model dapat menerima learning signal.
-
-# 6 Test Generation
-
-=== TEST GENERATION ===
-
-Input (200 char): Konteks: ### Perbandingan Penggunaan Memori
-
-```python
-import numpy
-import sys
-
-var_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-var_array = numpy.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-print("Ukuran k...
-
-Reference (200 char): Pertanyaan: Sesuai catatan modul yang menggunakan list Python untuk matriks, lengkapi kode berikut untuk menghitung ukuran memori list: import sys; var_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]; ukuran...
-
-Prediction (200 char): Perbandingan Penggunaan Memori Konteks: ### Perbandingan Penggunaan Memori Konteks: ### Perbandingan Penggunaan Memori Konteks: ### Perbandingan Penggunaan Memori Konteks: ### Perbandingan Penggunaan ...
-
-Prediction length: 414 chars
-
-⚠️ PERINGATAN: Prediction tidak dimulai dengan 'Pertanyaan'
-   Format output mungkin tidak sesuai.
-```
-
-# Hasil Evaluasi Report
-
-## Evaluasi Hasil Debug - Ringkasan
-
-Berdasarkan hasil debug, saya dapat memberikan **KABAR BAIK** dan analisis lengkap:
-
-### ✅ MASALAH UTAMA SUDAH FIXED!
-
-**DataCollator Fix BERHASIL**:
-- ✓ Tokenization: **201/201 labels valid** (100%)
-- ✓ DataCollator: **201/208 non-masked** (96.6% valid, 3.4% padding)
-- ✓ Forward Pass: **Loss = 9.9250** (VALID, bukan 0.0 atau NaN!)
-- ✓ Model menerima learning signal dengan benar
-
-**Perbandingan**:
-```
-SEBELUM FIX:
-- Loss: 0.0000 ❌
-- Eval loss: NaN ❌
-- Labels: >90% di-mask ❌
-
-SESUDAH FIX:
-- Loss: 9.9250 ✓
-- Labels: 96.6% valid ✓
-- DataCollator bekerja benar ✓
-```
-
-### ⚠️ Prediction Warning - BUKAN Masalah Kritis
-
-**Output yang Dihasilkan**:
-```
-Prediction: "Perbandingan Penggunaan Memori Konteks: ### Perbandingan..."
-Expected: "Pertanyaan: Sesuai catatan modul..."
-```
-
-**Analisis**:
-1. **BUKAN masalah dataset** - Format dataset sudah benar
-2. **BUKAN masalah preprocessing** - Tokenization 100% valid
-3. **BUKAN masalah DataCollator** - Masking sudah benar
-
-**Root Cause**: **Model belum di-train!**
-- Ini adalah **base model** (pre-trained IndoT5)
-- Model belum pernah lihat task AQG
-- Model belum belajar format output yang diinginkan
-- **NORMAL** untuk model yang belum di-fine-tune
-
-### 📊 Kesimpulan
-
-**Masalah Training Loss=0.0 SUDAH TERATASI**:
-1. ✅ DataCollator fix berhasil (hapus `max_length`)
-2. ✅ Labels tidak di-mask semua (96.6% valid)
-3. ✅ Loss valid (9.9250, bukan 0.0)
-4. ✅ Model siap untuk training
-
-**Prediction Warning adalah EXPECTED**:
-- Model base belum di-train untuk AQG
-- Setelah training, output akan sesuai format
-- Ini BUKAN indikasi masalah teknis
-
+**Apakah saya sudah memahami dengan benar? Dan apakah Anda ingin saya mulai membuat code samples untuk section mana dulu?**
